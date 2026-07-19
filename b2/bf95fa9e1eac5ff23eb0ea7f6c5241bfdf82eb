@@ -1,0 +1,21 @@
+bin/fm-dispatch-select.sh
+  s_73c5b8d1f2eead::t_7ae4e3fbb50df8 184,190
+tests/fm-dispatch-select.test.sh
+  s_73c5b8d1f2eead::t_b15463e5bd821a 95,104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "b2bf95fa9e1eac5ff23eb0ea7f6c5241bfdf82eb",
+  "prompts": {},
+  "sessions": {
+    "s_73c5b8d1f2eead": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f77a2-a1f5-7b10-a199-bc1190206237",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

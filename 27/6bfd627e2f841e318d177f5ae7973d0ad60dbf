@@ -1,0 +1,28 @@
+bin/fm-composer-lib.sh
+  s_94b1f535c4cd41::t_df26b20a473a2d 210-215
+tests/fm-backend-herdr.test.sh
+  s_94b1f535c4cd41::t_df26b20a473a2d 820
+tests/fm-composer-lib.test.sh
+  s_94b1f535c4cd41::t_df26b20a473a2d 100
+bin/backends/herdr.sh
+  s_94b1f535c4cd41::t_a95f39092a17b7 906
+  s_94b1f535c4cd41::t_df26b20a473a2d 742
+docs/configuration.md
+  s_94b1f535c4cd41::t_df26b20a473a2d 399
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "276bfd627e2f841e318d177f5ae7973d0ad60dbf",
+  "prompts": {},
+  "sessions": {
+    "s_94b1f535c4cd41": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f77ed-9c3d-7111-b8e7-24496773f925",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
