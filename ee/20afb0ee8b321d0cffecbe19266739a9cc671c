@@ -1,0 +1,54 @@
+docs/configuration.md
+  s_5a0b52ada672f2::t_564584c58d761c 105-114,431-433
+AGENTS.md
+  s_5a0b52ada672f2::t_564584c58d761c 400
+bin/fm-watch.sh
+  s_5a0b52ada672f2::t_b71a1efc7f1f06 80-84,512-526,532,547,1034
+  s_5a0b52ada672f2::t_a8b711fdf80175 849-853,1046
+tests/lib.sh
+  s_5a0b52ada672f2::t_b71a1efc7f1f06 37-42
+docs/decision-alert.md
+  s_5a0b52ada672f2::t_9ba295c6a80e37 93-94,96-101
+  s_5a0b52ada672f2::t_564584c58d761c 1-92,95
+docs/decision-hold-lifecycle.md
+  s_5a0b52ada672f2::t_564584c58d761c 15-16
+docs/wedge-alarm.md
+  s_5a0b52ada672f2::t_564584c58d761c 40-41
+tests/fm-decision-alert.test.sh
+  s_5a0b52ada672f2::t_92e41a900f85e2 55-62
+  s_5a0b52ada672f2::t_9ba295c6a80e37 92,122-129
+  s_5a0b52ada672f2::t_6317ba822f6ce9 79,86-87,108-109,170
+  s_5a0b52ada672f2::t_0b6ef9eb288273 1-54,63-78,80-85,88-91,93-107,110-112,114-121,130-169,171-172,174-184
+  s_5a0b52ada672f2::t_9adfb99f4a6062 113,173
+bin/fm-decision-hold.sh
+  s_5a0b52ada672f2::t_b71a1efc7f1f06 18-20,277
+bin/fm-decision-alert.sh
+  s_5a0b52ada672f2::t_6049c09c31cf56 1-137,139-161,164,167,169-173,175-228
+  s_5a0b52ada672f2::t_9ba295c6a80e37 138,162-163,165-166,168,174
+bin/fm-notify-lib.sh
+  s_5a0b52ada672f2::t_6049c09c31cf56 1-97
+tests/fm-decision-hold-lifecycle.test.sh
+  s_5a0b52ada672f2::t_c772c8dbebd6f0 122,140-145,153-154,158-159,165-166,174-175
+bin/fm-supervise-daemon.sh
+  s_5a0b52ada672f2::t_4d9eea6ee21d44 164-169,685-687,692-696,702-704,706,709-710,712,716,720,724-739
+docs/examples/decision-alert
+  s_5a0b52ada672f2::t_564584c58d761c 1-12
+tests/fm-brief.test.sh
+  s_5a0b52ada672f2::t_2458e4b7652f54 337
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "ee20afb0ee8b321d0cffecbe19266739a9cc671c",
+  "prompts": {},
+  "sessions": {
+    "s_5a0b52ada672f2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f77a1-04d7-7971-a623-c3f257ec5783",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
