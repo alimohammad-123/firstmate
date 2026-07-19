@@ -1,0 +1,19 @@
+docs/configuration.md
+  s_ccdbc72364d681::t_59b5d328d2bbd3 253
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "f5d6a2d62dd91325b6d1ffb1f65d16f15635453b",
+  "prompts": {},
+  "sessions": {
+    "s_ccdbc72364d681": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f78b6-de34-7b40-9d6f-5079c0a0eefd",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
