@@ -1,0 +1,21 @@
+bin/fm-decision-alert.sh
+  s_dcd9f3802b7558::t_f1035712fd6dba 229-232
+tests/fm-decision-alert.test.sh
+  s_dcd9f3802b7558::t_f1035712fd6dba 216-232,286
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "ca34ed327bf408896e704a594263f5802212bcd6",
+  "prompts": {},
+  "sessions": {
+    "s_dcd9f3802b7558": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7842-180f-7503-8fee-ce276db9b04f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
