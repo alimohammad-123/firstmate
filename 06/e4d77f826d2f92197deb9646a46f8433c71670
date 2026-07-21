@@ -1,0 +1,37 @@
+bin/fm-spawn.sh
+  s_fd56e90e0bcd89::t_804db5d4cb5616 717-727
+tests/fm-backend-cmux.test.sh
+  s_fd56e90e0bcd89::t_804db5d4cb5616 268-283,1035
+bin/backends/herdr.sh
+  s_fd56e90e0bcd89::t_804db5d4cb5616 1129
+bin/backends/cmux.sh
+  s_fd56e90e0bcd89::t_804db5d4cb5616 407,409,415-429
+  s_fd56e90e0bcd89::t_0356496735712d 411
+tests/fm-backend-herdr.test.sh
+  s_fd56e90e0bcd89::t_804db5d4cb5616 50,53,1072-1086,2507
+  s_fd56e90e0bcd89::t_ce381dadac661f 885,926
+bin/fm-backend.sh
+  s_fd56e90e0bcd89::t_1098c2ea72d126 361
+tests/fm-secondmate-lifecycle-e2e.test.sh
+  s_fd56e90e0bcd89::t_bbd3ed93882036 197,215-217,219,225-227,252
+  s_fd56e90e0bcd89::t_acfc9e9e4958e4 198,205-209,218,220-224
+  s_fd56e90e0bcd89::t_804db5d4cb5616 199-204,213-214
+tests/secondmate-helpers.sh
+  s_fd56e90e0bcd89::t_4656ce6e2c1683 62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "06e4d77f826d2f92197deb9646a46f8433c71670",
+  "prompts": {},
+  "sessions": {
+    "s_fd56e90e0bcd89": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8399-f697-71a2-b571-366cdf13152d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
