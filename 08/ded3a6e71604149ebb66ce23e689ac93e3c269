@@ -1,0 +1,19 @@
+tests/fm-secondmate-harness.test.sh
+  s_6823724d7030be::t_7eb9df376490b6 2035
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "08ded3a6e71604149ebb66ce23e689ac93e3c269",
+  "prompts": {},
+  "sessions": {
+    "s_6823724d7030be": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f859c-fd73-71a0-8512-28c2b2368d3c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
