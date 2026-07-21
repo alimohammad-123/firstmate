@@ -1,0 +1,36 @@
+tests/fm-backend-herdr-presentation-e2e.test.sh
+  s_c9d823e30f6c13::t_5c5d86e4ab50d4 468-493
+tests/fm-grok-harness.test.sh
+  s_c9d823e30f6c13::t_05522a4dd3d798 20
+tests/fm-gotmp.test.sh
+  s_c9d823e30f6c13::t_05522a4dd3d798 108
+tests/fm-spawn-dispatch-profile.test.sh
+  s_c9d823e30f6c13::t_05522a4dd3d798 24
+tests/fm-secondmate-harness.test.sh
+  s_c9d823e30f6c13::t_05522a4dd3d798 248,437
+tests/fm-backend.test.sh
+  s_c9d823e30f6c13::t_05522a4dd3d798 751,828
+tests/fm-tangle-guard.test.sh
+  s_c9d823e30f6c13::t_05522a4dd3d798 163,249
+tests/fm-backend-orca.test.sh
+  s_c9d823e30f6c13::t_05522a4dd3d798 701-704
+  s_c9d823e30f6c13::t_296dc97784f628 679,705-706,708-709,1326
+tests/fm-gate-refuse.test.sh
+  s_c9d823e30f6c13::t_05522a4dd3d798 146
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "aa3a16ced1c0c83b2eeec480835fad15d577369d",
+  "prompts": {},
+  "sessions": {
+    "s_c9d823e30f6c13": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8422-fab4-7843-84c6-b2afab5481f4",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
