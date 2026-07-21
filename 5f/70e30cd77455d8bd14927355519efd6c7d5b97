@@ -1,0 +1,26 @@
+bin/backends/tmux.sh
+  s_592021f82a30a1::t_a6cd5890824b77 182-184,187-191
+bin/backends/cmux.sh
+  s_592021f82a30a1::t_a6cd5890824b77 328-331
+docs/cmux-backend.md
+  s_592021f82a30a1::t_a6cd5890824b77 173,175,184-185,303-305,375-376
+docs/tmux-backend.md
+  s_592021f82a30a1::t_a6cd5890824b77 114-115,119,122-124,126,131
+  s_592021f82a30a1::t_d4dba179c11b99 125
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "5f70e30cd77455d8bd14927355519efd6c7d5b97",
+  "prompts": {},
+  "sessions": {
+    "s_592021f82a30a1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8468-cbc0-7e10-b10b-a275c1c030be",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
