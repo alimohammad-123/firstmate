@@ -1,0 +1,21 @@
+tests/fm-watch-triage.test.sh
+  s_56ccc721eae35b::t_41c81765099242 559
+  s_56ccc721eae35b::t_9be1409cef228d 430-433
+  s_56ccc721eae35b::t_e0cd94c0fba543 484-487,583-591
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "8557d4cd532732f0f829eb70799d7b300bdec15a",
+  "prompts": {},
+  "sessions": {
+    "s_56ccc721eae35b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f791d-78a5-7ca0-afa9-d0caa6624899",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

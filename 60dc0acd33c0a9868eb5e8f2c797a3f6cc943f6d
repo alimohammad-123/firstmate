@@ -1,0 +1,32 @@
+bin/fm-decision-alert.sh
+  s_1e68d5668a5dfe::t_d244c212a9bf73 134-135
+  s_1e68d5668a5dfe::t_8bcbe8e8da8e3a 187
+  s_1e68d5668a5dfe::t_1aeda2075be110 37-38,54,58,133,136-145,155,174-175,181-183,189,192,230,235,240
+bin/fm-watch.sh
+  s_1e68d5668a5dfe::t_1aeda2075be110 520-521
+docs/decision-alert.md
+  s_1e68d5668a5dfe::t_1aeda2075be110 48-49
+docs/configuration.md
+  s_1e68d5668a5dfe::t_1aeda2075be110 111,441
+.gitignore
+  s_1e68d5668a5dfe::t_1aeda2075be110 19
+tests/fm-decision-alert.test.sh
+  s_1e68d5668a5dfe::t_1aeda2075be110 156-180,182-184,213
+  s_1e68d5668a5dfe::t_b99f064bf13aac 181
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "60dc0acd33c0a9868eb5e8f2c797a3f6cc943f6d",
+  "prompts": {},
+  "sessions": {
+    "s_1e68d5668a5dfe": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f77f8-2850-73c2-9525-a4f6ad18720e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

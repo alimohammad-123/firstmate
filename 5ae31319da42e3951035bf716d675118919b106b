@@ -1,0 +1,41 @@
+docs/decision-alert.md
+  s_e2265df0462d47::t_21137097015902 96-99
+tests/fm-watch-triage.test.sh
+  s_a229a3d88f4c5e::t_777a270d0db80b 761-764
+  s_a229a3d88f4c5e::t_a41c1bf394f3df 430-433,484-487
+docs/wedge-alarm.md
+  s_e2265df0462d47::t_8a149ef9844b2b 87
+tests/fm-pi-watch-extension.test.sh
+  s_a229a3d88f4c5e::t_b8fc44c3764b88 663
+  s_a229a3d88f4c5e::t_4cdb1355d4ac70 132,255,554,609,671,757,841,932,982,1039,1155,1544,1600,1656,1664,1731,1804
+README.md
+  s_e2265df0462d47::t_8a149ef9844b2b 45,188
+AGENTS.md
+  s_e2265df0462d47::t_8a149ef9844b2b 73,108
+docs/scripts.md
+  s_e2265df0462d47::t_8a149ef9844b2b 20,68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "5ae31319da42e3951035bf716d675118919b106b",
+  "prompts": {},
+  "sessions": {
+    "s_a229a3d88f4c5e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7909-ae15-7523-99de-79051de95e92",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_e2265df0462d47": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f7999-322a-7860-bbaa-581c45bc5009",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

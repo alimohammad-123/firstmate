@@ -1,0 +1,30 @@
+tests/fm-tangle-guard.test.sh
+  s_3f137ec18b2e9d::t_2c5367a0827596 183
+bin/fm-spawn.sh
+  s_3f137ec18b2e9d::t_2c5367a0827596 689,787,846-849,853-857,862-865
+tests/fm-backend.test.sh
+  s_3f137ec18b2e9d::t_8cde77c5a97e7f 877-902,1116
+  s_3f137ec18b2e9d::t_1c823abb91cffa 802-803,814-815,817-818
+tests/fm-backend-herdr-workspace-per-home-e2e.test.sh
+  s_3f137ec18b2e9d::t_592f40d4fbe09e 93-94,98-99,103-104
+tests/fm-pi-watch-extension.test.sh
+  s_3f137ec18b2e9d::t_592f40d4fbe09e 643,663-666
+tests/fm-backend-autodetect-smoke.test.sh
+  s_3f137ec18b2e9d::t_592f40d4fbe09e 88-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "f50274d2fe8cead9717cfa68e91146c9113f0477",
+  "prompts": {},
+  "sessions": {
+    "s_3f137ec18b2e9d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f78cd-4c5b-7e30-ac41-7bd777f9d2ca",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+.github/workflows/no-mistakes-required.yml
+  s_e03857bc67f2ac::t_1a1a3676f33885 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "5aa87f206053b1a007dc93744bdc27afa6d4566d",
+  "prompts": {},
+  "sessions": {
+    "s_e03857bc67f2ac": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f79bb-9403-7eb1-aa7c-3121d0eb2770",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

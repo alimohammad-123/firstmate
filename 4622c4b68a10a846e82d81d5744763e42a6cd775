@@ -1,0 +1,19 @@
+bin/fm-home-seed.sh
+  s_92fcfcd7bc93d8::t_8d5b6d777ab2b1 654,656-659,661-663
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "4622c4b68a10a846e82d81d5744763e42a6cd775",
+  "prompts": {},
+  "sessions": {
+    "s_92fcfcd7bc93d8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f78e6-10b6-79f1-82cf-a10b1c49a700",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
