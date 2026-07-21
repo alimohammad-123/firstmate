@@ -1,0 +1,19 @@
+bin/backends/cmux.sh
+  s_31bc3ef725bebe::t_d62dc9d235c867 346,395,464
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "b2ff7fa6f5416b382de01b8a6b6b5191f0da6bf0",
+  "prompts": {},
+  "sessions": {
+    "s_31bc3ef725bebe": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f849d-fd41-7ef1-98fb-b1855ff6cc61",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
