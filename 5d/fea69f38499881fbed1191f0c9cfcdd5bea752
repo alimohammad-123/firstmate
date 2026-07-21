@@ -1,0 +1,30 @@
+tests/fm-merge-local.test.sh
+  s_cf7661bb467bc3::t_e7c11360cd81c5 1547-1558,1573,1580-1581,1601-1606,1804-1897
+  s_c9d823e30f6c13::t_9e2d81d1e65109 1898
+bin/fm-merge-local.sh
+  s_cf7661bb467bc3::t_d723a136331bbc 26-28,642,648-649,654-669,691,698-701,707,731,737,739,1350,1361-1362,1365,1383-1416,1419,1425,1431
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "5dfea69f38499881fbed1191f0c9cfcdd5bea752",
+  "prompts": {},
+  "sessions": {
+    "s_c9d823e30f6c13": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8422-fab4-7843-84c6-b2afab5481f4",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_cf7661bb467bc3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f82fd-784e-7041-92d1-8d25f1d1bd08",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
