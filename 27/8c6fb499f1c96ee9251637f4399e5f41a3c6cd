@@ -1,0 +1,57 @@
+bin/fm-spawn.sh
+  s_2875103fbfec74::t_2bda84fb8a23c0 95,431,1159,1179
+  s_2875103fbfec74::t_569768d2f5c9c0 141-142,413-414,444,448,1130,1246-1253,1263
+bin/fm-gate-refuse-lib.sh
+  s_2875103fbfec74::t_62008409abef15 57
+bin/fm-harness-launch-lib.sh
+  s_2875103fbfec74::t_73f79ace43b10e 1-114
+bin/fm-backend.sh
+  s_2875103fbfec74::t_865b9b8f773134 570-627
+docs/existing-task-relaunch.md
+  s_2875103fbfec74::t_c0e9e0bfb10ce1 1-127
+tests/fm-relaunch.test.sh
+  s_2875103fbfec74::t_470c1df435b86b 140-142,317-336,446-460,538,545
+  s_2875103fbfec74::t_667da220643ffb 10
+  s_2875103fbfec74::t_3a1626847e76b6 1-8,12-13,16-139,143-218,220-316,337-445,461-537,539-544,546-549
+  s_2875103fbfec74::t_2a032ed2076103 9,11
+  s_2875103fbfec74::t_29cda49cab6c25 14-15
+  s_2875103fbfec74::t_fe568d187c17de 219
+bin/fm-relaunch.sh
+  s_2875103fbfec74::t_e10dcb9a156ecf 1-86,88-151,153-169,171-190,196-215,217-234,238-265,267,269,271-272,274,276,278-279,281-282,284,286-287,289,293-303,305-330,333-340,343-362,366-374,377-528,530,537-552,554-750,753-789
+  s_2875103fbfec74::t_35943275e66f8b 87
+  s_2875103fbfec74::t_a53945f77c2a85 152,341-342
+  s_2875103fbfec74::t_4bbb6e08a4969a 216,235-237,266,268,270,273,275,277,280,283,285,288,290-292,304,331,375-376
+  s_2875103fbfec74::t_e3af72803aaf09 170,191-195,332,363-365,529,531-536,553
+  s_2875103fbfec74::t_d3b256b3ba32c8 751-752
+tests/fm-gate-refuse.test.sh
+  s_2875103fbfec74::t_a06853f7671fcf 5,7
+  s_2875103fbfec74::t_744b86832eb952 37,362-394,432
+bin/backends/herdr.sh
+  s_2875103fbfec74::t_023be66b9b3fcb 1656,1658-1663,1667-1696
+  s_2875103fbfec74::t_49d8c05d903dcc 1697
+.agents/skills/stuck-crewmate-recovery/SKILL.md
+  s_2875103fbfec74::t_9729d6101da949 33-39,49,51-52
+tests/fm-captain-translation-contract.test.sh
+  s_2875103fbfec74::t_0652cce7db0e54 241,251,273-275,277
+AGENTS.md
+  s_2875103fbfec74::t_282764b96fb8d9 179
+bin/fm-test-run.sh
+  s_2875103fbfec74::t_510aa91e8e7b3c 162
+  s_2875103fbfec74::t_bb5f5a70915109 667-668,698
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "278c6fb499f1c96ee9251637f4399e5f41a3c6cd",
+  "prompts": {},
+  "sessions": {
+    "s_2875103fbfec74": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f9449-e2db-7c5f-ba72-2559ef609f8b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
