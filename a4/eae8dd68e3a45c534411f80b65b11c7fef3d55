@@ -1,0 +1,19 @@
+tests/fm-calm-pi-extension.test.sh
+  s_5a25f8a8e05138::t_2d96c706ff0711 1686-1687
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "a4eae8dd68e3a45c534411f80b65b11c7fef3d55",
+  "prompts": {},
+  "sessions": {
+    "s_5a25f8a8e05138": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f97cd-564b-78a2-a0b0-973fb0404111",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

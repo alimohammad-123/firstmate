@@ -1,0 +1,23 @@
+docs/existing-task-relaunch.md
+  s_3a9e5dfb90ba49::t_b62e0b16902b5f 47,98
+bin/backends/herdr.sh
+  s_3a9e5dfb90ba49::t_b62e0b16902b5f 1704-1705
+tests/fm-relaunch.test.sh
+  s_3a9e5dfb90ba49::t_b62e0b16902b5f 124-137,395-402,413
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "809f37e03a2bc123a802ef4e804755c7c1090739",
+  "prompts": {},
+  "sessions": {
+    "s_3a9e5dfb90ba49": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f96c2-4d06-7a33-8cf6-e2fc1db0bef1",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

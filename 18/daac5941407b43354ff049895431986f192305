@@ -1,0 +1,21 @@
+tests/fm-gate-refuse.test.sh
+  s_c1e8649d8b4169::t_a963e68f3fd2d9 388,391-392
+tests/fm-pi-watch-extension.test.sh
+  s_c1e8649d8b4169::t_a963e68f3fd2d9 106-115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "18daac5941407b43354ff049895431986f192305",
+  "prompts": {},
+  "sessions": {
+    "s_c1e8649d8b4169": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f96ec-72a1-7be2-88e7-889896135a89",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
