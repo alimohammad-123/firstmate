@@ -1,0 +1,44 @@
+bin/fm-herdr-task-owner-lib.sh
+  s_fa87f33edd71b6::t_7ed3f4addd1b47 15,18,28,31-34
+  s_fa87f33edd71b6::t_5826c10174052a 1-14,16-17,19-27,29-30,35-86
+bin/fm-spawn.sh
+  s_fa87f33edd71b6::t_2cb928e1a6b9da 1280,1290,1311-1317
+  s_fa87f33edd71b6::t_5826c10174052a 1278-1279,1281-1289,1291-1310,1318-1335
+tests/fm-send-strict.test.sh
+  s_fa87f33edd71b6::t_6ec554762999a8 239-240
+  s_fa87f33edd71b6::t_29f20bfe81f78b 236,346-350
+  s_fa87f33edd71b6::t_80c8c2198bfb4b 108-113,258,264,331-337,360
+  s_fa87f33edd71b6::t_d2c69506c0ecbe 82-83,93,100,116-125,243-254,263,265,297-318,340,342,344-345,351-359,361,372-373,375
+  s_fa87f33edd71b6::t_19a2360a6d4fbe 319
+bin/fm-send.sh
+  s_fa87f33edd71b6::t_29f20bfe81f78b 10-12,221
+  s_fa87f33edd71b6::t_5826c10174052a 81-82,223,225-226,229-241,244-245,247,317-319
+  s_fa87f33edd71b6::t_b59c420c5142cc 224
+  s_fa87f33edd71b6::t_ce09d0341e38d6 242-243,246
+  s_fa87f33edd71b6::t_2d519baf01999b 222
+docs/herdr-backend.md
+  s_fa87f33edd71b6::t_839ec78251da72 810
+  s_fa87f33edd71b6::t_d2c69506c0ecbe 328,809,813-814
+bin/backends/herdr.sh
+  s_fa87f33edd71b6::t_5826c10174052a 2123-2124,2127-2132,2148-2150,2161-2166
+bin/fm-backend.sh
+  s_fa87f33edd71b6::t_578a8f81a1f9c2 556
+tests/fm-backend-herdr.test.sh
+  s_fa87f33edd71b6::t_8af3129c1fb19e 2432,2434-2438,2440
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "7cff05d880430238a166cfd29475f3ca84aed3bc",
+  "prompts": {},
+  "sessions": {
+    "s_fa87f33edd71b6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9936-4ddd-76c0-8131-12a472997fc0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
