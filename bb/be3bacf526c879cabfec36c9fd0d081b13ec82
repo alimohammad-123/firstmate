@@ -1,0 +1,19 @@
+tests/fm-relaunch.test.sh
+  s_765dae2663cf97::t_0e2e19477c5470 143-148,447-455
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "bbbe3bacf526c879cabfec36c9fd0d081b13ec82",
+  "prompts": {},
+  "sessions": {
+    "s_765dae2663cf97": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f98c7-bec5-7fb2-9c12-6e67b309e7fe",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
