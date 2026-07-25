@@ -1,0 +1,22 @@
+tests/fm-relaunch.test.sh
+  s_2875103fbfec74::t_3bcc0d017711b8 134-142
+  s_2875103fbfec74::t_17658419cee43d 425-443,608
+bin/backends/herdr.sh
+  s_2875103fbfec74::t_7833b508214103 1694-1696,1707-1708
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "c9bb2ab50ba17d1b47b1dfa056e325f572633923",
+  "prompts": {},
+  "sessions": {
+    "s_2875103fbfec74": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f9449-e2db-7c5f-ba72-2559ef609f8b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
