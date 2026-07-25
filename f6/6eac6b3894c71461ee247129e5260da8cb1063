@@ -1,0 +1,166 @@
+bin/fm-dispatch-select.sh
+  s_73c5b8d1f2eead::t_7ae4e3fbb50df8 278,291
+tests/fm-dispatch-select.test.sh
+  s_73c5b8d1f2eead::t_b15463e5bd821a 159
+bin/fm-spawn.sh
+  s_2875103fbfec74::t_2bda84fb8a23c0 95,431,1159,1179
+  s_2875103fbfec74::t_569768d2f5c9c0 141-142,413-414,444,448,1130,1246-1253,1263
+bin/fm-gate-refuse-lib.sh
+  s_2875103fbfec74::t_62008409abef15 57
+bin/fm-harness-launch-lib.sh
+  s_2875103fbfec74::t_73f79ace43b10e 1-10,13-65,75-125
+  s_3a9e5dfb90ba49::t_0c5ad5625edb72 11-12,66-70
+  s_3a9e5dfb90ba49::t_a3c84de16fadcd 71-73
+  s_3a9e5dfb90ba49::t_aee493e97ec191 74
+bin/fm-backend.sh
+  s_2875103fbfec74::t_865b9b8f773134 570-619,628-635
+  s_3a9e5dfb90ba49::t_0c5ad5625edb72 620-627
+docs/existing-task-relaunch.md
+  s_2875103fbfec74::t_c0e9e0bfb10ce1 1-12,15-37,39-43,45,48-97,99-129
+  s_3a9e5dfb90ba49::t_0c5ad5625edb72 13-14,38,44,46
+  s_3a9e5dfb90ba49::t_b62e0b16902b5f 47,98
+tests/fm-relaunch.test.sh
+  s_2875103fbfec74::t_470c1df435b86b 163-165,340-359,513-527,605,613
+  s_2875103fbfec74::t_667da220643ffb 10
+  s_2875103fbfec74::t_3a1626847e76b6 1-8,12-13,16-54,60-123,147-162,166-241,243-339,360-377,384-401,411-415,442-479,487-512,528-604,606-607,609-612,614-617
+  s_2875103fbfec74::t_2a032ed2076103 9,11
+  s_2875103fbfec74::t_29cda49cab6c25 14-15
+  s_2875103fbfec74::t_fe568d187c17de 242
+  s_3a9e5dfb90ba49::t_0c5ad5625edb72 55-59,378-383,416-421,480-486
+  s_3a9e5dfb90ba49::t_d74bfc520fb966 402
+  s_3a9e5dfb90ba49::t_b62e0b16902b5f 124-133,143-146,404-411,422
+  s_2875103fbfec74::t_3bcc0d017711b8 134-142
+  s_2875103fbfec74::t_17658419cee43d 425-443,608
+bin/fm-relaunch.sh
+  s_2875103fbfec74::t_e10dcb9a156ecf 1-86,88-129,142,144-147,152-164,166-182,184-203,209-228,230-247,251-278,280,282,284-285,287,289,291-292,294-295,297,299-300,302,306-316,318-341,343-348,351-370,374-382,396-398,399-443,445-546,548,555-570,572-691,694-716,719-753,756-772,775-811
+  s_2875103fbfec74::t_35943275e66f8b 87
+  s_2875103fbfec74::t_a53945f77c2a85 165,349-350
+  s_2875103fbfec74::t_4bbb6e08a4969a 229,248-250,279,281,283,286,288,290,293,296,298,301,303-305,317
+  s_2875103fbfec74::t_e3af72803aaf09 183,204-208,371-373,547,549-554,571
+  s_2875103fbfec74::t_d3b256b3ba32c8 773-774
+  s_3a9e5dfb90ba49::t_0c5ad5625edb72 130-141,143,148-151,342,383-395,444,692-693,717-718,754-755
+tests/fm-gate-refuse.test.sh
+  s_2875103fbfec74::t_a06853f7671fcf 5,7
+  s_2875103fbfec74::t_744b86832eb952 37,362-387,389-390,393-394,432
+  s_c1e8649d8b4169::t_a963e68f3fd2d9 388,391-392
+bin/backends/herdr.sh
+  s_2875103fbfec74::t_023be66b9b3fcb 1656,1658-1663,1667-1693,1713-1715
+  s_2875103fbfec74::t_49d8c05d903dcc 1716
+  s_3a9e5dfb90ba49::t_0c5ad5625edb72 1697-1706,1709-1712
+  s_2875103fbfec74::t_7833b508214103 1694-1696,1707-1708
+.agents/skills/stuck-crewmate-recovery/SKILL.md
+  s_2875103fbfec74::t_9729d6101da949 33,37-38,48,50-51
+  s_06398c99bf9402::t_60196572d4e3b3 34-36
+tests/fm-captain-translation-contract.test.sh
+  s_2875103fbfec74::t_0652cce7db0e54 241,251,273-275,277
+bin/fm-test-run.sh
+  s_2875103fbfec74::t_510aa91e8e7b3c 162
+  s_2875103fbfec74::t_bb5f5a70915109 667-668,698
+tests/fm-pi-watch-extension.test.sh
+  s_c1e8649d8b4169::t_a963e68f3fd2d9 106-109,111-116
+  s_ecec54f0a76ce0::t_eae1ddc0a5f18a 110
+tests/fm-test-run.test.sh
+  s_b61694dbe7bb20::t_8ba5b19ac53b37 516-524,534
+tests/fm-backend-herdr-presentation-e2e.test.sh
+  s_b61694dbe7bb20::t_1c64d21ff3978e 721-728
+  s_b61694dbe7bb20::t_8ba5b19ac53b37 506-531
+  s_b61694dbe7bb20::t_cd8a5685aabec5 386,388-390,392-398,401-406,717,800,878,1050,1263
+  s_b61694dbe7bb20::t_08899af6279ad2 382,391,400
+  s_b61694dbe7bb20::t_6db1ce4f330668 1047-1049,1051
+  s_b61694dbe7bb20::t_3b7a8842e2b693 381
+  s_ecec54f0a76ce0::t_eae1ddc0a5f18a 387
+  s_e1d85223366b65::t_3adbf8a5fbd773 399
+tests/fm-calm-pi-extension.test.sh
+  s_6e48001d5fed25::t_8abf75182d92ce 1676
+  s_5a25f8a8e05138::t_2d96c706ff0711 1686-1687
+AGENTS.md
+  s_06398c99bf9402::t_60196572d4e3b3 179
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "f66eac6b3894c71461ee247129e5260da8cb1063",
+  "prompts": {},
+  "sessions": {
+    "s_06398c99bf9402": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9850-d060-7ed3-ae41-eef3050eb51c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_2875103fbfec74": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f9449-e2db-7c5f-ba72-2559ef609f8b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_3a9e5dfb90ba49": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f96c2-4d06-7a33-8cf6-e2fc1db0bef1",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_5a25f8a8e05138": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f97cd-564b-78a2-a0b0-973fb0404111",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_6e48001d5fed25": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9789-da82-75c3-a6fb-ee4c40b0a04a",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_73c5b8d1f2eead": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f77a2-a1f5-7b10-a199-bc1190206237",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_b61694dbe7bb20": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9728-fda9-7170-9b85-254388fa90e7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_c1e8649d8b4169": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f96ec-72a1-7be2-88e7-889896135a89",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_e1d85223366b65": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f986a-9a60-7f62-8b88-3065d79de30a",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_ecec54f0a76ce0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9855-d91b-72b3-9fb7-8a4205d3b2a4",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
