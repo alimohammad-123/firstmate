@@ -1,0 +1,53 @@
+docs/watcher-continuity.md
+  s_7771a4675f00f1::t_c28a5a781ec5c3 11-16,61
+docs/verification/supervision.md
+  s_7771a4675f00f1::t_e23c6822435f27 122-151
+.pi/extensions/fm-primary-pi-watch.ts
+  s_7771a4675f00f1::t_5e9ed4aa6f1818 195-204,206-209,226-246,248-249,251-252,256-265,269,272-274,289-307,309-346,354-355
+  s_7771a4675f00f1::t_c37333413dd7eb 205,250,275-288,308
+  s_7771a4675f00f1::t_e50aaa37c05c03 247,533,540-542,544,550,558-563,571-577,579,581-588,594
+  s_7771a4675f00f1::t_c9b5487b80a44b 399,402-403,420,424-425,428,433,438-439,441,448-455
+  s_7771a4675f00f1::t_510a6fb9baf740 635
+  s_7771a4675f00f1::t_eaee3971fcd4e8 40-64,100,102-112
+docs/supervision-protocols/pi.md
+  s_7771a4675f00f1::t_af19721957e23f 7
+tests/fm-pi-primary-live-e2e.test.sh
+  s_7771a4675f00f1::t_87ffd592de1b82 121
+  s_7771a4675f00f1::t_24845352b01647 145
+  s_7771a4675f00f1::t_36c7da3733bbab 7-8,120,122-144,146-188
+  s_7771a4675f00f1::t_a9e80bb6dee759 318-322
+  s_7771a4675f00f1::t_88be101b276407 402-429
+  s_7771a4675f00f1::t_45673d66396bae 438
+  s_2875103fbfec74::t_6e689d1034b926 189-190
+tests/fm-pi-watch-extension.test.sh
+  s_7771a4675f00f1::t_bf478e03e13842 2205-2206
+  s_7771a4675f00f1::t_c2dc5f35fa2a59 937-1011,1018-1118
+  s_7771a4675f00f1::t_f5eca25a039c3c 1143-1150,1152,1154
+  s_7771a4675f00f1::t_d5943dfe8b11be 1012-1017
+docs/architecture.md
+  s_7771a4675f00f1::t_fd2fd58f6c002b 62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "3072f551904822c60ec38965feb8e4cf32b44c63",
+  "prompts": {},
+  "sessions": {
+    "s_2875103fbfec74": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f9449-e2db-7c5f-ba72-2559ef609f8b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_7771a4675f00f1": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f9b70-167a-734f-88af-d6d72d9e9925",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
