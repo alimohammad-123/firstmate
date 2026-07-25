@@ -1,0 +1,38 @@
+bin/fm-herdr-task-owner-lib.sh
+  s_fa87f33edd71b6::t_65bfb6b163a449 89-125
+  s_fa87f33edd71b6::t_d6a913d2bf747f 21-23,26,29-30,33,35-37,39-51,58-88,126-179,181,184-192
+bin/fm-herdr-replace.sh
+  s_fa87f33edd71b6::t_65bfb6b163a449 153-165,243-245
+  s_fa87f33edd71b6::t_e37614b87b6b40 12
+  s_fa87f33edd71b6::t_019a97b56412b5 1-11,13-152,240-242,246-259,267-270,272-387,391,414-425
+  s_fa87f33edd71b6::t_52a7604c865170 166-239
+  s_fa87f33edd71b6::t_0b186b7e30fd75 260-266,271,388-390,392-413
+bin/fm-spawn.sh
+  s_fa87f33edd71b6::t_5c0818d28c2ed9 387-390,796-801,956-961,1103-1110,1298-1304,1313-1319,1321-1322,1328-1332,1340-1349
+bin/fm-relaunch.sh
+  s_fa87f33edd71b6::t_019a97b56412b5 7,89-92
+  s_fa87f33edd71b6::t_15719436cb409c 93
+.agents/skills/stuck-crewmate-recovery/SKILL.md
+  s_fa87f33edd71b6::t_019a97b56412b5 35-36
+tests/fm-herdr-lifecycle.test.sh
+  s_fa87f33edd71b6::t_ad64f1dd014175 1-6,8-116,121-152
+  s_fa87f33edd71b6::t_b1db2682d80720 120
+  s_fa87f33edd71b6::t_a2a5f8accae5d7 7
+  s_fa87f33edd71b6::t_0b5b90bb8bbe3e 117-119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "d7f9f573198b14ce2ce599b25950b3ad85e2c07e",
+  "prompts": {},
+  "sessions": {
+    "s_fa87f33edd71b6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9936-4ddd-76c0-8131-12a472997fc0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

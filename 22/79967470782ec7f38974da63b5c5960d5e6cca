@@ -1,0 +1,43 @@
+tests/fm-send-strict.test.sh
+  s_fa87f33edd71b6::t_ee2fb84c635142 310-332,424
+  s_fa87f33edd71b6::t_b13102128cb02f 281-309,423
+tests/fm-daemon.test.sh
+  s_fa87f33edd71b6::t_ee2fb84c635142 845-846,861-862,1772
+tests/fm-backend-herdr.test.sh
+  s_fa87f33edd71b6::t_b13102128cb02f 2020,2027,2029-2031,2037,3077
+  s_fa87f33edd71b6::t_df4a852d4333db 2045,2304
+  s_fa87f33edd71b6::t_2877271d645303 2028,2032-2033
+  s_fa87f33edd71b6::t_c080598ed807e0 2034-2036
+bin/fm-spawn.sh
+  s_fa87f33edd71b6::t_b13102128cb02f 143-144,387-393,1331-1335
+.agents/skills/stuck-crewmate-recovery/SKILL.md
+  s_fa87f33edd71b6::t_ee2fb84c635142 33-37
+bin/backends/herdr.sh
+  s_fa87f33edd71b6::t_c53838b40b69b2 1945,2039-2053
+  s_fa87f33edd71b6::t_b13102128cb02f 2038,2054-2055
+tests/fm-composer-lib.test.sh
+  s_fa87f33edd71b6::t_b13102128cb02f 12,51-53,76,81,84
+bin/fm-composer-lib.sh
+  s_fa87f33edd71b6::t_b13102128cb02f 187-188,192
+bin/fm-herdr-task-owner-lib.sh
+  s_fa87f33edd71b6::t_cb83ee0ad67f5c 49-50,54,57-61,66-68,81-87
+  s_fa87f33edd71b6::t_b13102128cb02f 13-48,51-53,55-56,62-65,69-80,88-90,93,96-98
+bin/fm-crew-state.sh
+  s_fa87f33edd71b6::t_b13102128cb02f 65-66,82,88,148-156
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "2279967470782ec7f38974da63b5c5960d5e6cca",
+  "prompts": {},
+  "sessions": {
+    "s_fa87f33edd71b6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9936-4ddd-76c0-8131-12a472997fc0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

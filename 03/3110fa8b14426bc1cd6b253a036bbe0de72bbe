@@ -1,0 +1,39 @@
+bin/fm-harness-launch-lib.sh
+  s_fa87f33edd71b6::t_132edc06132b70 60-78
+bin/fm-spawn.sh
+  s_fa87f33edd71b6::t_6b525cb35dfa6b 834-860,1101-1122,1164-1165,1216-1222
+  s_fa87f33edd71b6::t_95d358f48b0a49 1003-1006
+  s_fa87f33edd71b6::t_c3fb65f132df98 1452-1453,1455-1460
+bin/fm-herdr-task-owner-lib.sh
+  s_fa87f33edd71b6::t_849e16ebabe7f6 148-175
+  s_fa87f33edd71b6::t_132edc06132b70 248,252-276
+bin/backends/herdr.sh
+  s_fa87f33edd71b6::t_132edc06132b70 1194-1202
+tests/fm-herdr-lifecycle.test.sh
+  s_fa87f33edd71b6::t_84c9ab9b5d0a55 172-176
+  s_fa87f33edd71b6::t_bf21eb02ff6183 104-105,111-115,119-123,163-171,177-185,201-202,270-275,277-313
+  s_fa87f33edd71b6::t_0f1625a45861f2 157-159,269
+bin/fm-herdr-replace.sh
+  s_fa87f33edd71b6::t_98a80fde339db7 280-307,312-356
+  s_fa87f33edd71b6::t_d8d75651399a9e 308-311
+  s_fa87f33edd71b6::t_4f7d2f6dba4806 490-502,504,506-525
+  s_fa87f33edd71b6::t_38ad51329bffdc 112,141-152
+  s_fa87f33edd71b6::t_5ae62fe7e21a3e 153,155-167,503,505
+  s_fa87f33edd71b6::t_6246ef788f5c4c 154
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "033110fa8b14426bc1cd6b253a036bbe0de72bbe",
+  "prompts": {},
+  "sessions": {
+    "s_fa87f33edd71b6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9936-4ddd-76c0-8131-12a472997fc0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
