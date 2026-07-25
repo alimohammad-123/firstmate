@@ -1,0 +1,23 @@
+tests/fm-spawn-worktree-settle.test.sh
+  s_fd56e90e0bcd89::t_cafad89cb933e2 44,71-79,84-89,91-99,154-155,160,172-174,261-325,330-333
+  s_fd56e90e0bcd89::t_feb6dbc12b1d6a 250
+bin/fm-spawn.sh
+  s_fd56e90e0bcd89::t_feb6dbc12b1d6a 1432-1436
+  s_fd56e90e0bcd89::t_cafad89cb933e2 240,264-266,1259,1261-1276,1279-1280,1283-1288,1295,1298-1311,1315,1327,1342-1353,1374,1380,1384,1422-1431,1437-1448
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "edc3127a38a2bea2b5b01d80af00bf4362ae7488",
+  "prompts": {},
+  "sessions": {
+    "s_fd56e90e0bcd89": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8399-f697-71a2-b571-366cdf13152d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

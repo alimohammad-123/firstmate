@@ -1,0 +1,31 @@
+bin/fm-spawn.sh
+  s_fd56e90e0bcd89::t_8a8337a08ba597 733,1313
+bin/backends/cmux.sh
+  s_fd56e90e0bcd89::t_29d0678f3dade9 333-336
+  s_fd56e90e0bcd89::t_39fca0c75e5e3c 337,353
+  s_fd56e90e0bcd89::t_8a8337a08ba597 340-352,354-368,387,389-405,410-413,453-454,456-466
+  s_fd56e90e0bcd89::t_7cc292c0d50532 338-339
+tests/fm-backend-cmux.test.sh
+  s_fd56e90e0bcd89::t_29d0678f3dade9 699-701,1036-1040
+  s_fd56e90e0bcd89::t_e962d78b7ad350 523-525,532
+  s_fd56e90e0bcd89::t_bd56c49641c966 536-563,1124
+  s_fd56e90e0bcd89::t_8a8337a08ba597 284-324,568-572,1105-1107
+bin/fm-backend.sh
+  s_fd56e90e0bcd89::t_8a8337a08ba597 698
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "a786311747bc9c1edf9b5f643c895cd5ea942a69",
+  "prompts": {},
+  "sessions": {
+    "s_fd56e90e0bcd89": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8399-f697-71a2-b571-366cdf13152d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

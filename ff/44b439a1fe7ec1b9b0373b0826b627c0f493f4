@@ -1,0 +1,28 @@
+bin/fm-merge-local.sh
+  s_cf7661bb467bc3::t_f5e070b302c3b7 1143,1153,1180-1194,1214,1217-1219,1224-1228,1231,1233-1236,1263,1265
+  s_cf7661bb467bc3::t_4f74bcfb05b03f 640-660,696-699,701
+  s_cf7661bb467bc3::t_b7ee03be971f82 1148,1150,1195-1213,1215,1229-1230,1250
+  s_cf7661bb467bc3::t_3528efc6ff9799 24-27
+  s_cf7661bb467bc3::t_200ae49e9b7b67 1216
+  s_cf7661bb467bc3::t_1ffad9321c32ac 1270,1272,1319-1320,1329-1346
+  s_cf7661bb467bc3::t_801b72eb5cff02 1555-1556,1577-1586
+tests/fm-merge-local.test.sh
+  s_cf7661bb467bc3::t_e4b8752f408ed2 1399-1528
+  s_cf7661bb467bc3::t_274866e8de5cf2 530-578
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "ff44b439a1fe7ec1b9b0373b0826b627c0f493f4",
+  "prompts": {},
+  "sessions": {
+    "s_cf7661bb467bc3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f82fd-784e-7041-92d1-8d25f1d1bd08",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

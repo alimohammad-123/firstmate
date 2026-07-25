@@ -1,0 +1,41 @@
+tests/fm-merge-local.test.sh
+  s_cf7661bb467bc3::t_16e4b98a6d911a 1459-1463,1492,1509-1510,1512,1524-1525,1541,1543-1560
+bin/fm-merge-local.sh
+  s_cf7661bb467bc3::t_181130fa0c5122 4213-4216,4237-4239
+  s_cf7661bb467bc3::t_66b05207b6d5bc 52-90,92-166,175-201
+  s_cf7661bb467bc3::t_f99f8111b4cfaa 3230-3231,3604
+  s_cf7661bb467bc3::t_e17b23371c0a80 4028-4033,4045-4049,4056,4062-4072,4074
+  s_cf7661bb467bc3::t_7a2a1852206930 3882
+  s_cf7661bb467bc3::t_ec3cb68b0a47f4 4034-4044
+  s_cf7661bb467bc3::t_aed85cb62fe63a 91,167-174,1534,4307-4309
+  s_cf7661bb467bc3::t_7ee4432133563c 4106-4108,4110-4125
+  s_cf7661bb467bc3::t_6043ab9053cb70 2811-2812,2821-2822
+  s_cf7661bb467bc3::t_1b1aa1faae1a47 3888
+  s_cf7661bb467bc3::t_23a1cb3fd6e722 2887
+  s_cf7661bb467bc3::t_53354447bdb80d 3714-3716
+  s_cf7661bb467bc3::t_4d893035c125b8 3537,4339-4344
+  s_cf7661bb467bc3::t_6cff28b92b7a93 406,424,461
+  s_cf7661bb467bc3::t_7b2e8ab7e6aba5 3887,3889
+  s_cf7661bb467bc3::t_a2433cf561c7ea 3641,3693-3705,3753,3818,3876-3881,3884-3886,3890-3891,3893-3894,3899-3900,3933,3936,3944-3946,3963-3964,3975
+  s_cf7661bb467bc3::t_97e33871dc31e0 3883
+  s_cf7661bb467bc3::t_ea55e8e355b37d 4026
+  s_cf7661bb467bc3::t_824b3ed6877cfe 4081-4098
+  s_cf7661bb467bc3::t_ddc81068f01999 3892,3898
+  s_cf7661bb467bc3::t_abff84469e6cc3 949,3637
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "1219de094a7927203bfb338a95d1db3af14fa833",
+  "prompts": {},
+  "sessions": {
+    "s_cf7661bb467bc3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f82fd-784e-7041-92d1-8d25f1d1bd08",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

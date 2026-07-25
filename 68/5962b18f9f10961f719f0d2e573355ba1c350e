@@ -1,0 +1,48 @@
+tests/fm-merge-local.test.sh
+  s_cf7661bb467bc3::t_50b5be1c5bf449 296-297
+  s_cf7661bb467bc3::t_c26a491c03a776 251-286,840-849,852-872
+  s_cf7661bb467bc3::t_f437ccf0a9a75a 850-851
+  s_fb954c0160e8d0::t_dcdb8f6bdff395 873
+bin/fm-merge-local.sh
+  s_cf7661bb467bc3::t_75dd7c018ab77f 1326-1332
+  s_cf7661bb467bc3::t_44c6f539f8339d 1108,1148-1151,1316-1325,1333,1391-1393
+  s_cf7661bb467bc3::t_53d02a331c55d2 1030-1031,1062-1063
+  s_cf7661bb467bc3::t_afe588cbfb0762 326-328,368
+  s_cf7661bb467bc3::t_355a61a8f1dc6f 22-24,45-46
+  s_cf7661bb467bc3::t_c5d2245f1e7e01 290,299-301,305-325,329-367,369,402-403
+  s_cf7661bb467bc3::t_b88e9583cc1d4a 1096,1099,1101
+  s_cf7661bb467bc3::t_844827ce1b5916 1032,1064,1080
+  s_fd56e90e0bcd89::t_e1b9522a5fe0f3 370
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "685962b18f9f10961f719f0d2e573355ba1c350e",
+  "prompts": {},
+  "sessions": {
+    "s_cf7661bb467bc3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f82fd-784e-7041-92d1-8d25f1d1bd08",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_fb954c0160e8d0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8332-d9b6-7012-a940-77bffc6673d8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_fd56e90e0bcd89": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8399-f697-71a2-b571-366cdf13152d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

@@ -1,0 +1,64 @@
+tests/fm-spawn-worktree-settle.test.sh
+  s_fb954c0160e8d0::t_e6bfa5671a616f 150,170
+  s_fb954c0160e8d0::t_db962b5fdefc3f 24-28,35-36,40-41,50-64,90,100-111,148-149,156-159,161,166,168-169,171,192,214,220-249,251-260,328-329
+  s_fb954c0160e8d0::t_03b1d8064c6672 37-39
+  s_fd56e90e0bcd89::t_cafad89cb933e2 44,71-79,84-89,91-99,154-155,160,172-174,261-325,330-333
+  s_fd56e90e0bcd89::t_feb6dbc12b1d6a 250
+tests/fm-backend.test.sh
+  s_fb954c0160e8d0::t_1058e4115d9b17 753-758,829-834,844,858,875
+tests/fm-backend-orca.test.sh
+  s_fb954c0160e8d0::t_dc59752fa7b18b 484,492,506,512
+  s_fb954c0160e8d0::t_817c52a3480ec6 26-36
+tests/fm-gate-refuse.test.sh
+  s_fb954c0160e8d0::t_bf6db57cdc1b60 150-157
+bin/fm-spawn.sh
+  s_fb954c0160e8d0::t_b5d8f442011467 83-91,239,262-263,786-789,814,1230-1257,1258,1260,1277-1278,1281-1282,1289-1294,1296,1313-1314,1316-1326,1328-1341,1354-1373,1375-1379,1381-1383
+  s_fb954c0160e8d0::t_a499ae36f0de8f 261
+  s_fb954c0160e8d0::t_1ab8be09d04108 1297,1312
+  s_fd56e90e0bcd89::t_feb6dbc12b1d6a 1432-1436
+  s_fd56e90e0bcd89::t_cafad89cb933e2 240,264-266,1259,1261-1276,1279-1280,1283-1288,1295,1298-1311,1315,1327,1342-1353,1374,1380,1384,1422-1431,1437-1448
+tests/fm-spawn-dispatch-profile.test.sh
+  s_fb954c0160e8d0::t_38d4bbc2b0e0dd 36-40,102
+  s_fb954c0160e8d0::t_fae3f101e4c517 35,41,103-104,112-113,136,138,222-226
+  s_fb954c0160e8d0::t_ad89074569e8dd 91,94-97,101
+tests/fm-backend-herdr.test.sh
+  s_fb954c0160e8d0::t_5c16c24a38e458 924,926
+  s_fb954c0160e8d0::t_11f8cc275ccf79 919-923,925,928-938,2485
+  s_fb954c0160e8d0::t_f38e68ee44b7a5 927
+tests/fm-grok-harness.test.sh
+  s_fb954c0160e8d0::t_46305474a7725f 24-31
+tests/fm-secondmate-harness.test.sh
+  s_fb954c0160e8d0::t_a22e269d2fcba0 250-262,298,447-451,483
+tests/secondmate-helpers.sh
+  s_fb954c0160e8d0::t_f7358ce1d007b7 27,31-46,54-63
+tests/fm-tangle-guard.test.sh
+  s_fb954c0160e8d0::t_e59c3f5167258c 167-174,253-260
+docs/herdr-backend.md
+  s_fb954c0160e8d0::t_1c2f708aa38adf 1010,1012-1013
+  s_fb954c0160e8d0::t_fa7b801c2bb9b5 1074-1096
+  s_fb954c0160e8d0::t_2f11f539f0bf39 992-1009,1011,1014-1073,1097-1138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "4c0c5c42bb1389138e6370742bb190257d73cc36",
+  "prompts": {},
+  "sessions": {
+    "s_fb954c0160e8d0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8332-d9b6-7012-a940-77bffc6673d8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_fd56e90e0bcd89": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8399-f697-71a2-b571-366cdf13152d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

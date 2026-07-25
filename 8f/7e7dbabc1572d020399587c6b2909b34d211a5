@@ -1,0 +1,20 @@
+tests/fm-watcher-lock.test.sh
+  s_f83f344783779f::t_257a40d34b5d68 140-141,143
+  s_f83f344783779f::t_4d9a1f47c8f929 129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "8f7e7dbabc1572d020399587c6b2909b34d211a5",
+  "prompts": {},
+  "sessions": {
+    "s_f83f344783779f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f83eb-7e39-7713-9abe-3a92ca72ab2f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

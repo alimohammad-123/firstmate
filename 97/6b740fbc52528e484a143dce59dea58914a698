@@ -1,0 +1,22 @@
+tests/fm-backend-cmux.test.sh
+  s_fd56e90e0bcd89::t_c35d33dc8eaa57 82-95,619-625,648-658,681-687,700-718,720-762,1307-1309
+  s_fd56e90e0bcd89::t_36728eeb5fe6e5 633,666,695,719
+bin/backends/cmux.sh
+  s_fd56e90e0bcd89::t_c35d33dc8eaa57 394-425,427-451
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "976b740fbc52528e484a143dce59dea58914a698",
+  "prompts": {},
+  "sessions": {
+    "s_fd56e90e0bcd89": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8399-f697-71a2-b571-366cdf13152d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

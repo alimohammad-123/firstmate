@@ -1,0 +1,29 @@
+bin/backends/cmux.sh
+  s_31bc3ef725bebe::t_d62dc9d235c867 346,395,464
+tests/fm-secondmate-harness.test.sh
+  s_6823724d7030be::t_7eb9df376490b6 2035
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "993f31df814b946cdd181dc565f877ef6efa458d",
+  "prompts": {},
+  "sessions": {
+    "s_31bc3ef725bebe": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f849d-fd41-7ef1-98fb-b1855ff6cc61",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_6823724d7030be": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f859c-fd73-71a0-8512-28c2b2368d3c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
