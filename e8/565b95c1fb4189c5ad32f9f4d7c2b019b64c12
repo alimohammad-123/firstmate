@@ -1,0 +1,21 @@
+.agents/skills/stuck-crewmate-recovery/SKILL.md
+  s_06398c99bf9402::t_60196572d4e3b3 34-36
+AGENTS.md
+  s_06398c99bf9402::t_60196572d4e3b3 179
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "e8565b95c1fb4189c5ad32f9f4d7c2b019b64c12",
+  "prompts": {},
+  "sessions": {
+    "s_06398c99bf9402": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9850-d060-7ed3-ae41-eef3050eb51c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
