@@ -1,0 +1,21 @@
+tests/fm-pi-watch-extension.test.sh
+  s_ecec54f0a76ce0::t_eae1ddc0a5f18a 110
+tests/fm-backend-herdr-presentation-e2e.test.sh
+  s_ecec54f0a76ce0::t_eae1ddc0a5f18a 387
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "8d636490c3645b049e71cc4fe5e484a8e6f643ac",
+  "prompts": {},
+  "sessions": {
+    "s_ecec54f0a76ce0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9855-d91b-72b3-9fb7-8a4205d3b2a4",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
