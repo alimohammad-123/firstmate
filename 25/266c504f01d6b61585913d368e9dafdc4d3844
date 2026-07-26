@@ -1,0 +1,35 @@
+.agents/skills/stuck-crewmate-recovery/SKILL.md
+  s_e71ea2ade547a2::t_91a4486537a38d 45
+bin/fm-cross-runtime-relaunch.sh
+  s_e71ea2ade547a2::t_96a8979868ee66 5-9,35-40,375-456,460-466,468,520-524,1217-1240,1268-1269,1393
+bin/fm-cross-runtime-task-owner-lib.sh
+  s_e71ea2ade547a2::t_f1a5717367a979 11,51-127
+bin/fm-relaunch-safety-lib.sh
+  s_e71ea2ade547a2::t_8fc9ff7d446f35 110-180,182-198,200-285,287-292,296,299,301-302,304-305,307,309,311,343,360-364
+bin/fm-relaunch.sh
+  s_e71ea2ade547a2::t_e50a2d79d3da31 48-64,142
+docs/existing-task-relaunch.md
+  s_e71ea2ade547a2::t_ec6da42534ef7e 52-53,86-104,130,133,161-162,173-174
+tests/fm-cross-runtime-relaunch.test.sh
+  s_e71ea2ade547a2::t_e4bf4056ef8d56 17-19,21,28-30,35-44,209-218,220,225-232,241-242,244,286-305,871-1185,1204-1210
+tests/fm-gotmp.test.sh
+  s_e71ea2ade547a2::t_4f3bc1f1e24991 68-70,171-173
+tests/fm-tmux-to-tmux-relaunch-e2e.test.sh
+  s_e71ea2ade547a2::t_7b07e1cae82da0 4-9,30-31,33-37,43-45,58-234
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "25266c504f01d6b61585913d368e9dafdc4d3844",
+  "prompts": {},
+  "sessions": {
+    "s_e71ea2ade547a2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cf6502f2-183d-44a7-9fb5-8511bb88f6cd",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
