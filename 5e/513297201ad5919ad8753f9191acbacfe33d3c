@@ -1,0 +1,25 @@
+tests/fm-cross-runtime-relaunch.test.sh
+  s_37a9f8f01077f8::t_98565fc2e9d81a 251-252,262-267,694-711,732-736,831
+bin/fm-cross-runtime-task-owner-lib.sh
+  s_37a9f8f01077f8::t_5d6851b15afbfe 388-399
+tests/fm-tmux-to-tmux-relaunch-e2e.test.sh
+  s_37a9f8f01077f8::t_31776b9a002d7d 92
+bin/fm-cross-runtime-relaunch.sh
+  s_37a9f8f01077f8::t_de0411fb588f7b 914-915,1066-1068
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "5e513297201ad5919ad8753f9191acbacfe33d3c",
+  "prompts": {},
+  "sessions": {
+    "s_37a9f8f01077f8": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f9f93-1e51-756e-bf00-44b8f190d8b9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
