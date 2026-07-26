@@ -1,0 +1,41 @@
+tests/fm-test-run.test.sh
+  s_75ac2f9da4ba36::t_c114bf9b8c8a0b 109
+  s_75ac2f9da4ba36::t_c8f922799a6817 127,132-133,146-151
+  s_7771a4675f00f1::t_6c55b11b783fa7 152
+docs/calm-mode-feasibility.md
+  s_bab33044f1550a::t_cdfd616553dcdd 218
+bin/fm-test-run.sh
+  s_75ac2f9da4ba36::t_c8f922799a6817 611-613
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "5494af63811ecd047f6a81a25c676d35c752d6ac",
+  "prompts": {},
+  "sessions": {
+    "s_75ac2f9da4ba36": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9ccd-0f65-73d2-aafa-4e2ad0ede59f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_7771a4675f00f1": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f9b70-167a-734f-88af-d6d72d9e9925",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_bab33044f1550a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9cd9-5b56-7f43-8421-d66b5d48a000",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
