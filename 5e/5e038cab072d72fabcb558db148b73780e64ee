@@ -1,0 +1,22 @@
+docs/configuration.md
+  s_356385daf35080::t_8d71858d039aea 70
+docs/existing-task-relaunch.md
+  s_356385daf35080::t_95a095f2945f06 48
+  s_356385daf35080::t_8d71858d039aea 109
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "5e5e038cab072d72fabcb558db148b73780e64ee",
+  "prompts": {},
+  "sessions": {
+    "s_356385daf35080": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa007-06d8-76b2-8361-a8742dade2c3",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
