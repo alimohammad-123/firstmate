@@ -1,0 +1,34 @@
+tests/fm-herdr-lifecycle.test.sh
+  s_1df2a63cdaf127::t_916e8b6faf90c7 525-527
+tests/fm-send-strict.test.sh
+  s_1df2a63cdaf127::t_916e8b6faf90c7 12-13,328
+bin/fm-bootstrap.sh
+  s_1df2a63cdaf127::t_7703391cc57287 456-458
+  s_1df2a63cdaf127::t_99d7380d8b3ceb 455
+tests/fm-session-start.test.sh
+  s_1df2a63cdaf127::t_916e8b6faf90c7 870,879-889
+  s_1df2a63cdaf127::t_7703391cc57287 1270
+tests/fm-backend-herdr-presentation-e2e.test.sh
+  s_1df2a63cdaf127::t_f88d8dffc91581 611,646
+  s_1df2a63cdaf127::t_68a01996ff0cac 496
+  s_1df2a63cdaf127::t_859ac0cb7764ec 780
+  s_1df2a63cdaf127::t_dec92d6e7ba012 922
+bin/fm-herdr-task-owner-lib.sh
+  s_1df2a63cdaf127::t_916e8b6faf90c7 45-52,139
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "e3b2421671a6a90f23a51f57c7fd5dafe661f708",
+  "prompts": {},
+  "sessions": {
+    "s_1df2a63cdaf127": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9cb7-995d-7101-82b8-0d71a6cf19ae",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
