@@ -1,0 +1,159 @@
+bin/fm-relaunch-safety-lib.sh
+  s_aaf9e568ccbcde::t_5751fec742fe12 54,65-73
+  s_aaf9e568ccbcde::t_8575809bd33949 74
+tests/fm-send-popup-settle.test.sh
+  s_aaf9e568ccbcde::t_bea0cf033502ed 47,57
+tests/fm-send-strict.test.sh
+  s_aaf9e568ccbcde::t_86a139f7454b46 19,54
+  s_aaf9e568ccbcde::t_aa86aaa6f7e9ea 38,42,48
+  s_aaf9e568ccbcde::t_79bd8ac749154f 56-58
+  s_aaf9e568ccbcde::t_fa79bafd8a2561 452
+  s_aaf9e568ccbcde::t_39797bb0bc55f7 161
+  s_aaf9e568ccbcde::t_8735eb12462be6 53,55,59-60,168-186
+  s_aaf9e568ccbcde::t_8d4f935c0050c3 187-188
+tests/fm-send-settle.test.sh
+  s_aaf9e568ccbcde::t_ff32318c3174d2 33,43
+.agents/skills/stuck-crewmate-recovery/SKILL.md
+  s_aaf9e568ccbcde::t_c5f0c04f062522 36-39,41,45
+bin/fm-teardown.sh
+  s_aaf9e568ccbcde::t_b5d0d493187a0b 138
+  s_aaf9e568ccbcde::t_56973364047d9a 109-110,129-137,139-142,1229-1234
+tests/fm-pending-reply.test.sh
+  s_aaf9e568ccbcde::t_bee9a5f06d4ffe 43,66
+bin/fm-relaunch.sh
+  s_aaf9e568ccbcde::t_e62fc953c6f009 130
+  s_aaf9e568ccbcde::t_bc010692431b3c 111-112,568-571
+  s_aaf9e568ccbcde::t_fcd1146f368645 40-41
+  s_aaf9e568ccbcde::t_b9bb5920b998a1 8,17-20,24-25,31-32,36,39,89-90,120-121,127
+  s_aaf9e568ccbcde::t_28ab89df11f89c 57-60,63-73,75-77,81
+  s_aaf9e568ccbcde::t_85210896edcbf0 9,21-23,29-30,122-126
+  s_aaf9e568ccbcde::t_00f09e003ea4a0 37-38,45-47,62,78-80,88
+bin/fm-test-run.sh
+  s_aaf9e568ccbcde::t_2a5bcf162e4d1f 157-159,162-164,672
+bin/fm-tmux-lib.sh
+  s_aaf9e568ccbcde::t_22002f6028da51 68-69
+  s_aaf9e568ccbcde::t_8122d35df688f4 180-181
+  s_aaf9e568ccbcde::t_08e2a91eae236d 194-196,221-223
+  s_aaf9e568ccbcde::t_9d6806cb07cd08 191-192,219-220,224-226,229
+  s_aaf9e568ccbcde::t_a3b2fcc14f6f22 197-199
+  s_aaf9e568ccbcde::t_aaf664584bff95 67,70-83,85,88-90
+  s_aaf9e568ccbcde::t_9e3766fbdd5abe 84,86-87
+tests/fm-cross-runtime-relaunch.test.sh
+  s_aaf9e568ccbcde::t_c497b4ff0edba8 376,378-384
+  s_aaf9e568ccbcde::t_a747cda6a82db0 609,685
+  s_aaf9e568ccbcde::t_0186528b1204c8 692-704
+  s_aaf9e568ccbcde::t_f080605c11f581 674
+  s_aaf9e568ccbcde::t_92a58e6c835145 19,21,23-24
+  s_aaf9e568ccbcde::t_7dc4091b7a9ba8 440
+  s_aaf9e568ccbcde::t_a7c4b0c5a8617e 228-230
+  s_aaf9e568ccbcde::t_2a27082b2112e4 43,377
+  s_aaf9e568ccbcde::t_0ddb733a678a43 305
+  s_aaf9e568ccbcde::t_4866db0ec552e4 65,222
+  s_aaf9e568ccbcde::t_11c6a4adb5e6f6 1-6,9-18,25-42,44-45,50-64,66-221,223-227,231-232,279-294,311-329,331-347,349-355,363-373,375,385-400,402,413-417,592-593,707-709
+  s_aaf9e568ccbcde::t_97be9575baa8f7 504
+  s_aaf9e568ccbcde::t_4714bcf6bbd53e 594-608,610-619,627-673,675-684,686-691
+  s_aaf9e568ccbcde::t_cf9e364e7fe87c 705-706
+  s_aaf9e568ccbcde::t_7d5200c490c0e4 401,403-412
+  s_aaf9e568ccbcde::t_6cc6738c7ee501 330
+  s_aaf9e568ccbcde::t_64dfe307a4704c 7-8
+  s_aaf9e568ccbcde::t_4e9378413762ec 295-304,306-310
+  s_aaf9e568ccbcde::t_f1890eacc5d6b5 348,374,447,531
+  s_aaf9e568ccbcde::t_5f195edd106123 421
+  s_aaf9e568ccbcde::t_76ccf3d0ff6714 444-445
+  s_aaf9e568ccbcde::t_1a799639fbe933 620-626
+  s_aaf9e568ccbcde::t_a0f20e59da3c96 46-49,418-420,422-439,441-443,446,448-503,505-530,532-591
+  s_aaf9e568ccbcde::t_2421af738fad58 274-276
+  s_aaf9e568ccbcde::t_9ed1b1dab21aa2 233-273,277-278
+  s_aaf9e568ccbcde::t_9480a029e2295f 20,22
+  s_aaf9e568ccbcde::t_f6c66fc89d0f7c 356-362
+bin/fm-herdr-replace.sh
+  s_aaf9e568ccbcde::t_6ba38c38cf2eb9 24-25,272-275
+bin/fm-crew-state.sh
+  s_aaf9e568ccbcde::t_350672397a4a89 67-68,150,159-166,171-174
+tests/fm-tmux-submit-busy.test.sh
+  s_aaf9e568ccbcde::t_eadc12aa21069c 23,35-37
+tests/fm-send-secondmate-marker.test.sh
+  s_aaf9e568ccbcde::t_8e785bf3009564 37,60
+docs/tmux-backend.md
+  s_aaf9e568ccbcde::t_ee4ecf5c3b2a71 77,79-91,160-161
+bin/fm-harness-launch-lib.sh
+  s_aaf9e568ccbcde::t_b6eae450753a7b 12
+bin/fm-cross-runtime-task-owner-lib.sh
+  s_aaf9e568ccbcde::t_95b7839ca7bb4e 125,525
+  s_aaf9e568ccbcde::t_2f7edac1c1d8dd 2-3,11,100-103
+  s_aaf9e568ccbcde::t_24cb5ac4fb002d 1,4-10,12-84,86-91,93-99,104-124,126-202,213-223,227-246,248-398,400-457,484-524,526-529
+  s_aaf9e568ccbcde::t_4d20540c90a2b0 203,205-212
+  s_aaf9e568ccbcde::t_f6c7791ce407c2 247
+  s_aaf9e568ccbcde::t_e2c9139385de37 399
+  s_aaf9e568ccbcde::t_dec34f765eb793 458-483
+  s_aaf9e568ccbcde::t_dc62dec2d30c53 204
+  s_aaf9e568ccbcde::t_ab431081078beb 85,92,224-226
+bin/fm-spawn.sh
+  s_aaf9e568ccbcde::t_063c92f18dd3d2 145-146,383-386
+tests/fm-cross-runtime-relaunch-e2e.test.sh
+  s_aaf9e568ccbcde::t_02af15da2063ad 1-8,11-33,35,39-52,55-62,69-126,130-167,169-188,190-198,201-205
+  s_aaf9e568ccbcde::t_1957a5efbb8ded 189
+  s_aaf9e568ccbcde::t_cdad2d1b449fc1 9-10
+  s_aaf9e568ccbcde::t_19732e245ca9ee 34,36-38,63-68,199-200
+  s_aaf9e568ccbcde::t_07ede483299e19 53-54,127-129
+  s_aaf9e568ccbcde::t_16b634d638dc58 168
+bin/fm-cross-runtime-relaunch.sh
+  s_aaf9e568ccbcde::t_21cb083f77112b 730,738-739,766,768,920-921
+  s_aaf9e568ccbcde::t_f633d4c30a1d4e 254-259
+  s_aaf9e568ccbcde::t_f1cee9231faf30 238-249
+  s_aaf9e568ccbcde::t_cc757a9bea08a8 383,387,393-397,454,483
+  s_aaf9e568ccbcde::t_186a6e5947529d 133-142,146-154,1209-1210,1212,1246,1255
+  s_aaf9e568ccbcde::t_fed92410d99c01 211-212,214-222,224,236,260,264,269
+  s_aaf9e568ccbcde::t_93c60aab10ebfa 844-852
+  s_aaf9e568ccbcde::t_7ef46d23bf7f8e 1223-1229,1235-1242
+  s_aaf9e568ccbcde::t_f90ef09b98378e 1230-1234
+  s_aaf9e568ccbcde::t_412d2fb0c5a288 155,161-164,198-200,202,205-210,223,225-235,237,250-253,261-263,265-268,270-299,303,308-312,314,319-323,332,337-340,342
+  s_aaf9e568ccbcde::t_e3cf001938f1af 213
+  s_aaf9e568ccbcde::t_2cbf55710f4297 1,5-43,45,48-54,59-128,130-132,156-160,165-197,300-302,304-307,313,315-318,324-325,331,333-336,341,343-382,384-386,388-392,398-453,455-482,484-729,731-737,740-754,765,773-780,783-843,853-859,861-870,872,880-919,923-967,970-986,989-990,992-998,1002-1011,1036-1043,1047-1048,1050-1053,1058-1071,1073-1104,1107-1117,1121-1125,1131-1161,1166-1168,1170,1172-1176,1178-1185,1187-1191,1193-1206,1211,1213-1215,1217-1222,1243-1245,1247,1249-1254,1256-1258,1260-1275,1277-1288,1290-1297,1299-1306,1308-1326,1328-1335,1337-1353,1355-1374,1376-1398
+  s_aaf9e568ccbcde::t_e5caa2fb442786 1208
+  s_aaf9e568ccbcde::t_ef53be16f144a9 129,1044-1046,1049,1171,1192,1216,1248,1259,1276,1289,1298,1307,1327,1336,1354,1375
+  s_aaf9e568ccbcde::t_4dfcc7350065f6 143-145
+  s_aaf9e568ccbcde::t_40ed0d12546cd5 767,769-772
+  s_aaf9e568ccbcde::t_0d6dd7dbf8885b 781-782,922
+  s_aaf9e568ccbcde::t_1c80756f313260 968-969
+  s_aaf9e568ccbcde::t_cf3a25eeefc230 987-988,991,999-1001,1012-1035,1054-1057,1072,1105-1106
+  s_aaf9e568ccbcde::t_856ba5c5942c1a 755-764,1186
+  s_aaf9e568ccbcde::t_7789f3e19a6b3b 326-330,1169,1177,1207
+  s_aaf9e568ccbcde::t_6bf14489c57cfb 860,871,873-879
+  s_aaf9e568ccbcde::t_2191d8c69eb854 201,203-204
+  s_aaf9e568ccbcde::t_d3efa9f13cb96c 1118-1120,1126-1130,1162-1165
+  s_aaf9e568ccbcde::t_fcbdc04e23714b 2-4,44,46-47,55-58
+tests/fm-tmux-to-tmux-relaunch-e2e.test.sh
+  s_aaf9e568ccbcde::t_cf9e5b430c664e 121
+  s_aaf9e568ccbcde::t_1892c20d31f6e7 1-29,36-120,122-143
+  s_aaf9e568ccbcde::t_e5aac8ebce1fb0 30-35
+bin/fm-send.sh
+  s_aaf9e568ccbcde::t_35cc78c55166e9 21-22
+  s_aaf9e568ccbcde::t_f52e7637f63354 242,273-282
+  s_aaf9e568ccbcde::t_ea0ce32e6eccfc 390,394
+  s_aaf9e568ccbcde::t_21976c5ebec398 85-86,232-240,247-253,283,361-366
+  s_aaf9e568ccbcde::t_a01dc38a0b8a2b 243-246,355-360
+tests/fm-gate-refuse.test.sh
+  s_aaf9e568ccbcde::t_4b5e9042499eb8 196
+  s_aaf9e568ccbcde::t_1cbb87c5c1459e 212,228-230,232
+docs/existing-task-relaunch.md
+  s_aaf9e568ccbcde::t_a012503df7eb6b 17-30,33,35-36,42-43,54-55,72-83,90-91,108-111,121-124,138,144
+tests/wake-helpers.sh
+  s_aaf9e568ccbcde::t_b4c158e0feb517 124,142-144,207,222
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "b0924e1560814fbd2a3f30d304975c3ec14974af",
+  "prompts": {},
+  "sessions": {
+    "s_aaf9e568ccbcde": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f9d75-0f82-7856-b494-8785c704a557",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
