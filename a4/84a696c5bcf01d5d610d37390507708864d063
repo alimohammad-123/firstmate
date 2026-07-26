@@ -1,0 +1,29 @@
+tests/fm-afk-pi-herdr-return-e2e.test.sh
+  s_03998e175c07cc::t_62aca52c1a4ead 119-122
+  s_03998e175c07cc::t_afd711b4b0ddd2 102,129,147,153-159,162
+  s_03998e175c07cc::t_e23cfd509d03c9 160-161
+  s_03998e175c07cc::t_ad344ee21f6c78 2,138,144,150
+  s_03998e175c07cc::t_8a744c2383ee74 95-96,98-101,103-107,109-112,114-115,125-128,130-133,135-136,139,145,164-166
+tests/fm-backend-herdr-presentation-e2e.test.sh
+  s_03998e175c07cc::t_27e7d4e55d76ff 430-475
+  s_03998e175c07cc::t_5ae0d68ad7cb9a 805-806,950-951
+  s_03998e175c07cc::t_98af134571d376 428-429,476-492,809-810,935-949,991-996
+docs/herdr-backend.md
+  s_03998e175c07cc::t_8a744c2383ee74 489-491
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "a484a696c5bcf01d5d610d37390507708864d063",
+  "prompts": {},
+  "sessions": {
+    "s_03998e175c07cc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9c4c-aef3-7b52-9875-e485f054dbdd",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
