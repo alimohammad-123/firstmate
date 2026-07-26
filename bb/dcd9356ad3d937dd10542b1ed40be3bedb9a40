@@ -1,0 +1,80 @@
+bin/fm-spawn.sh
+  s_6c6f25ba47f81e::t_4b2ee1327ec1d3 975-977,998
+  s_6c6f25ba47f81e::t_1617d163006fc3 432,435,495-497,1442-1445,1463,1467
+  s_6c6f25ba47f81e::t_f424d90fbbd5be 1464-1466,1468,1508
+  s_6c6f25ba47f81e::t_8f8fa73a153345 1497-1507
+  s_6c6f25ba47f81e::t_eddcfa94c7bd1b 1572
+  s_6c6f25ba47f81e::t_eafe2534a7154b 1461-1462
+  s_6c6f25ba47f81e::t_9eb9dc53d57ed1 1481
+  s_6c6f25ba47f81e::t_947e8d565efbb3 1509-1510
+tests/fm-herdr-lifecycle.test.sh
+  s_6c6f25ba47f81e::t_8e8832c02c669a 77-84,298
+  s_6c6f25ba47f81e::t_06d5ef83575a88 322-332
+  s_6c6f25ba47f81e::t_418d39cb5a89e9 297,302-303,306-312,314-321,333
+  s_6c6f25ba47f81e::t_d28a31a82b7517 195-196
+  s_6c6f25ba47f81e::t_3122561c33a25b 40-43,73-76,85
+  s_6c6f25ba47f81e::t_22afc1f347b6e9 166-171
+  s_6c6f25ba47f81e::t_1d3c812f40ec47 313
+  s_6c6f25ba47f81e::t_adf83dd0cf2f64 524-533,539,544,546-549,554,556-559
+  s_6c6f25ba47f81e::t_182d33d24ff609 44-47,344-370,739,779,869
+  s_6c6f25ba47f81e::t_3b9a67b2cdb167 165,173-179,192
+  s_6c6f25ba47f81e::t_3146e7fa76b881 371-372
+bin/backends/herdr.sh
+  s_d3088bcb0c846e::t_356e2f35ca58fe 1233-1234,1242-1243,1266-1267,1275-1276
+  s_6c6f25ba47f81e::t_470845eadfb6a7 1110-1115,1123-1124
+  s_6c6f25ba47f81e::t_195101c8bc5e13 1104-1109,1185,1250,1282
+tests/fm-send-strict.test.sh
+  s_d3088bcb0c846e::t_356e2f35ca58fe 318-324,330-331,333-334
+tests/fm-backend-herdr.test.sh
+  s_6c6f25ba47f81e::t_5d11d91e1b588a 361,380,383,405-407,430,435-438,460,463,466-472,500,503-507,527,555-557
+docs/herdr-backend.md
+  s_6c6f25ba47f81e::t_418d39cb5a89e9 828-832
+bin/fm-herdr-task-owner-lib.sh
+  s_6c6f25ba47f81e::t_418d39cb5a89e9 107-109,305,309-310
+  s_6c6f25ba47f81e::t_d204378368075d 63-73,84,89,104-106,110-120
+  s_6c6f25ba47f81e::t_47f2d2eceaa2dc 155
+  s_6c6f25ba47f81e::t_327aff9fbd2a18 329,345
+  s_6c6f25ba47f81e::t_196e1b7fce750b 33-62,74-83,85-88,90-93,97-103,121-145
+  s_6c6f25ba47f81e::t_2be2258f2031ca 306-308,311,346
+  s_d3088bcb0c846e::t_356e2f35ca58fe 377-378
+  s_6c6f25ba47f81e::t_3599a8a5887ac6 94-95
+  s_6c6f25ba47f81e::t_7d2b9cfb1323d6 347
+  s_6c6f25ba47f81e::t_c317a43388619e 96,320,322-323
+bin/fm-herdr-replace.sh
+  s_d3088bcb0c846e::t_356e2f35ca58fe 186-187,190-191
+  s_6c6f25ba47f81e::t_20d94b30b717a5 493
+  s_6c6f25ba47f81e::t_c9b813fa701686 502
+  s_6c6f25ba47f81e::t_b1b36d5e5e8511 153-156,529-531
+  s_6c6f25ba47f81e::t_418d39cb5a89e9 543-555
+  s_6c6f25ba47f81e::t_182d33d24ff609 245-246
+  s_6c6f25ba47f81e::t_eddcfa94c7bd1b 428,688-690
+bin/fm-test-run.sh
+  s_6c6f25ba47f81e::t_ba6d3549e7e26a 666-667
+tests/fm-backend-herdr-presentation-e2e.test.sh
+  s_6c6f25ba47f81e::t_c30d90103ee8aa 167,171,173
+  s_6c6f25ba47f81e::t_c9a5a542408b10 434-435
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "bbdcd9356ad3d937dd10542b1ed40be3bedb9a40",
+  "prompts": {},
+  "sessions": {
+    "s_6c6f25ba47f81e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9bf6-7814-7a72-827b-38e7a758b9a2",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_d3088bcb0c846e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9be7-81c3-7852-91f4-a9a9b63fb88b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

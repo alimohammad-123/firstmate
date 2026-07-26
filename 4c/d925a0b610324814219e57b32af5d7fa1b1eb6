@@ -1,0 +1,24 @@
+tests/fm-herdr-lifecycle.test.sh
+  s_fa87f33edd71b6::t_5da081c4686852 337-339,356-374
+  s_fa87f33edd71b6::t_5e15ebf1243c42 111-113,146-148,465-485
+  s_fa87f33edd71b6::t_e6bdeed417a19b 375
+  s_fa87f33edd71b6::t_695490b412fc5f 486
+bin/fm-harness-launch-lib.sh
+  s_fa87f33edd71b6::t_5da081c4686852 85,90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "4cd925a0b610324814219e57b32af5d7fa1b1eb6",
+  "prompts": {},
+  "sessions": {
+    "s_fa87f33edd71b6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9936-4ddd-76c0-8131-12a472997fc0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

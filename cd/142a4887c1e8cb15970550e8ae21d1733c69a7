@@ -1,0 +1,34 @@
+.pi/extensions/fm-primary-pi-watch.ts
+  s_3153eda859cb4d::t_7882cdc4eba520 214-215,222-224,264-267
+  s_2875103fbfec74::t_2b97e78aa79f5c 268
+tests/fm-pi-watch-extension.test.sh
+  s_3153eda859cb4d::t_7882cdc4eba520 1052-1070,1080,1108,1115,1118-1125,1145-1147,1153
+docs/watcher-continuity.md
+  s_3153eda859cb4d::t_7882cdc4eba520 13,100
+docs/supervision-protocols/pi.md
+  s_3153eda859cb4d::t_7882cdc4eba520 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "cd142a4887c1e8cb15970550e8ae21d1733c69a7",
+  "prompts": {},
+  "sessions": {
+    "s_2875103fbfec74": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f9449-e2db-7c5f-ba72-2559ef609f8b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_3153eda859cb4d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9bc9-7278-74b0-8741-e368f6e30f9f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

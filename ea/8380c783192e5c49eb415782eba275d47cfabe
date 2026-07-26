@@ -1,0 +1,50 @@
+.agents/skills/harness-adapters/SKILL.md
+  s_ab7b1370928519::t_f30771109d5cb5 211
+  s_ab7b1370928519::t_fa215510f2fe0e 218-219
+tests/fm-backend-herdr-respawn-idem-e2e.test.sh
+  s_b541105fea1398::t_bb66990c9fff65 51
+bin/fm-harness-launch-lib.sh
+  s_ab7b1370928519::t_a8a562032c6419 9-12
+tests/fm-backend-autodetect-smoke.test.sh
+  s_b541105fea1398::t_894aa4f70b4cd4 98
+docs/architecture.md
+  s_ab7b1370928519::t_f30771109d5cb5 79-80
+docs/tmux-backend.md
+  s_ab7b1370928519::t_f30771109d5cb5 89-90
+docs/existing-task-relaunch.md
+  s_ab7b1370928519::t_f30771109d5cb5 5,12,31-34,38-40,57-67,79,81-83,87,89-90,99,118
+  s_ab7b1370928519::t_f7a15e657b70f1 3,37
+bin/fm-relaunch.sh
+  s_ab7b1370928519::t_f30771109d5cb5 2,10-18,61-65,69-70,73
+tests/fm-backend-herdr-smoke.test.sh
+  s_b541105fea1398::t_29eac703cd2bd7 43,56,71,81,121,130,141,150,181,198,334,339
+tests/fm-backend-herdr-workspace-per-home-e2e.test.sh
+  s_b541105fea1398::t_29eac703cd2bd7 112,141,167
+  s_b541105fea1398::t_da1ac8cf8e75a1 92-94
+bin/fm-tmux-lib.sh
+  s_ab7b1370928519::t_f30771109d5cb5 43-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "ea8380c783192e5c49eb415782eba275d47cfabe",
+  "prompts": {},
+  "sessions": {
+    "s_ab7b1370928519": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9c99-f9d5-77a1-82f9-ff8bf13e36bb",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_b541105fea1398": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9c7a-dbb0-7b81-b10a-c0fa63dc66dc",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

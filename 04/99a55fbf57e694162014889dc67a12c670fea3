@@ -1,0 +1,24 @@
+docs/herdr-backend.md
+  s_fa87f33edd71b6::t_7b102467b2a419 386
+  s_fa87f33edd71b6::t_ee5a94558ab0d0 387-388,632-633
+bin/fm-test-isolation-proof.sh
+  s_fa87f33edd71b6::t_7b102467b2a419 123
+bin/fm-test-run.sh
+  s_fa87f33edd71b6::t_7b102467b2a419 158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "0499a55fbf57e694162014889dc67a12c670fea3",
+  "prompts": {},
+  "sessions": {
+    "s_fa87f33edd71b6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9936-4ddd-76c0-8131-12a472997fc0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

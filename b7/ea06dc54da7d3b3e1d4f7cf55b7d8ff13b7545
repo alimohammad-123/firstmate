@@ -1,0 +1,25 @@
+tests/fm-afk-pi-herdr-return-e2e.test.sh
+  s_fa87f33edd71b6::t_ccd0af2f6f5a7e 22-25,63,91-92
+  s_fa87f33edd71b6::t_b3aab534d38a38 2,9,13,17-21,26-43,45-46,49-50,55-56,64-85,88-90,93-112,114-146,148-150
+CONTRIBUTING.md
+  s_fa87f33edd71b6::t_b3aab534d38a38 98
+docs/herdr-backend.md
+  s_fa87f33edd71b6::t_b3aab534d38a38 462,468-470,480-494
+  s_fa87f33edd71b6::t_91ca5980f96a71 495
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "b7ea06dc54da7d3b3e1d4f7cf55b7d8ff13b7545",
+  "prompts": {},
+  "sessions": {
+    "s_fa87f33edd71b6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9936-4ddd-76c0-8131-12a472997fc0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

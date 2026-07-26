@@ -1,0 +1,19 @@
+docs/supervision-protocols/pi.md
+  s_f729cbf05e377c::t_85f6d420996a6e 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "7a39867c7ba584681892a384082ed2771f752118",
+  "prompts": {},
+  "sessions": {
+    "s_f729cbf05e377c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9c73-8660-7f73-815c-b737a5792b2e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
