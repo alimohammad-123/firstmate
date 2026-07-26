@@ -1,0 +1,21 @@
+docs/architecture.md
+  s_36933816f175e8::t_73ca4c79a6d8a2 62
+docs/watcher-continuity.md
+  s_36933816f175e8::t_73ca4c79a6d8a2 12,122
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "337c349492ec823f0c5506b1e5aaf9f68b6b3212",
+  "prompts": {},
+  "sessions": {
+    "s_36933816f175e8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9bd5-108a-73e1-8b04-e6a7f1af024e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
