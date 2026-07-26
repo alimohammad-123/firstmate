@@ -1,0 +1,30 @@
+tests/fm-calm-pi-extension.test.sh
+  s_7771a4675f00f1::t_dee1220310b2c9 942-950,1090-1098,1100,1204-1207,1211
+  s_7771a4675f00f1::t_4b07d373353eab 1545,1549-1561,1720-1721,1729
+.gitignore
+  s_7771a4675f00f1::t_b80b5d8edc74c6 10
+tests/pi-types/package.json
+  s_7771a4675f00f1::t_c5d8a135954117 1-8
+tests/fm-pi-primary-types.test.sh
+  s_7771a4675f00f1::t_df3b4601210dee 6-8,10-28,80-82
+.pi/extensions/fm-calm.ts
+  s_7771a4675f00f1::t_2a7eebd7d7fe36 172,236,244,258
+tests/pi-types/package-lock.json
+  s_7771a4675f00f1::t_8f4a80df6310c7 1-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "856c00722c5beec75cb0686eab05825ba3d4fc51",
+  "prompts": {},
+  "sessions": {
+    "s_7771a4675f00f1": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f9b70-167a-734f-88af-d6d72d9e9925",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
