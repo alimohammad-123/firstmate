@@ -1,0 +1,32 @@
+tests/fm-cross-runtime-relaunch.test.sh
+  s_d8965beef2fac0::t_4f41e6c8be9524 1229
+  s_d8965beef2fac0::t_69d6f55ae83d4b 1129-1154,1168-1169,1171-1173,1175,1190,1193-1203,1224
+  s_d8965beef2fac0::t_c972fc6bc5e664 1155-1164
+bin/fm-cross-runtime-task-owner-lib.sh
+  s_d8965beef2fac0::t_945752e463812e 129-156,234,262-263,274-277,279-280
+tests/fm-gotmp.test.sh
+  s_d8965beef2fac0::t_945752e463812e 71,175
+docs/existing-task-relaunch.md
+  s_d8965beef2fac0::t_69d6f55ae83d4b 93,97-100,136,168,179
+bin/fm-cross-runtime-relaunch.sh
+  s_d8965beef2fac0::t_c972fc6bc5e664 552
+  s_d8965beef2fac0::t_a12e1a13c5e7be 380,389-391,402,481-518,520-521,524-549,553-554,558-559,561,565-569,571
+bin/fm-relaunch.sh
+  s_d8965beef2fac0::t_69d6f55ae83d4b 62-63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "9153743e71597ee667c8c84ca11cd437d46fcd76",
+  "prompts": {},
+  "sessions": {
+    "s_d8965beef2fac0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa0df-d95c-7d40-abf8-c231624b946b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
