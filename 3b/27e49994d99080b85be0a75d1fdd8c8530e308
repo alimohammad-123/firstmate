@@ -1,0 +1,49 @@
+docs/scripts.md
+  s_4de32080f7ffd7::t_ebcf09be614543 88
+docs/architecture.md
+  s_4de32080f7ffd7::t_8bd50db87bec13 127-134
+tests/fm-arena-cache-reclaim.test.sh
+  s_4de32080f7ffd7::t_8f80f1413127ad 134
+  s_4de32080f7ffd7::t_d39aebb5a52e25 20-27
+  s_4de32080f7ffd7::t_0786ef726cfe13 1-9,11-12,19,28-34,36-75,83-102,104-115,117-125,127-133,135,137-163,165-172,174-183,185-201,244,246-258,260-276,278-293,295-321
+  s_4de32080f7ffd7::t_a4a3bd1c6fe35d 10,16
+  s_4de32080f7ffd7::t_863ef674cd860e 13-15,17-18,103,116,126,136,164,173,184,245,259,277,294
+  s_4de32080f7ffd7::t_0ab09d4a2378e3 35
+  s_4de32080f7ffd7::t_cbc02e47a3a083 76-82
+  s_4de32080f7ffd7::t_31aaae2329530e 202-243
+bin/fm-test-run.sh
+  s_4de32080f7ffd7::t_67ce30c47062d3 168-169,668
+bin/fm-arena-cache-reclaim.sh
+  s_4de32080f7ffd7::t_855193b90e687d 658-662,805-806
+  s_4de32080f7ffd7::t_a7d44900303564 702-703
+  s_4de32080f7ffd7::t_8371d1b7f02ed4 1-30,34-82,84-168,178-186,196,198-269,272,274-313,316-356,358-406,408,410-418,427-442,479-482,487-488,490-610,612-633,635-642,644-657,663-674,680-701,704-804,807-837
+  s_4de32080f7ffd7::t_20681ef8b5324f 314-315
+  s_4de32080f7ffd7::t_45595ac4bf3d3a 197,357,483-486,643
+  s_4de32080f7ffd7::t_db5a12fd25c0f7 611
+  s_4de32080f7ffd7::t_9437e7dd8b648c 675-679
+  s_4de32080f7ffd7::t_6a77a0cae4258c 83
+  s_4de32080f7ffd7::t_302c7648002f8e 169-177,419,424-426,443-478,489
+  s_4de32080f7ffd7::t_9cbefeaae92ccd 273
+  s_4de32080f7ffd7::t_20c01d08de3485 31-33
+  s_4de32080f7ffd7::t_de75cb01b42450 407,409
+  s_4de32080f7ffd7::t_edab09736dfafd 420-423
+  s_4de32080f7ffd7::t_d7b0d1dad18347 187-195,270-271,634
+bin/fm-arena-cache-manifest.mjs
+  s_4de32080f7ffd7::t_a9385651562388 1-265
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "3b27e49994d99080b85be0a75d1fdd8c8530e308",
+  "prompts": {},
+  "sessions": {
+    "s_4de32080f7ffd7": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa297-97e0-774a-9643-7b992f3cd34e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
