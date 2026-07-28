@@ -1,0 +1,30 @@
+bin/fm-test-shard-lib.sh
+  s_9ab038f8d3350a::t_1cf9714e471033 143-146
+.github/workflows/ci.yml
+  s_9ab038f8d3350a::t_1cf9714e471033 37-40
+docs/recovery-test-architecture.md
+  s_9ab038f8d3350a::t_1cf9714e471033 105,284,297,302,354
+bin/fm-test-continuation.sh
+  s_9ab038f8d3350a::t_1cf9714e471033 221
+bin/fm-test-plan.sh
+  s_9ab038f8d3350a::t_1cf9714e471033 217-218
+tests/fm-test-plan.test.sh
+  s_9ab038f8d3350a::t_1cf9714e471033 269,293-299
+  s_9ab038f8d3350a::t_835f7b3897c5ad 300
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "034d5f0a5c24783bd31a704b0e38fad7b38848a3",
+  "prompts": {},
+  "sessions": {
+    "s_9ab038f8d3350a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa750-56f5-7062-8d44-cec1eb70bd25",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
