@@ -1,0 +1,30 @@
+bin/fm-test-plan.sh
+  s_db2f934db74c0c::t_5ccbbe32fd46eb 529-541,577-580,582-592,594-597,600-606
+docs/recovery-test-architecture.md
+  s_db2f934db74c0c::t_052b7628b89736 29-44,153,158-159,161-164
+tests/fm-test-plan.test.sh
+  s_db2f934db74c0c::t_8757c1ea23b133 636-638
+  s_db2f934db74c0c::t_eda615cd9197e2 454,551-552
+  s_db2f934db74c0c::t_1c7eebe177842e 368-453,455-550,553-613
+bin/fm-test-continuation.sh
+  s_db2f934db74c0c::t_45fe8406c00b7c 65,71-72,74
+  s_db2f934db74c0c::t_2d46670156ddfc 15,60-64,66-70,73,75-81,97,99-127,129,176-206,211-212,221-224,235-236,246,270-273
+  s_db2f934db74c0c::t_7f063bca1c7566 30-34
+  s_db2f934db74c0c::t_16b9ac25f48b37 59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "e80a034b10af7158e7b198a768c7c9883b5cffe3",
+  "prompts": {},
+  "sessions": {
+    "s_db2f934db74c0c": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa88b-9514-70a9-b9b7-5ea211f2bcb0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
