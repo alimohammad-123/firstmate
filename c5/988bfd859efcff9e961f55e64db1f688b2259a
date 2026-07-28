@@ -1,0 +1,37 @@
+bin/fm-arena-cache-manifest.mjs
+  s_f42bd2d8b071fc::t_a9e14fce6cf7b6 278,280
+  s_f42bd2d8b071fc::t_dfb39d2591ce72 6,68-102,175,179-183,195,277,279,281-289,291-295,307-308,312-313
+  s_f42bd2d8b071fc::t_8c2ae54fa90fd7 245,248,250-251,290
+  s_f42bd2d8b071fc::t_49e0da1f54ac31 246-247,249
+bin/fm-arena-cache-reclaim.sh
+  s_f42bd2d8b071fc::t_e70792e3bbd862 56-59,870,888-893
+  s_f42bd2d8b071fc::t_02354978dfebf3 714
+  s_f42bd2d8b071fc::t_a9e14fce6cf7b6 404-449,712-713,715-726
+tests/fm-arena-cache-reclaim.test.sh
+  s_f42bd2d8b071fc::t_02354978dfebf3 28-31,167-189,303-318,354-371
+  s_d626b1dc0e8dee::t_559fe057af29a7 372
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "c5988bfd859efcff9e961f55e64db1f688b2259a",
+  "prompts": {},
+  "sessions": {
+    "s_d626b1dc0e8dee": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019faa82-10c5-7c16-987b-4bfa12189532",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_f42bd2d8b071fc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019faa96-d74c-7ec0-af04-32fa8932e5d9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
