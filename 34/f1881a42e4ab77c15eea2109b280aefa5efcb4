@@ -1,0 +1,23 @@
+tests/fm-gotmp.test.sh
+  s_7e1c06806c6dcf::t_425fbb65611b10 239-240
+tests/fm-cross-runtime-relaunch.test.sh
+  s_7e1c06806c6dcf::t_425fbb65611b10 358-359,364-365
+bin/fm-cross-runtime-relaunch.sh
+  s_7e1c06806c6dcf::t_425fbb65611b10 1221-1229
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "34f1881a42e4ab77c15eea2109b280aefa5efcb4",
+  "prompts": {},
+  "sessions": {
+    "s_7e1c06806c6dcf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019faaf0-df4b-77c1-9db4-ee7030d737df",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
