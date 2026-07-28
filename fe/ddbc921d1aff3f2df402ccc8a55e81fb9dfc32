@@ -1,0 +1,21 @@
+tests/fm-gotmp.test.sh
+  s_02e6f9e96d782a::t_a0711e75dfbaad 10-11,23,25,27
+tests/fm-herdr-lifecycle.test.sh
+  s_02e6f9e96d782a::t_a0711e75dfbaad 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "feddbc921d1aff3f2df402ccc8a55e81fb9dfc32",
+  "prompts": {},
+  "sessions": {
+    "s_02e6f9e96d782a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fab0a-df09-7cf2-ae05-aa0e74dcb333",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
