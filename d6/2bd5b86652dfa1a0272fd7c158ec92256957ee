@@ -1,0 +1,29 @@
+bin/fm-test-continuation.sh
+  s_e585f65e92b560::t_e2e88a73b1e087 48-50
+bin/fm-test-shard-lib.sh
+  s_e585f65e92b560::t_6469809b70256e 141-146
+docs/recovery-test-architecture.md
+  s_e585f65e92b560::t_6469809b70256e 121-122,373
+docs/existing-task-relaunch.md
+  s_e585f65e92b560::t_6469809b70256e 122
+bin/fm-test-plan.sh
+  s_e585f65e92b560::t_8e532579d7df56 60-61
+  s_e585f65e92b560::t_6469809b70256e 65
+  s_e585f65e92b560::t_e2e88a73b1e087 26,30,62-64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "d62bd5b86652dfa1a0272fd7c158ec92256957ee",
+  "prompts": {},
+  "sessions": {
+    "s_e585f65e92b560": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa8b3-6820-7571-86ab-b4dfeecd7577",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
