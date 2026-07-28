@@ -1,0 +1,30 @@
+tests/fm-arena-cache-reclaim.test.sh
+  s_f42bd2d8b071fc::t_13147c38a29b4b 409,432-458,464,466-468
+bin/fm-arena-cache-reclaim.sh
+  s_f42bd2d8b071fc::t_c35dc7e06cc178 999-1003
+  s_f42bd2d8b071fc::t_382d635708f3c3 809,812-813,841
+  s_f42bd2d8b071fc::t_c9bf0b8190fb6f 61-63,791-808,810-811,814-840,842-843,990-991,1004-1008,1026-1027,1029-1035,1043
+  s_f42bd2d8b071fc::t_d604e54c32c816 939
+tests/fm-teardown.test.sh
+  s_f42bd2d8b071fc::t_13147c38a29b4b 553,581-615
+bin/fm-teardown.sh
+  s_f42bd2d8b071fc::t_e3ccc2b6d30d20 154-161
+docs/architecture.md
+  s_f42bd2d8b071fc::t_c35dc7e06cc178 131
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "b0d72f2afce6aac40778bd1c652ead002cf32c81",
+  "prompts": {},
+  "sessions": {
+    "s_f42bd2d8b071fc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019faa96-d74c-7ec0-af04-32fa8932e5d9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
