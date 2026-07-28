@@ -1,0 +1,61 @@
+docs/existing-task-relaunch.md
+  s_d626b1dc0e8dee::t_ce057c23b064bc 3
+  s_d626b1dc0e8dee::t_240f6180d23104 41-46,53-56,117-118
+tests/fm-cross-runtime-relaunch-e2e.test.sh
+  s_d626b1dc0e8dee::t_b63ddcc34e9f3d 43-45,118,158-162,203-204
+tests/fm-gotmp.test.sh
+  s_d626b1dc0e8dee::t_bae557cc6f2313 4-6,23-24,38,137-166,170-171,186-212,216,260-261,273,275-276
+bin/fm-relaunch.sh
+  s_d626b1dc0e8dee::t_d1797d6c0590a0 455,459
+  s_d626b1dc0e8dee::t_a300caf412abd1 634-635
+  s_4de32080f7ffd7::t_54e15d9065e2c0 636
+tests/cross-runtime-helpers.sh
+  s_d626b1dc0e8dee::t_02a69360d3e8c3 107-115,121,294
+  s_d626b1dc0e8dee::t_bf37c384fbfee0 80-89
+tests/fm-relaunch.test.sh
+  s_d626b1dc0e8dee::t_acfd114a5767c1 370,380,387,633
+tests/fm-tmux-to-tmux-relaunch-e2e.test.sh
+  s_d626b1dc0e8dee::t_10bc895254b6cf 33-35,111-115,143-144
+bin/fm-herdr-replace.sh
+  s_d626b1dc0e8dee::t_2e682d9e536aa9 505-511,515
+bin/fm-teardown.sh
+  s_d626b1dc0e8dee::t_c9c68eb8fbfee7 149-150,152-155,1229-1231
+tests/fm-herdr-lifecycle.test.sh
+  s_d626b1dc0e8dee::t_144454f538a7e2 6-7,16-20,59-60,632,639-641
+tests/fm-cross-runtime-relaunch.test.sh
+  s_d626b1dc0e8dee::t_1d0cc93f0c2df3 65-86,88,109-123
+  s_d626b1dc0e8dee::t_3f70b15ab857f5 23,34-38,41,98,104-106,395,406-408,424,427-428
+  s_d626b1dc0e8dee::t_cef05b980a045b 124
+bin/fm-cross-runtime-relaunch.sh
+  s_d626b1dc0e8dee::t_bff1e4010981ee 1188-1189
+  s_d626b1dc0e8dee::t_8b741a0c5993c2 891,904,909,915,1214-1218
+bin/fm-cross-runtime-task-owner-lib.sh
+  s_d626b1dc0e8dee::t_1fb32d9efbfb1b 51,53-57,59-87,89-106,108-114,484
+  s_d626b1dc0e8dee::t_f4fc6e727ec134 58
+  s_d626b1dc0e8dee::t_d6e5ae8e0bbf73 115,117-123
+  s_d626b1dc0e8dee::t_8d3149af0eeaa5 52,88,107,116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "fe843261efce767e3fcdcc2dccf9f5cd407d903d",
+  "prompts": {},
+  "sessions": {
+    "s_4de32080f7ffd7": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa297-97e0-774a-9643-7b992f3cd34e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_d626b1dc0e8dee": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019faa82-10c5-7c16-987b-4bfa12189532",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
