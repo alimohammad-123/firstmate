@@ -1,0 +1,30 @@
+bin/fm-arena-cache-reclaim.sh
+  s_f42bd2d8b071fc::t_00bd259e0ae72d 834,848-850,852-853,855-856,865-873,875-880,1038-1042
+  s_f42bd2d8b071fc::t_42f14140f886a6 140,146,148-149,430,447,461,472,517,536,766,802
+  s_f42bd2d8b071fc::t_8e36fa9cfa1f93 152-160,778-783,829,844,854,874,889
+  s_f42bd2d8b071fc::t_f3579ba4f5d625 839-840,842-843,845-847,857,859-860,1030,1044
+  s_f42bd2d8b071fc::t_cc9c0d2b173bdf 150-151
+  s_f42bd2d8b071fc::t_186f7cfec27a15 881-882
+bin/fm-arena-cache-manifest.mjs
+  s_f42bd2d8b071fc::t_67fb1bf3c26d84 103-114,449,453-457
+tests/fm-teardown.test.sh
+  s_f42bd2d8b071fc::t_8e36fa9cfa1f93 553,615-622
+tests/fm-arena-cache-reclaim.test.sh
+  s_f42bd2d8b071fc::t_74d5aba5904f9b 185-195,420,464,470-497,506
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "db3cde3949e10ffc7940dbe83addbeb9656a49bd",
+  "prompts": {},
+  "sessions": {
+    "s_f42bd2d8b071fc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019faa96-d74c-7ec0-af04-32fa8932e5d9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
