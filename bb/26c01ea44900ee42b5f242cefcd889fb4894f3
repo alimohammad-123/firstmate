@@ -1,0 +1,27 @@
+docs/fm-test-portable-shards.md
+  s_9d781f88f4c461::t_9550a8192e0df1 13,67,69,78-79,87,101,110
+docs/existing-task-relaunch.md
+  s_9d781f88f4c461::t_9550a8192e0df1 109,122
+docs/recovery-test-architecture.md
+  s_9d781f88f4c461::t_9550a8192e0df1 294,297
+.github/workflows/ci.yml
+  s_9d781f88f4c461::t_9550a8192e0df1 27-29
+CONTRIBUTING.md
+  s_9d781f88f4c461::t_9550a8192e0df1 102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "bb26c01ea44900ee42b5f242cefcd889fb4894f3",
+  "prompts": {},
+  "sessions": {
+    "s_9d781f88f4c461": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa7b0-290c-72b2-bc85-cb7125c13892",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
