@@ -1,0 +1,21 @@
+tests/fm-test-plan.test.sh
+  s_7962908dc8e8a8::t_c57ecf86f3920a 233-246,386
+bin/fm-test-plan.sh
+  s_7962908dc8e8a8::t_c57ecf86f3920a 514-527
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "02c3ffe87ddb6f17d73f523c5dba9f8edad5f3ab",
+  "prompts": {},
+  "sessions": {
+    "s_7962908dc8e8a8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa794-f71f-72c3-b02c-04624dff2061",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
