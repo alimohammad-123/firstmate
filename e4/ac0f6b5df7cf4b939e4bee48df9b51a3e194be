@@ -1,0 +1,20 @@
+tests/fm-cross-runtime-relaunch.test.sh
+  s_3ed6bf8683cfe0::t_6f7a12056fdf32 362-363
+  s_3ed6bf8683cfe0::t_ba06e5ddd88511 351
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "e4ac0f6b5df7cf4b939e4bee48df9b51a3e194be",
+  "prompts": {},
+  "sessions": {
+    "s_3ed6bf8683cfe0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa81a-1227-78e3-93b4-f29758f8ed08",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
