@@ -1,0 +1,26 @@
+tests/fm-recovery-invariants.test.sh
+  s_438d7dc0d9e771::t_6720f73ff994f6 331-339,341,346-358
+  s_438d7dc0d9e771::t_4408f772081bf2 359
+tests/fm-cross-runtime-crash-matrix.test.sh
+  s_438d7dc0d9e771::t_f666f6a954d160 72-106
+  s_438d7dc0d9e771::t_99224cdab9e852 133-141
+tests/fm-cross-runtime-tmux-crash-matrix.test.sh
+  s_438d7dc0d9e771::t_f666f6a954d160 65-102
+  s_438d7dc0d9e771::t_99224cdab9e852 129-137
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "a5a5339d0135f5922026885e400ef2c2e7e8896f",
+  "prompts": {},
+  "sessions": {
+    "s_438d7dc0d9e771": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa774-ee5d-7863-9142-5d5ef8ca2fd0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

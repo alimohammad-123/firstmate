@@ -1,0 +1,22 @@
+.github/workflows/ci.yml
+  s_a5435402fd422a::t_1271f15c54f712 60,67-70,72
+  s_a5435402fd422a::t_09ac48e32ed74c 44,48-53
+tests/cross-runtime-helpers.sh
+  s_a5435402fd422a::t_09ac48e32ed74c 352,367,373
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "006b3354a8d18b8b5f8ee6bfdeba61304bdcfb16",
+  "prompts": {},
+  "sessions": {
+    "s_a5435402fd422a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa862-4f48-7c03-b325-466851c45502",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

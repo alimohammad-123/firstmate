@@ -1,0 +1,36 @@
+tests/fm-gotmp.test.sh
+  s_8c1abd56c54b8d::t_20f46a013e78bd 68,169
+tests/secondmate-helpers.sh
+  s_8c1abd56c54b8d::t_20f46a013e78bd 37,40-41
+  s_8c1abd56c54b8d::t_01ff7b3b2dd733 38-39
+  s_8c1abd56c54b8d::t_a30c81ddb8029e 43-48
+tests/fm-secondmate-sync.test.sh
+  s_8c1abd56c54b8d::t_01ff7b3b2dd733 305-309
+tests/fm-secondmate-harness.test.sh
+  s_8c1abd56c54b8d::t_01ff7b3b2dd733 742-746
+tests/fm-bootstrap.test.sh
+  s_8c1abd56c54b8d::t_a30c81ddb8029e 679-685,691
+  s_8c1abd56c54b8d::t_01ff7b3b2dd733 687-690
+tests/fm-backend.test.sh
+  s_8c1abd56c54b8d::t_20f46a013e78bd 117
+tests/fm-afk-inject-e2e.test.sh
+  s_8c1abd56c54b8d::t_20f46a013e78bd 84-86,133
+tests/cross-runtime-helpers.sh
+  s_8c1abd56c54b8d::t_20f46a013e78bd 27-28,354,369,375
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "951f6afe451de2fb8483eff4dce7e98a277de787",
+  "prompts": {},
+  "sessions": {
+    "s_8c1abd56c54b8d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa7c8-1ed9-78c3-97e9-c1cc769c1c18",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

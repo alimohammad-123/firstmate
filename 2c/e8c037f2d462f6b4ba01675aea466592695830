@@ -1,0 +1,42 @@
+tests/fm-nm-test-contract.test.sh
+  s_9ab038f8d3350a::t_61b87dd5303d7b 108-111
+bin/fm-test-shard-lib.sh
+  s_9ab038f8d3350a::t_61b87dd5303d7b 152
+tests/fm-test-shard.test.sh
+  s_9ab038f8d3350a::t_61b87dd5303d7b 139-141,152-153,175-177
+tests/fm-test-run.test.sh
+  s_9ab038f8d3350a::t_61b87dd5303d7b 393-396,479-480,484
+  s_9ab038f8d3350a::t_9046580015ffe9 454,459-463,478,481,486,490
+  s_9ab038f8d3350a::t_8a34e4f1793892 379,418-423
+bin/fm-test-continuation.sh
+  s_9ab038f8d3350a::t_9046580015ffe9 63
+  s_9ab038f8d3350a::t_61b87dd5303d7b 29-36,57,74,76-81,83-106,110-124,126-134,136-138,140,142
+  s_9ab038f8d3350a::t_8f7a6ddd721f93 125,135
+CONTRIBUTING.md
+  s_9ab038f8d3350a::t_61b87dd5303d7b 79
+tests/fm-test-plan.test.sh
+  s_9ab038f8d3350a::t_61b87dd5303d7b 297,301,303,306,308,322-328,338-343
+.github/workflows/ci.yml
+  s_9ab038f8d3350a::t_61b87dd5303d7b 37-41,43,60-67,138-139
+  s_9ab038f8d3350a::t_9046580015ffe9 52-59
+bin/fm-test-run.sh
+  s_9ab038f8d3350a::t_61b87dd5303d7b 317-336,371-373,384-386,430-431,439,442-443,455-456,468,485,489
+docs/recovery-test-architecture.md
+  s_9ab038f8d3350a::t_61b87dd5303d7b 137-138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "2ce8c037f2d462f6b4ba01675aea466592695830",
+  "prompts": {},
+  "sessions": {
+    "s_9ab038f8d3350a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa750-56f5-7062-8d44-cec1eb70bd25",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
