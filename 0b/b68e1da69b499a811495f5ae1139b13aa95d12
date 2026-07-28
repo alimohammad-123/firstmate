@@ -1,0 +1,61 @@
+.agents/skills/ask-user-authority/SKILL.md
+  s_4beacdbcc8f10b::t_67ba3f11986c3c 34-49
+.github/workflows/ci.yml
+  s_4beacdbcc8f10b::t_40fe90ced829ee 37-52
+.no-mistakes.yaml
+  s_4beacdbcc8f10b::t_29fd0c54cf6a7b 30-68
+AGENTS.md
+  s_4beacdbcc8f10b::t_9782d7f908013b 289
+CONTRIBUTING.md
+  s_4beacdbcc8f10b::t_f4159b9f3f7d70 84-87,96-98
+bin/fm-slo-check.sh
+  s_4beacdbcc8f10b::t_80c2736feeb7e2 1-178
+bin/fm-test-continuation.sh
+  s_4beacdbcc8f10b::t_5fb62a165ee25c 1-180
+bin/fm-test-plan.sh
+  s_4beacdbcc8f10b::t_faa00ccf22eb7d 1-622
+bin/fm-test-progress-lib.sh
+  s_4beacdbcc8f10b::t_155945a733d734 1-79
+bin/fm-test-run.sh
+  s_4beacdbcc8f10b::t_0cb9d26c2457ef 131-132,164-166,626-635
+bin/fm-test-shard-lib.sh
+  s_4beacdbcc8f10b::t_67f8f7e283b107 1-247
+docs/scripts.md
+  s_4beacdbcc8f10b::t_7379fffb135e22 28-32
+tests/cross-runtime-helpers.sh
+  s_4beacdbcc8f10b::t_915d8ea985a75a 1-435
+tests/fm-cross-runtime-relaunch.test.sh
+  s_4beacdbcc8f10b::t_e26e44c0ed0f91 2-10,18-20,413-424
+tests/fm-cross-runtime-tmux-crash-matrix.test.sh
+  s_4beacdbcc8f10b::t_7fa09e6b4ed558 1-94
+tests/fm-lint.test.sh
+  s_4beacdbcc8f10b::t_e96cbe2123512b 252-262,265-266
+tests/fm-recovery-invariants.test.sh
+  s_4beacdbcc8f10b::t_f601ba8203030c 1-443
+tests/fm-test-plan.test.sh
+  s_4beacdbcc8f10b::t_92b10422bf9971 1-350
+tests/fm-test-shard.test.sh
+  s_4beacdbcc8f10b::t_c6f198ea69a7ae 1-313
+tests/lib.sh
+  s_4beacdbcc8f10b::t_459ed56b88b4e4 56-75,78,85-92,98,102-110
+tests/recovery-targets.deps
+  s_4beacdbcc8f10b::t_a4ba802ed2cd38 1-45
+tests/recovery-targets.manifest
+  s_4beacdbcc8f10b::t_b01dc2c176083d 1-246
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "0bb68e1da69b499a811495f5ae1139b13aa95d12",
+  "prompts": {},
+  "sessions": {
+    "s_4beacdbcc8f10b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7a3568e2-1252-47b7-8ffa-e68f3f83ac22",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
