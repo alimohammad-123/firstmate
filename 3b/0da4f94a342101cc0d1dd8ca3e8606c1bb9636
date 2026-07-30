@@ -1,0 +1,23 @@
+docs/existing-task-relaunch.md
+  s_a8e33295893619::t_b30eec6683a517 40,44,46-47
+  s_a8e33295893619::t_6523ff3674da29 3
+bin/fm-cross-runtime-task-owner-lib.sh
+  s_a8e33295893619::t_6b2871ef973929 16-18
+  s_a8e33295893619::t_b30eec6683a517 10-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "3b0da4f94a342101cc0d1dd8ca3e8606c1bb9636",
+  "prompts": {},
+  "sessions": {
+    "s_a8e33295893619": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019faaed-d143-7540-b9a7-35102d497425",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

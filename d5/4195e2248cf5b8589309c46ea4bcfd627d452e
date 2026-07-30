@@ -1,0 +1,28 @@
+bin/fm-cross-runtime-task-owner-lib.sh
+  s_d5e0d6a6355b6c::t_d242823b445201 11-13
+  s_d5e0d6a6355b6c::t_41cbcd5df07df4 87
+  s_d5e0d6a6355b6c::t_aa48b53df865c5 63,83,86,88,114,116,122,134
+  s_d5e0d6a6355b6c::t_d1afadbf0bc6bb 85,113,115,117-121,123-128
+tests/fm-gotmp.test.sh
+  s_d5e0d6a6355b6c::t_80117f40738f49 23-24
+  s_d5e0d6a6355b6c::t_8cb384a12ac8ae 27-28,71,267-270,272-284,286-287,292-293,295-301,316,370
+bin/fm-teardown.sh
+  s_d5e0d6a6355b6c::t_41cbcd5df07df4 128-129,162-163
+  s_d5e0d6a6355b6c::t_7d94ad1d674cbb 105-106,127,130,1236-1237
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "d54195e2248cf5b8589309c46ea4bcfd627d452e",
+  "prompts": {},
+  "sessions": {
+    "s_d5e0d6a6355b6c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019faace-7e39-7b93-8b60-4bc98ad37c6a",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

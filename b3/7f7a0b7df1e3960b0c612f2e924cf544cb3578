@@ -1,0 +1,46 @@
+bin/fm-cross-runtime-task-owner-lib.sh
+  s_d5e0d6a6355b6c::t_886c798f4cb511 39-46,100,102-107,109-119,122-124,126-134,159
+  s_d5e0d6a6355b6c::t_88a28e5dc8533d 120-121,125,158,160
+  s_d5e0d6a6355b6c::t_341814f5d2da3e 148
+  s_d5e0d6a6355b6c::t_be5cb59a9ae7c7 93-99,101,108
+tests/cross-runtime-helpers.sh
+  s_d5e0d6a6355b6c::t_bb44bd99d99736 108,114-116
+  s_13fc878625f787::t_d6d3064a6d33bd 117
+tests/fm-gotmp.test.sh
+  s_d5e0d6a6355b6c::t_341814f5d2da3e 229,246-248,259
+  s_d5e0d6a6355b6c::t_bb44bd99d99736 213-228,230-245,249-258,260-280,345-346
+tests/fm-cross-runtime-relaunch.test.sh
+  s_d5e0d6a6355b6c::t_341814f5d2da3e 353-358
+  s_d5e0d6a6355b6c::t_bb44bd99d99736 348-352,359-378,510
+bin/fm-cross-runtime-relaunch.sh
+  s_d5e0d6a6355b6c::t_886c798f4cb511 1224
+  s_d5e0d6a6355b6c::t_341814f5d2da3e 1214-1221,1223
+bin/fm-teardown.sh
+  s_d5e0d6a6355b6c::t_886c798f4cb511 164-171,1255
+  s_d5e0d6a6355b6c::t_be5cb59a9ae7c7 158
+  s_d5e0d6a6355b6c::t_bcc52a807adaa5 156-157,159-163,1246-1254
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "b37f7a0b7df1e3960b0c612f2e924cf544cb3578",
+  "prompts": {},
+  "sessions": {
+    "s_13fc878625f787": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019faace-89fc-7122-870e-ee24bce4fb36",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_d5e0d6a6355b6c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019faace-7e39-7b93-8b60-4bc98ad37c6a",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
