@@ -1,0 +1,69 @@
+.agents/skills/secondmate-provisioning/SKILL.md
+  s_c56c8b6d5ab81a::t_6586aa76aad25b 81,102
+bin/fm-brief.sh
+  s_209a9cc0fe5127::t_17bdaef1dc6623 32-38,342-343,347-351
+bin/fm-delivery-preflight.sh
+  s_c56c8b6d5ab81a::t_3550cef8e3081d 1-592
+bin/fm-teardown.sh
+  s_c56c8b6d5ab81a::t_5d405fbb1f6914 1043-1044,1235
+bin/fm-test-run.sh
+  s_c56c8b6d5ab81a::t_86b588c6736833 124,682
+docs/configuration.md
+  s_c56c8b6d5ab81a::t_7869f2c79ba55e 154-171,320
+docs/documentation-audiences.json
+  s_cf306ac90ddd20::t_00549b8c1c1b9a 306-309
+docs/scripts.md
+  s_c56c8b6d5ab81a::t_e9a1afbe6dacc4 54
+tests/fm-backend-herdr-presentation-e2e.test.sh
+  s_cf306ac90ddd20::t_9c9e4b9a5afcfe 877
+tests/fm-delivery-preflight.test.sh
+  s_209a9cc0fe5127::t_586b28f8f049a6 1-351
+tests/fm-secondmate-harness.test.sh
+  s_cf306ac90ddd20::t_7122d3dfee20aa 17-18,20-21,269,280-281,302,308-309,324,331,904
+AGENTS.md
+  s_9dd506824d1b43::t_1d07c9be59cb0b 74,95,299-300
+bin/fm-config-inherit-lib.sh
+  s_9dd506824d1b43::t_fb3b4639914e18 10,12-15,50
+docs/architecture.md
+  s_9dd506824d1b43::t_953e81a3ce5fb0 193
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "343915866c353ba754f1c46f53de5df105c01102",
+  "prompts": {},
+  "sessions": {
+    "s_209a9cc0fe5127": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fafbe-4c7f-7ccb-99f1-6bcae1ce0d24",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_9dd506824d1b43": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "10738632-843a-448c-b5af-7f0095c60b8e",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_c56c8b6d5ab81a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa056-82e3-78e9-9643-d3a18702b7a5",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_cf306ac90ddd20": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fab34-5d34-73d3-9ec0-11690fbdbfe2",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
