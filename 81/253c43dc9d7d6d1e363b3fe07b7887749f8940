@@ -4,18 +4,31 @@ bin/fm-delivery-preflight.sh
   s_c56c8b6d5ab81a::t_3550cef8e3081d 1-592
 bin/fm-test-run.sh
   s_c56c8b6d5ab81a::t_86b588c6736833 730
+  s_e2bf2e5d919232::t_8de433e790091b 124
 docs/configuration.md
   s_c56c8b6d5ab81a::t_7869f2c79ba55e 138-155
+  s_e2bf2e5d919232::t_8de433e790091b 297
 docs/scripts.md
   s_c56c8b6d5ab81a::t_e9a1afbe6dacc4 59
 tests/fm-delivery-preflight.test.sh
   s_209a9cc0fe5127::t_586b28f8f049a6 1-351
 tests/fm-secondmate-harness.test.sh
   s_cf306ac90ddd20::t_7122d3dfee20aa 139,149-150,167,172-173,193,715
+  s_e2bf2e5d919232::t_8de433e790091b 17-21,186-187
 AGENTS.md
   s_9dd506824d1b43::t_1d07c9be59cb0b 72,92,287-288
 docs/architecture.md
   s_9dd506824d1b43::t_953e81a3ce5fb0 190
+docs/verification/delivery-preflight.md
+  s_e2bf2e5d919232::t_fb005b455c674a 1-67
+tests/fm-backend-herdr-presentation-e2e.test.sh
+  s_e2bf2e5d919232::t_8de433e790091b 1019
+bin/fm-config-inherit-lib.sh
+  s_e2bf2e5d919232::t_8de433e790091b 8-13,45
+bin/fm-teardown.sh
+  s_e2bf2e5d919232::t_8de433e790091b 1055-1057,1247-1249
+.agents/skills/secondmate-provisioning/SKILL.md
+  s_e2bf2e5d919232::t_8de433e790091b 81,99
 ---
 {
   "schema_version": "authorship/3.0.0",
@@ -51,6 +64,14 @@ docs/architecture.md
       "agent_id": {
         "tool": "pi",
         "id": "019fab34-5d34-73d3-9ec0-11690fbdbfe2",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_e2bf2e5d919232": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb588-219c-7bd2-8db2-e888a81e3e14",
         "model": "gpt-5.6-sol"
       },
       "human_author": "Ali Mohammad <ali@arenacrm.com>"
