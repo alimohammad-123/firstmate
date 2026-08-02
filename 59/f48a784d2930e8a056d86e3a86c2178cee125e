@@ -1,0 +1,37 @@
+bin/fm-bearings-snapshot.sh
+  s_c3fa7f032c9c66::t_f6955a8b63481a 389,401-402,404-408,411-413,415,454
+bin/fm-fleet-snapshot.sh
+  s_c3fa7f032c9c66::t_a03a50f1f86589 144-155,645,726,1326
+bin/fm-owed-artifact-lib.sh
+  s_c3fa7f032c9c66::t_7adc570c123b9a 21-26,30,41,44-48,52-55,57,59,62-82,87,138-182,184,189-202,205-213,215-216,218-223,228-243,245,247,250-254,256-263,268-273,275,287,289-290,292-293,295-296,298-301,320-331,333-334,339
+bin/fm-supervise-daemon.sh
+  s_c3fa7f032c9c66::t_e4b6b1d0cff237 1069-1072,1075-1078,1083
+bin/fm-test-run.sh
+  s_e39a7281062102::t_b89fe9498f2754 178-179
+bin/fm-watch.sh
+  s_c3fa7f032c9c66::t_731e706a508009 548-549,561-565,570-573
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "59f48a784d2930e8a056d86e3a86c2178cee125e",
+  "prompts": {},
+  "sessions": {
+    "s_c3fa7f032c9c66": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fc0d0-969b-762c-9085-23aaf6601ae7",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_e39a7281062102": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fbb76-85b5-7112-9d80-8b507e199ebd",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
