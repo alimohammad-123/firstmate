@@ -1,0 +1,19 @@
+AGENTS.md
+  s_c3fa7f032c9c66::t_984a6e1238eaa3 262
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "bd3cd54b4f0378e58b7493a3ee29464a6e9c8ea2",
+  "prompts": {},
+  "sessions": {
+    "s_c3fa7f032c9c66": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fc0d0-969b-762c-9085-23aaf6601ae7",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
