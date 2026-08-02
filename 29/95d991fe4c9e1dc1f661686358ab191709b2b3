@@ -1,0 +1,21 @@
+bin/fm-owed-artifact-lib.sh
+  s_e39a7281062102::t_bd8a5e88e066e6 23-26
+tests/fm-owed-artifact.test.sh
+  s_e39a7281062102::t_4313f782d06570 51-87,240-306,326-328
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "2995d991fe4c9e1dc1f661686358ab191709b2b3",
+  "prompts": {},
+  "sessions": {
+    "s_e39a7281062102": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fbb76-85b5-7112-9d80-8b507e199ebd",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
