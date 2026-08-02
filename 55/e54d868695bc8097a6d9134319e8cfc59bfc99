@@ -1,0 +1,21 @@
+bin/fm-delivery-preflight.sh
+  s_9574525f6dc908::t_2a85bba38ca195 459
+tests/fm-delivery-preflight.test.sh
+  s_9574525f6dc908::t_2a85bba38ca195 395,404-410,416-417
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "55e54d868695bc8097a6d9134319e8cfc59bfc99",
+  "prompts": {},
+  "sessions": {
+    "s_9574525f6dc908": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb565-c430-71c1-ba73-cd82ee83ec47",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
