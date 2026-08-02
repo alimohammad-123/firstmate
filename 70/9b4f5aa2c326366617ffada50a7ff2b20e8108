@@ -1,0 +1,19 @@
+bin/fm-brief.sh
+  s_e8bdf0b8ef99bc::t_ea276076a2d6fd 338,341
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "709b4f5aa2c326366617ffada50a7ff2b20e8108",
+  "prompts": {},
+  "sessions": {
+    "s_e8bdf0b8ef99bc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "794c6289-cd1a-4cda-8147-ea559c5ca47f",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

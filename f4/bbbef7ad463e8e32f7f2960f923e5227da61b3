@@ -1,0 +1,28 @@
+AGENTS.md
+  s_c3fa7f032c9c66::t_558a11f196ee92 287
+tests/fm-no-mistakes-ownership.test.sh
+  s_c3fa7f032c9c66::t_8914c3899d9cdc 67-68,70
+  s_c3fa7f032c9c66::t_164cb216515b06 1,4-8,39-66,71-161,164-166
+  s_c3fa7f032c9c66::t_9c6a6e435bec79 69
+CONTRIBUTING.md
+  s_c3fa7f032c9c66::t_b23af3cbf13b3d 65
+bin/fm-brief.sh
+  s_c3fa7f032c9c66::t_b8446fb8693fe6 33-34,326-328,337-340
+  s_c3fa7f032c9c66::t_3555d888cc5538 321,324
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.19",
+  "base_commit_sha": "f4bbbef7ad463e8e32f7f2960f923e5227da61b3",
+  "prompts": {},
+  "sessions": {
+    "s_c3fa7f032c9c66": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fc0d0-969b-762c-9085-23aaf6601ae7",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
