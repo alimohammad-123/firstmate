@@ -1,0 +1,74 @@
+tests/fm-teardown.test.sh
+  s_fd3f8b28e3eb92::t_375eed0351a53d 525-526
+bin/fm-watch.sh
+  s_fd3f8b28e3eb92::t_22dee30eb34d03 517-518
+  s_fd3f8b28e3eb92::t_2e4a46835a79b3 41-42,70-71,520-522,524
+  s_fd3f8b28e3eb92::t_889f68bca38a04 523
+  s_fd3f8b28e3eb92::t_1b0971fd01f15c 512-516
+bin/fm-session-start.sh
+  s_fd3f8b28e3eb92::t_6a1457ff7b44aa 109-110,397-402,404-426,428-429,431-434,438-451
+  s_fd3f8b28e3eb92::t_eb2d74ba24843f 435-437
+  s_fd3f8b28e3eb92::t_de1fcea508f178 403,427,430
+  s_fd3f8b28e3eb92::t_e66f252ce1f366 84-89
+  s_1e043ae4149107::t_a381d494ebcfe8 452
+tests/fm-owed-artifact.test.sh
+  s_fd3f8b28e3eb92::t_75947cc2e2bdff 20,126
+  s_fd3f8b28e3eb92::t_41a7efeafe9b46 10-11
+  s_fd3f8b28e3eb92::t_8354aa8a67db5e 65-69,193-202,220
+  s_fd3f8b28e3eb92::t_4a439f534046e2 79-91,215
+  s_fd3f8b28e3eb92::t_a1560947ecbe6c 1-9,12-19,21-64,70-78,92-125,127-192,203-214,216-219,221-222
+bin/fm-owed-artifact.sh
+  s_fd3f8b28e3eb92::t_f01d22bd47b90b 1-206,208-226,230-290,292-321,323-335
+  s_fd3f8b28e3eb92::t_cd026899fd70bb 207,227-229
+  s_fd3f8b28e3eb92::t_bf42fb28d2a300 291,322
+bin/fm-bearings-snapshot.sh
+  s_fd3f8b28e3eb92::t_089562f94099e9 353-354,407
+  s_fd3f8b28e3eb92::t_7be1dfc8ef7df7 25-26,109-111
+  s_fd3f8b28e3eb92::t_5d808b8730a63d 487-491
+  s_fd3f8b28e3eb92::t_ec922ca48d4fdb 310-319,389,401,403-406,408,410,449
+bin/fm-supervise-daemon.sh
+  s_fd3f8b28e3eb92::t_c2a2aa3c1bcc01 1054
+  s_fd3f8b28e3eb92::t_98ce1df99b5dcc 54-56
+  s_fd3f8b28e3eb92::t_e717302751e485 170-172,1051-1053,1055-1060
+.agents/skills/bearings/SKILL.md
+  s_fd3f8b28e3eb92::t_dd48813a75372e 29,70
+bin/fm-owed-artifact-lib.sh
+  s_fd3f8b28e3eb92::t_a713f20aaa2589 1-192,194-248
+  s_fd3f8b28e3eb92::t_f640eb0c4b1dbc 193
+bin/fm-test-run.sh
+  s_fd3f8b28e3eb92::t_34f0aa92287a69 685-690
+bin/fm-teardown.sh
+  s_fd3f8b28e3eb92::t_f67c11525ba528 449,453,457,459
+bin/fm-fleet-snapshot.sh
+  s_fd3f8b28e3eb92::t_3ed79757969fdb 139-147,271,387-392,412-414
+  s_fd3f8b28e3eb92::t_a01c9743f5db43 731-732
+  s_fd3f8b28e3eb92::t_13c34b8d97cc71 637,639-643
+  s_fd3f8b28e3eb92::t_9f0beea785ecff 23-24,163-165
+AGENTS.md
+  s_fd3f8b28e3eb92::t_9fdcef01a66013 242
+  s_fd3f8b28e3eb92::t_4f5c23006549a9 241
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.19",
+  "base_commit_sha": "6e45ae3b6cc7b4f9cb81dd7ca342c4d0aecdd7a4",
+  "prompts": {},
+  "sessions": {
+    "s_1e043ae4149107": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fc0aa-c56d-7718-a109-95e4e2f6ea2a",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_fd3f8b28e3eb92": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fc0b5-c63b-7504-b1de-3231ecf290a5",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+docs/scripts.md
+  s_c56c8b6d5ab81a::t_9c8fdee0763d02 21-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "ac67e884bae7b21df15a4dbd220b771b7b09a191",
+  "prompts": {},
+  "sessions": {
+    "s_c56c8b6d5ab81a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa056-82e3-78e9-9643-d3a18702b7a5",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
