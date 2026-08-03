@@ -1,0 +1,47 @@
+bin/fm-endpoint-binding-migrate.sh
+  s_c56c8b6d5ab81a::t_b79ddb30f66400 1-502
+docs/herdr-backend.md
+  s_c56c8b6d5ab81a::t_6c422b2dd3bf27 184-189,318
+AGENTS.md
+  s_f1a87b32d610f8::t_4822f3e3782d02 336
+bin/backends/herdr.sh
+  s_f1a87b32d610f8::t_ba823b2dd7a77e 2280-2287
+bin/fm-teardown.sh
+  s_f1a87b32d610f8::t_695030df8ea8a6 113-114,750,757-758
+bin/fm-test-run.sh
+  s_f1a87b32d610f8::t_1b1be4dab1067c 181
+bin/fm-worktree-lib.sh
+  s_f1a87b32d610f8::t_ce38f11e2be11a 1-27
+docs/configuration.md
+  s_f1a87b32d610f8::t_605c434a426cdd 84
+docs/scripts.md
+  s_f1a87b32d610f8::t_9a3898f2c310cd 71,93
+docs/verification/runtime-backends.md
+  s_f1a87b32d610f8::t_4aeacd03be7b41 157-178
+tests/fm-endpoint-binding-migrate.test.sh
+  s_f1a87b32d610f8::t_3fa9f653c6af55 1-479
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "4538ade9bb574756df6d497138b2543d6e932d21",
+  "prompts": {},
+  "sessions": {
+    "s_c56c8b6d5ab81a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa056-82e3-78e9-9643-d3a18702b7a5",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_f1a87b32d610f8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5d4ccd6f-ffd5-4f4b-8a0a-0036e0bf57b4",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
