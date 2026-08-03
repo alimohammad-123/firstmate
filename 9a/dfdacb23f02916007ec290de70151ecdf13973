@@ -1,0 +1,21 @@
+.agents/skills/firstmate-coding-guidelines/SKILL.md
+  s_0801d8630d27ce::t_c1c486ade2621f 83
+.agents/skills/harness-adapters/SKILL.md
+  s_0801d8630d27ce::t_99d9ebfb36760e 107-109,123-125
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "9adfdacb23f02916007ec290de70151ecdf13973",
+  "prompts": {},
+  "sessions": {
+    "s_0801d8630d27ce": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1f0532ef-4d10-4c94-8ef0-0dbfa4e51d4d",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
