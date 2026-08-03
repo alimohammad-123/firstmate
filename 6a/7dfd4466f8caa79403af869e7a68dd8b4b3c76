@@ -1,0 +1,35 @@
+.pi/extensions/fm-primary-pi-watch.ts
+  s_0dfd24015f31f2::t_5b75f6ba9238f2 232-236,328,342,357,608-614
+bin/backends/herdr.sh
+  s_0dfd24015f31f2::t_9eb6b13921160d 1758,1778-1779,2357-2360,2376-2379,2391,2393-2398
+bin/fm-teardown.sh
+  s_0dfd24015f31f2::t_eb3576e565af8b 154-155,1697-1703
+bin/fm-test-run.sh
+  s_0dfd24015f31f2::t_1d68e62feb2bc2 137-138,141,144-145,915-916
+tests/fm-backend-herdr.test.sh
+  s_0dfd24015f31f2::t_79e54f23f44363 2501-2592,4043-4046
+tests/fm-pi-watch-extension.test.sh
+  s_0dfd24015f31f2::t_4a28013742360e 1024-1049,1082-1102
+tests/fm-subagent-pretool-check.test.sh
+  s_0dfd24015f31f2::t_f0a40ffb77e8f9 279-312,326
+tests/fm-teardown.test.sh
+  s_0dfd24015f31f2::t_91a7866fc65f9e 1267-1324,1894-1895
+tests/fm-test-run.test.sh
+  s_0dfd24015f31f2::t_17ef3e0cd7481f 61-80,139-141,185-191,705
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "6a7dfd4466f8caa79403af869e7a68dd8b4b3c76",
+  "prompts": {},
+  "sessions": {
+    "s_0dfd24015f31f2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f04ad863-ae45-47fe-b7d2-e51f38553010",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
