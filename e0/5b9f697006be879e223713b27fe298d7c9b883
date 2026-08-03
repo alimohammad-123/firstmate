@@ -1,0 +1,14 @@
+tests/fm-nm-test-contract.test.sh
+  h_e917d96537cdf9 104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "e05b9f697006be879e223713b27fe298d7c9b883",
+  "prompts": {},
+  "humans": {
+    "h_e917d96537cdf9": {
+      "author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
