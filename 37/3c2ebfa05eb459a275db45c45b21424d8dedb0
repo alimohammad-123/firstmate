@@ -1,0 +1,21 @@
+.agents/skills/harness-adapters/SKILL.md
+  s_d11510678a8a5d::t_85f7b9ed2ae2d7 159
+AGENTS.md
+  s_d11510678a8a5d::t_d0b54e21e6292d 309-311,313
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "373c2ebfa05eb459a275db45c45b21424d8dedb0",
+  "prompts": {},
+  "sessions": {
+    "s_d11510678a8a5d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fc659-2032-70ee-af94-698d9934913d",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
