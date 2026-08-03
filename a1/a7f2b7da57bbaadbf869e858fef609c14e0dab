@@ -1,0 +1,19 @@
+tests/fm-subagent-pretool-check.test.sh
+  s_ce1731aee17e76::t_d5e8898a585c80 141
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "a1a7f2b7da57bbaadbf869e858fef609c14e0dab",
+  "prompts": {},
+  "sessions": {
+    "s_ce1731aee17e76": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fc556-67c0-7666-a3cd-b13c29838bbe",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
