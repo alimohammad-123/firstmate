@@ -1,0 +1,39 @@
+.github/workflows/ci.yml
+  s_75774d4738593a::t_bc466a1e3ca253 38-77
+AGENTS.md
+  s_75774d4738593a::t_c0903db2b51f90 290
+bin/fm-brief.sh
+  s_75774d4738593a::t_c8ca3ef04be4ce 388
+bin/fm-composer-lib.sh
+  s_75774d4738593a::t_ba42bc503c9328 188-191,195-198
+bin/fm-cross-runtime-task-owner-lib.sh
+  s_75774d4738593a::t_17518993d0da9a 123,127-130
+tests/fm-backend-herdr.test.sh
+  s_75774d4738593a::t_80edf58dc647b1 3418,3420-3424,3426
+tests/fm-composer-lib.test.sh
+  s_75774d4738593a::t_d1f336cba1ea24 12-13,46-51,74,76,78-79,82,132
+tests/fm-install-herdr.test.sh
+  s_75774d4738593a::t_9c2799f8dd18c4 89-90
+tests/fm-nm-test-contract.test.sh
+  s_75774d4738593a::t_0fccd3574c8e2d 104,106-107
+tests/fm-no-mistakes-ownership.test.sh
+  s_75774d4738593a::t_40212634d412cd 57,98,129,136,157
+tests/fm-teardown.test.sh
+  s_75774d4738593a::t_2c21c7ef09da79 526-527
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "f3d32d3ba8e55566d055f8de2445e60c4f3055e0",
+  "prompts": {},
+  "sessions": {
+    "s_75774d4738593a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6f212e03-9553-4f94-a294-42caa71e15ab",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
