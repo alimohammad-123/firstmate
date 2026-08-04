@@ -1,0 +1,34 @@
+docs/documentation-audiences.json
+  s_c56c8b6d5ab81a::t_75482ce15ca865 132-134
+  s_1e4a9a273fc2fe::t_0fab605d576097 131
+AGENTS.md
+  s_c56c8b6d5ab81a::t_6688d55e768103 512
+.agents/skills/agent-watchdog/SKILL.md
+  s_c56c8b6d5ab81a::t_fd61183866f812 1-114
+.agents/skills/initiative-secondmate/SKILL.md
+  s_c56c8b6d5ab81a::t_fac12dea83eff3 69-70,103
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "8aab0e84357e8d9fa996c2398913afb4f78b58e8",
+  "prompts": {},
+  "sessions": {
+    "s_1e4a9a273fc2fe": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fceb5-1d7c-78d6-aacf-a2f1b7a5acfa",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_c56c8b6d5ab81a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa056-82e3-78e9-9643-d3a18702b7a5",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
