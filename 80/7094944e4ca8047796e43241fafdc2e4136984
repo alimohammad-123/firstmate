@@ -1,0 +1,51 @@
+bin/fm-remote-doctor.sh
+  s_a3b6d666ccf558::t_aab5da78a02d03 21-27,42,47-48,339-343,355
+bin/fm-status.sh
+  s_144b2a5739b336::t_8a22f037213afd 15-19,113-114,126
+tests/fm-brief.test.sh
+  s_144b2a5739b336::t_5efa860522f4aa 749-760
+tests/fm-remote-secondmate-lifecycle-e2e.test.sh
+  s_144b2a5739b336::t_e45c5fa86c0930 182-189,456-488
+bin/fm-remote-home-seed.sh
+  s_3866a1a1402667::t_57b134f486614d 239-252
+bin/fm-test-run.sh
+  s_3866a1a1402667::t_c6414906a13b29 919-924,926
+docs/remote-secondmates.md
+  s_3866a1a1402667::t_561015bc3f750c 142
+tests/fm-remote-doctor.test.sh
+  s_3866a1a1402667::t_91373bb17a2e45 425-429,448-463
+tests/fm-remote-secondmate-trace-context.test.sh
+  s_3866a1a1402667::t_1f37752421ca1f 116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "807094944e4ca8047796e43241fafdc2e4136984",
+  "prompts": {},
+  "sessions": {
+    "s_144b2a5739b336": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fce82-8f62-7ee5-9cd3-c8112336c0a5",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_3866a1a1402667": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b5aeb9aa-68fe-4114-a7aa-304ae29bcf7e",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_a3b6d666ccf558": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fce76-d85f-7ffb-983f-13f6ba162677",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
