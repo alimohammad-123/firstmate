@@ -85,7 +85,7 @@ test_orphan_sweep_respects_fixture_ownership() {
   touch -t 202001010000 "$active_dir/.fm-test-fixture"
 
   stale_dir=$(mktemp -d "${TMPDIR:-/tmp}/fm-test-cleanup-stale.XXXXXX")
-  printf '%s\n' 999999999 > "$stale_dir/.fm-test-fixture"
+  printf '%s\n%s\n' "$$" reused-process-identity > "$stale_dir/.fm-test-fixture"
   touch -t 202001010000 "$stale_dir/.fm-test-fixture"
   fresh_dir=$(mktemp -d "${TMPDIR:-/tmp}/fm-test-cleanup-fresh.XXXXXX")
   : > "$fresh_dir/.fm-test-fixture"
@@ -96,7 +96,7 @@ test_orphan_sweep_respects_fixture_ownership() {
   '
 
   assert_absent "$stale_dir" \
-    "a stale marked fixture root from a killed prior run was not reaped on the next source"
+    "a stale fixture root whose PID was reused by another process was not reaped"
   assert_present "$active_dir" \
     "the orphan reaper removed an old fixture root whose owning process was still alive"
   assert_present "$fresh_dir" \

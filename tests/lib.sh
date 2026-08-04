@@ -39,6 +39,9 @@ export FM_GATE_REFUSE_BYPASS=1
 # shellcheck disable=SC2034
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# shellcheck source=bin/fm-wake-lib.sh
+. "$ROOT/bin/fm-wake-lib.sh"
+
 # --- reporters --------------------------------------------------------------
 
 fail() {
@@ -85,9 +88,13 @@ fm_test_cleanup() {
 }
 
 fm_test_tmproot() {
-  local prefix=${1:-fm-test} root
+  local prefix=${1:-fm-test} root owner_identity
   root=$(mktemp -d "${TMPDIR:-/tmp}/${prefix}.XXXXXX")
-  printf '%s\n' "$$" > "$root/.fm-test-fixture"
+  owner_identity=$(fm_pid_identity "$$") || {
+    rm -rf "$root"
+    return 1
+  }
+  printf '%s\n%s\n' "$$" "$owner_identity" > "$root/.fm-test-fixture"
   printf '%s\n' "$root" >> "$FM_TEST_CLEANUP_REGISTRY"
   printf '%s\n' "$root"
 }
@@ -100,20 +107,23 @@ trap 'fm_test_cleanup; exit 143' TERM
 # prior run that was killed hard enough to skip the traps above (e.g. a
 # SIGKILL timeout). Only removes directories carrying the .fm-test-fixture
 # marker fm_test_tmproot writes, so it never touches unrelated fm-* tmp dirs
-# from real (non-test) firstmate commands. The marker names the owning shell,
-# so a live owner always wins over the age fallback for dead or unowned roots.
+# from real (non-test) firstmate commands. The marker identifies the owning
+# shell across PID reuse, so the same live owner always wins over the age
+# fallback for dead or unowned roots.
 FM_TEST_ORPHAN_MAX_AGE_SECONDS=${FM_TEST_ORPHAN_MAX_AGE_SECONDS:-3600}
 
 fm_test_reap_orphans() {
-  local marker dir mtime now owner_pid
+  local marker dir mtime now owner_pid owner_identity current_identity
   now=$(date +%s)
   for marker in "${TMPDIR:-/tmp}"/fm-*/.fm-test-fixture; do
     [ -e "$marker" ] || continue
     owner_pid=$(sed -n '1p' "$marker" 2>/dev/null) || owner_pid=
+    owner_identity=$(sed -n '2,$p' "$marker" 2>/dev/null) || owner_identity=
     case "$owner_pid" in
       '' | *[!0-9]*) ;;
       *)
-        if [ "$owner_pid" -gt 0 ] && kill -0 "$owner_pid" 2>/dev/null; then
+        current_identity=$(fm_pid_identity "$owner_pid" 2>/dev/null) || current_identity=
+        if [ -n "$owner_identity" ] && [ "$current_identity" = "$owner_identity" ]; then
           continue
         fi
         ;;
