@@ -1,0 +1,49 @@
+bin/fm-herdr-session-cleanup.sh
+  s_a3b6d666ccf558::t_591de7ac298291 13-19
+docs/herdr-backend.md
+  s_57de53cbcc20c2::t_d2e3f06208fe00 89,148,331
+docs/scripts.md
+  s_65ca3060919f61::t_e4c4c12b63e010 26,49
+docs/verification/runtime-backends.md
+  s_144b2a5739b336::t_0249fddf8e4f25 214-215,229
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "ab62a3f9b5a10ecb97803496e17d22450fbad8fc",
+  "prompts": {},
+  "sessions": {
+    "s_144b2a5739b336": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fce82-8f62-7ee5-9cd3-c8112336c0a5",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_57de53cbcc20c2": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fce81-83df-7ada-8371-e6b3e069e760",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_65ca3060919f61": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fce84-5eea-7849-bbc7-e1d09fe16aa1",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_a3b6d666ccf558": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fce76-d85f-7ffb-983f-13f6ba162677",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
