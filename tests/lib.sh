@@ -87,7 +87,7 @@ fm_test_cleanup() {
 fm_test_tmproot() {
   local prefix=${1:-fm-test} root
   root=$(mktemp -d "${TMPDIR:-/tmp}/${prefix}.XXXXXX")
-  : > "$root/.fm-test-fixture"
+  printf '%s\n' "$$" > "$root/.fm-test-fixture"
   printf '%s\n' "$root" >> "$FM_TEST_CLEANUP_REGISTRY"
   printf '%s\n' "$root"
 }
@@ -100,15 +100,24 @@ trap 'fm_test_cleanup; exit 143' TERM
 # prior run that was killed hard enough to skip the traps above (e.g. a
 # SIGKILL timeout). Only removes directories carrying the .fm-test-fixture
 # marker fm_test_tmproot writes, so it never touches unrelated fm-* tmp dirs
-# from real (non-test) firstmate commands, and only ones old enough that no
-# currently-running suite could still own them.
+# from real (non-test) firstmate commands. The marker names the owning shell,
+# so a live owner always wins over the age fallback for dead or unowned roots.
 FM_TEST_ORPHAN_MAX_AGE_SECONDS=${FM_TEST_ORPHAN_MAX_AGE_SECONDS:-3600}
 
 fm_test_reap_orphans() {
-  local marker dir mtime now
+  local marker dir mtime now owner_pid
   now=$(date +%s)
   for marker in "${TMPDIR:-/tmp}"/fm-*/.fm-test-fixture; do
     [ -e "$marker" ] || continue
+    owner_pid=$(sed -n '1p' "$marker" 2>/dev/null) || owner_pid=
+    case "$owner_pid" in
+      '' | *[!0-9]*) ;;
+      *)
+        if [ "$owner_pid" -gt 0 ] && kill -0 "$owner_pid" 2>/dev/null; then
+          continue
+        fi
+        ;;
+    esac
     mtime=$(stat -f %m "$marker" 2>/dev/null || stat -c %Y "$marker" 2>/dev/null) || continue
     [ $((now - mtime)) -ge "$FM_TEST_ORPHAN_MAX_AGE_SECONDS" ] || continue
     dir=$(dirname "$marker")

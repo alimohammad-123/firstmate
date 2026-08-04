@@ -62,10 +62,30 @@ test_fixture_root_gone_after_sigterm() {
   pass "fm_test_tmproot cleans up its fixture root on SIGTERM"
 }
 
-test_stale_marked_fixture_reaped_on_next_source() {
-  local stale_dir fresh_dir
+test_orphan_sweep_respects_fixture_ownership() {
+  local harness dirfile active_dir stale_dir fresh_dir pid tries
+  harness=$(fm_test_tmproot fm-test-cleanup-orphan-harness)
+  dirfile="$harness/active-dir"
+  bash -c '
+    # shellcheck source=tests/lib.sh
+    . "'"$LIB"'"
+    d=$(fm_test_tmproot fm-test-cleanup-active)
+    printf "%s\n" "$d" > "'"$dirfile"'"
+    sleep 30
+  ' &
+  pid=$!
+  tries=0
+  while [ "$tries" -lt 100 ]; do
+    [ -s "$dirfile" ] && break
+    sleep 0.05
+    tries=$((tries + 1))
+  done
+  [ -s "$dirfile" ] || fail "the active child never published its fixture root before the wait timed out"
+  active_dir=$(cat "$dirfile")
+  touch -t 202001010000 "$active_dir/.fm-test-fixture"
+
   stale_dir=$(mktemp -d "${TMPDIR:-/tmp}/fm-test-cleanup-stale.XXXXXX")
-  : > "$stale_dir/.fm-test-fixture"
+  printf '%s\n' 999999999 > "$stale_dir/.fm-test-fixture"
   touch -t 202001010000 "$stale_dir/.fm-test-fixture"
   fresh_dir=$(mktemp -d "${TMPDIR:-/tmp}/fm-test-cleanup-fresh.XXXXXX")
   : > "$fresh_dir/.fm-test-fixture"
@@ -77,12 +97,18 @@ test_stale_marked_fixture_reaped_on_next_source() {
 
   assert_absent "$stale_dir" \
     "a stale marked fixture root from a killed prior run was not reaped on the next source"
+  assert_present "$active_dir" \
+    "the orphan reaper removed an old fixture root whose owning process was still alive"
   assert_present "$fresh_dir" \
     "the orphan reaper removed a fresh marked fixture root it does not own yet"
+  kill -TERM "$pid"
+  wait "$pid" 2>/dev/null
+  assert_absent "$active_dir" \
+    "the active fixture root survived its owning process's teardown"
   rm -rf "$fresh_dir"
-  pass "a stale marked fixture root from a dead prior run is reaped on the next source"
+  pass "the orphan sweep reaps only old fixtures without a live owner"
 }
 
 test_fixture_root_gone_after_normal_exit
 test_fixture_root_gone_after_sigterm
-test_stale_marked_fixture_reaped_on_next_source
+test_orphan_sweep_respects_fixture_ownership
