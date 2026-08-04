@@ -43,7 +43,7 @@ test_fixture_root_gone_after_sigterm() {
     . "'"$LIB"'"
     d=$(fm_test_tmproot fm-test-cleanup-term)
     printf "%s\n" "$d" > "'"$dirfile"'"
-    sleep 30
+    while :; do sleep 0.1; done
   ' &
   pid=$!
   tries=0
@@ -106,7 +106,7 @@ test_orphan_sweep_respects_fixture_ownership() {
     . "'"$LIB"'"
     d=$(fm_test_tmproot fm-test-cleanup-active)
     printf "%s\n" "$d" > "'"$dirfile"'"
-    sleep 30
+    while :; do sleep 0.1; done
   ' &
   pid=$!
   tries=0
