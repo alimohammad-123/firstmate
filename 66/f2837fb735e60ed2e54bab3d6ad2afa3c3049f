@@ -1,0 +1,46 @@
+AGENTS.md
+  s_a9e6f7b9e28c6f::t_d9dd89b8423c17 512-517
+.agents/skills/initiative-orchestration/SKILL.md
+  s_a9e6f7b9e28c6f::t_379d546c098fcb 39
+docs/documentation-audiences.json
+  s_a9e6f7b9e28c6f::t_a2dec852ce9b05 115-118,135-142,147-150,167-170,191-194,219-234
+tests/fm-initiative-workflow.test.sh
+  s_a9e6f7b9e28c6f::t_c3b4919264f894 1-15,18-30,32-34,36,40-43,45-51,53-108,110-111,113-119,121-128
+  s_a9e6f7b9e28c6f::t_4954cd03d4cab3 109
+  s_a9e6f7b9e28c6f::t_a9c66b5c57332f 17,52
+  s_a9e6f7b9e28c6f::t_8f3c4cef82e8df 35
+  s_a9e6f7b9e28c6f::t_58bb972da1280c 112,120
+  s_a9e6f7b9e28c6f::t_89c5d2f38c2a57 16,31
+  s_a9e6f7b9e28c6f::t_292f400daf6694 44
+  s_a9e6f7b9e28c6f::t_1ecde67ce7b86b 37-39
+.agents/skills/initiative-secondmate/SKILL.md
+  s_a9e6f7b9e28c6f::t_a0a6bbd8c4d49f 108-109
+  s_a9e6f7b9e28c6f::t_10993958a7eec3 67-69,106-107,131,133-143,155-159
+  s_a9e6f7b9e28c6f::t_92d837b6fdf08b 70
+  s_a9e6f7b9e28c6f::t_80ba1a3b3ea417 132
+  s_144b2a5739b336::t_2ed7a8d80a1a5a 160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "66f2837fb735e60ed2e54bab3d6ad2afa3c3049f",
+  "prompts": {},
+  "sessions": {
+    "s_144b2a5739b336": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fce82-8f62-7ee5-9cd3-c8112336c0a5",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_a9e6f7b9e28c6f": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fcec2-85ef-7108-b5f0-bb7cba64d9d0",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
