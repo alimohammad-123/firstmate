@@ -1,0 +1,29 @@
+.agents/skills/e2e-proof/windowrec.swift
+  s_159bf0a4c358b7::t_6bd249cf467325 1-47,49-125
+  s_159bf0a4c358b7::t_12723922a0383a 48
+.agents/skills/e2e-proof/SKILL.md
+  s_159bf0a4c358b7::t_bd4dfdf9ed214b 274,281
+  s_159bf0a4c358b7::t_e729b8d6c5a9e5 195,206,217,265,277,293,320
+  s_159bf0a4c358b7::t_735b7ebf0a0dfc 324,326
+  s_159bf0a4c358b7::t_09d2063c71ce5d 108-113,170-186
+  s_159bf0a4c358b7::t_753061cf39ba18 117,189-190,198,201,209-210
+  s_159bf0a4c358b7::t_3c0012c831a446 221,224,269-270,282,299,308
+tests/fm-e2e-proof.test.sh
+  s_159bf0a4c358b7::t_536ea84f295c88 9,14-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "2339d6137c758016ab9e25edef428e0a6fda100d",
+  "prompts": {},
+  "sessions": {
+    "s_159bf0a4c358b7": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fceb0-2b26-7b93-bee8-f2239c0bdcf8",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
