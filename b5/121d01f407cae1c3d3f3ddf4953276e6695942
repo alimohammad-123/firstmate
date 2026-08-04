@@ -1,0 +1,25 @@
+tests/fm-graphify.test.sh
+  s_65ca3060919f61::t_603579f885b62d 52
+  s_65ca3060919f61::t_e10b82692217f3 24-25
+  s_65ca3060919f61::t_9ed17d74a8f3ba 1-5,7-20,22-23,26-51,53-76
+  s_65ca3060919f61::t_315e60bd035251 6,21
+.agents/skills/graphify/SKILL.md
+  s_65ca3060919f61::t_bdae06afd1529d 1-20,23-90
+  s_65ca3060919f61::t_4f51a78474325f 21-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "b5121d01f407cae1c3d3f3ddf4953276e6695942",
+  "prompts": {},
+  "sessions": {
+    "s_65ca3060919f61": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fce84-5eea-7849-bbc7-e1d09fe16aa1",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
