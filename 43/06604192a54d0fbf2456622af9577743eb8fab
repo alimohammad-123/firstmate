@@ -1,0 +1,59 @@
+docs/documentation-audiences.json
+  s_c56c8b6d5ab81a::t_4172c5d5c3034d 160-162
+  s_c56c8b6d5ab81a::t_00f0bbe9221348 151-159
+tests/fm-secondmate-safety.test.sh
+  s_c56c8b6d5ab81a::t_83eac666afe076 2602-2624,2634
+bin/fm-spawn.sh
+  s_c56c8b6d5ab81a::t_fab50249041142 135,842,992-1005,1007-1010,1285-1323,1326-1328,1347,1349-1366,2165,2211-2215,2218
+  s_c56c8b6d5ab81a::t_0776aeb8878a8b 942-957,1006,1324-1325,1329-1346
+  s_c56c8b6d5ab81a::t_33000132564eaf 112-116
+  s_c56c8b6d5ab81a::t_f4842c29948794 1348
+tests/fm-brief.test.sh
+  s_c56c8b6d5ab81a::t_2c77fef1e33b7f 724
+  s_c56c8b6d5ab81a::t_65639cea086eb0 711-723,725-753,774
+tests/fm-spawn-dispatch-profile.test.sh
+  s_c56c8b6d5ab81a::t_97b8bec11ed187 677,699,709,711-713,729,731-732
+  s_c56c8b6d5ab81a::t_1280a3d03c57cb 676,678-698,700-708,710,714-728,730,733-741,768-769
+.agents/skills/secondmate-provisioning/SKILL.md
+  s_c56c8b6d5ab81a::t_bc89415d251a93 52-59
+.agents/skills/initiative-secondmate/assets/worker-context-template.md
+  s_c56c8b6d5ab81a::t_dee10b929e0de0 1-35
+bin/fm-brief.sh
+  s_c56c8b6d5ab81a::t_7989f5d5a37e23 9-11,25-30,113-115,127-128,137,140-143,180-192
+  s_c56c8b6d5ab81a::t_8e5a77edb2406c 193,233-242,264-265,310-359
+  s_c56c8b6d5ab81a::t_35dc62f8a638bd 397-398,508
+  s_c56c8b6d5ab81a::t_ddc9b35e8bc8b7 194
+  s_c56c8b6d5ab81a::t_e0c1935517a903 509
+.agents/skills/harness-adapters/SKILL.md
+  s_c56c8b6d5ab81a::t_3c7fb90e711ea6 280-281
+.agents/skills/initiative-orchestration/SKILL.md
+  s_c56c8b6d5ab81a::t_60548ca3c86fca 1-67
+bin/fm-remote-home-seed.sh
+  s_c56c8b6d5ab81a::t_48bb54eb4b5a06 95,97,104-107
+  s_c56c8b6d5ab81a::t_ebc7bbf8b02d78 108
+AGENTS.md
+  s_c56c8b6d5ab81a::t_c2c90721775c18 249,485,510-511
+.agents/skills/initiative-secondmate/SKILL.md
+  s_c56c8b6d5ab81a::t_56ebd206b3c2ad 1-68,71-144
+  s_c56c8b6d5ab81a::t_650ea5c4a0d96b 69-70
+bin/fm-home-seed.sh
+  s_c56c8b6d5ab81a::t_84593d0c1f37ea 20-21,202-216,825
+docs/verification/runtime-backends.md
+  s_c56c8b6d5ab81a::t_be8204fde53076 122-145
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "4306604192a54d0fbf2456622af9577743eb8fab",
+  "prompts": {},
+  "sessions": {
+    "s_c56c8b6d5ab81a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa056-82e3-78e9-9643-d3a18702b7a5",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
