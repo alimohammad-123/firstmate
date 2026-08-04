@@ -1,0 +1,36 @@
+.agents/skills/tdd/tests.md
+  s_54e74c3fa25496::t_1a4c64d53f3ac8 1-30
+.agents/skills/ponytail/SKILL.md
+  s_54e74c3fa25496::t_063eb1dbda3bb0 1-30,32-49
+  s_54e74c3fa25496::t_46a50344eb1514 31
+tests/fm-quality-skills.test.sh
+  s_54e74c3fa25496::t_897d54e9b6f234 1-104
+.agents/skills/tdd/mocking.md
+  s_54e74c3fa25496::t_557a2c1011ced0 1-15
+.agents/skills/tdd/risk-based-testing.md
+  s_54e74c3fa25496::t_c48f9e3317f58b 1-28
+.agents/skills/codebase-design/SKILL.md
+  s_54e74c3fa25496::t_b6a1dc8bf5380c 55
+  s_54e74c3fa25496::t_1fa9418b8760c5 1-54,56-67
+.agents/skills/tdd/SKILL.md
+  s_54e74c3fa25496::t_49eacaf587b401 1-18,20-59
+  s_54e74c3fa25496::t_6d9a60d3730f52 19
+.agents/skills/codebase-design/DEEPENING.md
+  s_54e74c3fa25496::t_9ef96566deb0ca 1-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "c38c928b3b51d8915477bf10b990bdd897d4ccb6",
+  "prompts": {},
+  "sessions": {
+    "s_54e74c3fa25496": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fce84-3530-7680-b53d-7e272b0cf661",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
