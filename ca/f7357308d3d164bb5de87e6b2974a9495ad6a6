@@ -1,0 +1,47 @@
+bin/fm-herdr-bind-legacy.sh
+  s_03e5679ef3756d::t_ab881f0933f2f8 35,279
+  s_03e5679ef3756d::t_9fc197e8570590 1-24,27-34,36-47,52-77,80-139,144-147,152,154-197,205-206,210-255,257-258,266-267,273-274,276-278,280,282,286-288,290-292
+  s_03e5679ef3756d::t_a7282a04b0e7a4 25-26
+  s_03e5679ef3756d::t_2f0cada695c1f6 259
+  s_03e5679ef3756d::t_d3cea3bee1c1ad 262
+  s_03e5679ef3756d::t_16a88a24331ed8 48-51,198-204,256,260-261,263-265,268-272,275,281,284-285,289
+  s_03e5679ef3756d::t_a4c107a5548a1e 78
+  s_03e5679ef3756d::t_02954ab4d33c95 209
+  s_03e5679ef3756d::t_a1827a3d9e9f4d 79,148-151,153
+  s_03e5679ef3756d::t_094b6cf1feda2d 140-143,207-208,283
+bin/fm-teardown-safety-lib.sh
+  s_03e5679ef3756d::t_02954ab4d33c95 32-48,91
+  s_03e5679ef3756d::t_9fc197e8570590 1-31,49-90,92-135
+docs/configuration.md
+  s_03e5679ef3756d::t_094b6cf1feda2d 84-85
+docs/scripts.md
+  s_03e5679ef3756d::t_ce4267e7485f0f 96
+tests/fm-herdr-legacy-bind.test.sh
+  s_03e5679ef3756d::t_16a88a24331ed8 35
+  s_03e5679ef3756d::t_5bce6019b06f0a 16,98
+  s_03e5679ef3756d::t_657183aed6d3c1 1-14,17-34,36-62,68-77,79-80,82-97,99-179,181-184,201-221,223
+  s_03e5679ef3756d::t_385d8b7f696e79 78
+  s_03e5679ef3756d::t_250ffe3099261d 81
+  s_03e5679ef3756d::t_77cf03882d2be5 15
+  s_03e5679ef3756d::t_ade474ce87fa3e 63-67,180,185-200,222
+bin/backends/herdr.sh
+  s_03e5679ef3756d::t_9fc197e8570590 440
+bin/fm-teardown.sh
+  s_03e5679ef3756d::t_ece1f53a2fbf93 109-110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "caf7357308d3d164bb5de87e6b2974a9495ad6a6",
+  "prompts": {},
+  "sessions": {
+    "s_03e5679ef3756d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fc9fb-59c3-7c33-911d-4767f8900568",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
