@@ -39,9 +39,6 @@ export FM_GATE_REFUSE_BYPASS=1
 # shellcheck disable=SC2034
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# shellcheck source=bin/fm-wake-lib.sh
-. "$ROOT/bin/fm-wake-lib.sh"
-
 # --- reporters --------------------------------------------------------------
 
 fail() {
@@ -74,6 +71,17 @@ pass() {
 FM_TEST_CLEANUP_DIRS=()
 FM_TEST_CLEANUP_REGISTRY=$(mktemp "${TMPDIR:-/tmp}/.fm-test-cleanup.$$.XXXXXX") || return 1
 
+fm_test_pid_identity() {
+  local pid=$1
+  FM_STATE_OVERRIDE="${TMPDIR:-/tmp}" bash -c \
+    '. "$1"; fm_pid_identity "$2"' _ "$ROOT/bin/fm-wake-lib.sh" "$pid"
+}
+
+FM_TEST_OWNER_IDENTITY=$(fm_test_pid_identity "$$") || {
+  rm -f "$FM_TEST_CLEANUP_REGISTRY"
+  return 1
+}
+
 fm_test_cleanup() {
   local d
   for d in "${FM_TEST_CLEANUP_DIRS[@]:-}"; do
@@ -88,13 +96,9 @@ fm_test_cleanup() {
 }
 
 fm_test_tmproot() {
-  local prefix=${1:-fm-test} root owner_identity
+  local prefix=${1:-fm-test} root
   root=$(mktemp -d "${TMPDIR:-/tmp}/${prefix}.XXXXXX") || return 1
-  owner_identity=$(fm_pid_identity "$$") || {
-    rm -rf "$root"
-    return 1
-  }
-  if ! printf '%s\n%s\n' "$$" "$owner_identity" > "$root/.fm-test-fixture" ||
+  if ! printf '%s\n%s\n' "$$" "$FM_TEST_OWNER_IDENTITY" > "$root/.fm-test-fixture" ||
     ! printf '%s\n' "$root" >> "$FM_TEST_CLEANUP_REGISTRY"; then
     rm -rf "$root"
     return 1
@@ -125,7 +129,7 @@ fm_test_reap_orphans() {
     case "$owner_pid" in
       '' | *[!0-9]*) ;;
       *)
-        current_identity=$(fm_pid_identity "$owner_pid" 2>/dev/null) || current_identity=
+        current_identity=$(fm_test_pid_identity "$owner_pid" 2>/dev/null) || current_identity=
         if [ -n "$owner_identity" ] && [ "$current_identity" = "$owner_identity" ]; then
           continue
         fi
