@@ -1,0 +1,22 @@
+CONTRIBUTING.md
+  h_e917d96537cdf9 105
+docs/documentation-audiences.json
+  h_e917d96537cdf9 246-249,270-273
+docs/existing-task-relaunch.md
+  h_e917d96537cdf9 47
+docs/recovery-test-architecture.md
+  h_e917d96537cdf9 174-180
+docs/scripts.md
+  h_e917d96537cdf9 34-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "d61283089d5248470135e8c2d915f7b6cc8306aa",
+  "prompts": {},
+  "humans": {
+    "h_e917d96537cdf9": {
+      "author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

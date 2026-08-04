@@ -1,0 +1,16 @@
+.no-mistakes.yaml
+  h_e917d96537cdf9 12-24,27-44
+docs/recovery-test-architecture.md
+  h_e917d96537cdf9 175-176,178-180,182
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "7a63eeb8f0e6c92c560cf8c5c08a40479f2305cc",
+  "prompts": {},
+  "humans": {
+    "h_e917d96537cdf9": {
+      "author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

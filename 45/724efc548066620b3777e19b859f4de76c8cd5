@@ -1,0 +1,19 @@
+tests/fm-test-run.test.sh
+  s_61aec2a28bb997::t_17291c72a78185 8-17,20-28,172-177
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "45724efc548066620b3777e19b859f4de76c8cd5",
+  "prompts": {},
+  "sessions": {
+    "s_61aec2a28bb997": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "57f1ae31-d1cf-49bf-bf29-6c7cb877727e",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
