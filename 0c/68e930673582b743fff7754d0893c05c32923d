@@ -1,0 +1,81 @@
+docs/herdr-backend.md
+  s_a3b6d666ccf558::t_6fabad384d755f 105,107-108
+  s_a3b6d666ccf558::t_ba891640708bdf 98
+  s_a3b6d666ccf558::t_48147437c07be1 70
+  s_a3b6d666ccf558::t_4bb586f252d72f 92-93
+  s_a3b6d666ccf558::t_3bb5501df7e284 40,42-45
+  s_a3b6d666ccf558::t_f9307049125bcf 94
+  s_a3b6d666ccf558::t_fbfd97b1a0f542 106
+docs/verification/runtime-backends.md
+  s_a3b6d666ccf558::t_11b0b6bfde38fb 232-233
+bin/backends/herdr.sh
+  s_a3b6d666ccf558::t_97c15de8def47c 3256-3261
+  s_a3b6d666ccf558::t_7632fa042b8983 1285,2235
+  s_a3b6d666ccf558::t_b64806007277cc 115-118,129-154,156-177,179-198,201,205-224,226-252,254-265,267-271
+  s_a3b6d666ccf558::t_9ff6fce75234de 1416,1422-1426
+  s_a3b6d666ccf558::t_41aba95256a168 564-591,593-596,608-619,621,624-630,643-644,647-648
+  s_a3b6d666ccf558::t_bab370a5276ec2 1267,1279-1284,1286,1294-1296
+  s_a3b6d666ccf558::t_486a9ee632fdf9 2007,2009
+  s_a3b6d666ccf558::t_b34fa15005f804 2229-2234,2241-2242,2250-2251,2266-2268
+  s_a3b6d666ccf558::t_afd14a4b3384e1 225,266
+  s_a3b6d666ccf558::t_6396e4d2a9d107 1483,1770-1771
+  s_a3b6d666ccf558::t_3a5b6b706c3858 155
+  s_a3b6d666ccf558::t_83dd63e879c4de 1996-2001,2005-2006,2008,2019,2050-2054
+  s_a3b6d666ccf558::t_0419faf17dfd96 3248-3255,3262-3279,3287,3291
+  s_a3b6d666ccf558::t_f4e4a740d98fcd 2057
+  s_a3b6d666ccf558::t_027a24ab114f88 592,597-607
+  s_a3b6d666ccf558::t_02d1ce0bd515d1 199-200
+  s_a3b6d666ccf558::t_3fabf9249c8ded 1244,1252
+  s_a3b6d666ccf558::t_3452e5ec513450 202-204
+  s_a3b6d666ccf558::t_a7170379bf94b1 1266,1276-1278,2224,2226-2228
+tests/fm-backend-herdr-presentation-e2e.test.sh
+  s_a3b6d666ccf558::t_98e85532595ed6 703
+  s_a3b6d666ccf558::t_8395fd2187b881 498-499
+  s_a3b6d666ccf558::t_8b3d56fc4c77b3 385-386
+  s_a3b6d666ccf558::t_089b6b4b494b09 651-652
+  s_a3b6d666ccf558::t_2af886a09e026b 516-518
+  s_a3b6d666ccf558::t_2e0b655b774679 519-520
+  s_a3b6d666ccf558::t_85551ce7f5726e 505,507,689,837-838,841,853
+  s_a3b6d666ccf558::t_76f40e5144d34a 862-863,903,923,977-978,985-986,1014-1015,1023-1024,1058,1240
+tests/fm-backend-herdr-workspace-per-home-e2e.test.sh
+  s_a3b6d666ccf558::t_576975da45fbf6 194-196,200-202
+  s_a3b6d666ccf558::t_e3c86801c9e0b8 161
+bin/fm-spawn.sh
+  s_a3b6d666ccf558::t_ea0a8a80773b39 2262
+  s_a3b6d666ccf558::t_228b49d1b17229 70
+  s_a3b6d666ccf558::t_f6612b445e53b6 1529-1532,1536
+  s_a3b6d666ccf558::t_9a94d568cd795b 1654,1666
+  s_a3b6d666ccf558::t_db9f5a106938e0 1739-1745
+tests/fm-herdr-space-manifest.test.sh
+  s_a3b6d666ccf558::t_7166338edf113f 50,54
+  s_a3b6d666ccf558::t_469a581aefcbb0 49,53
+tests/fm-backend-herdr-smoke.test.sh
+  s_a3b6d666ccf558::t_f2a72025d8a0a6 198-199,239
+docs/configuration.md
+  s_a3b6d666ccf558::t_8694968a688c8b 84-86
+tests/fm-backend-herdr.test.sh
+  s_a3b6d666ccf558::t_2c6e224f75593e 689-704,706-709
+  s_a3b6d666ccf558::t_d5aa8385a65bc7 242-243,251,270-271,909,914
+  s_a3b6d666ccf558::t_084dcbcac539d7 3969-3975
+  s_a3b6d666ccf558::t_e673a56605720b 336-337
+  s_a3b6d666ccf558::t_1063807a2a006e 705
+  s_a3b6d666ccf558::t_53b455f63680a7 276-335,338-353
+  s_a3b6d666ccf558::t_f5cd55989fed72 2548,2551,2555,2566
+  s_a3b6d666ccf558::t_04e07fe6174d2b 4002
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "0c68e930673582b743fff7754d0893c05c32923d",
+  "prompts": {},
+  "sessions": {
+    "s_a3b6d666ccf558": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fce76-d85f-7ffb-983f-13f6ba162677",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
