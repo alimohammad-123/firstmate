@@ -1,0 +1,21 @@
+bin/fm-brief.sh
+  s_c56c8b6d5ab81a::t_266185f45b9ea7 239-240,323-324,437-438
+tests/fm-brief.test.sh
+  s_c56c8b6d5ab81a::t_78ae2b15d03e39 691-715,755
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "01e7f6f90be3d8fbac79f80403594ad39535a931",
+  "prompts": {},
+  "sessions": {
+    "s_c56c8b6d5ab81a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa056-82e3-78e9-9643-d3a18702b7a5",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
