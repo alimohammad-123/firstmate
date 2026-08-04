@@ -1,0 +1,43 @@
+bin/fm-test-run.sh
+  s_ae7c38ff25e9c8::t_a060bf683372f3 920
+tests/fm-secondmate-safety.test.sh
+  s_ae7c38ff25e9c8::t_e3ac3cba83f380 65,69,74
+bin/fm-status.sh
+  s_ae7c38ff25e9c8::t_c191d390928bd0 1-4,6-7,10-13,17-52,60,63-65,71-74,77-88
+  s_ae7c38ff25e9c8::t_df68eb41f4ee96 5,8-9,14-16,53-59,61-62,66-70,75-76
+bin/fm-brief.sh
+  s_ae7c38ff25e9c8::t_81aa52646e3cfa 330
+  s_ae7c38ff25e9c8::t_1116e3cdbd600b 180-184,188-190,248
+  s_ae7c38ff25e9c8::t_61a55eb7269455 442
+  s_ae7c38ff25e9c8::t_6d2028256684f4 239-241
+  s_ae7c38ff25e9c8::t_abf7b996a3db87 185-187
+.agents/skills/firstmate-codexapp/SKILL.md
+  s_ae7c38ff25e9c8::t_02e22a1494abd2 61,67
+  s_ae7c38ff25e9c8::t_ff0d30f6852434 59-60,62,70
+docs/scripts.md
+  s_ae7c38ff25e9c8::t_a2e254d91a5435 25
+tests/fm-brief.test.sh
+  s_ae7c38ff25e9c8::t_f054dd7dc9d0c5 730
+  s_ae7c38ff25e9c8::t_5aa4dc8256da73 554-555,570-571,586-587
+  s_ae7c38ff25e9c8::t_bf77a0da12f326 514
+  s_ae7c38ff25e9c8::t_c8c1ae20363930 720,731
+  s_ae7c38ff25e9c8::t_0247e9b34670ef 780
+  s_ae7c38ff25e9c8::t_cafe1d86809271 516,518
+  s_ae7c38ff25e9c8::t_7a31d47357d8c4 691-719,721-729,732-740
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "81b3d98ef818675946014816b165d2c6e49c8ad9",
+  "prompts": {},
+  "sessions": {
+    "s_ae7c38ff25e9c8": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fcb6d-4809-774b-96f8-6255a0cfc2b9",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
