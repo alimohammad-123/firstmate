@@ -1,0 +1,19 @@
+bin/fm-spawn.sh
+  s_c56c8b6d5ab81a::t_6ad18a962a6606 708-717,719,724,1429
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "4da954051f35e9e16633a461bac059b8b500b52e",
+  "prompts": {},
+  "sessions": {
+    "s_c56c8b6d5ab81a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa056-82e3-78e9-9643-d3a18702b7a5",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
