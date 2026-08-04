@@ -1,0 +1,72 @@
+tests/fm-backend-herdr.test.sh
+  s_adf7c59e0030ec::t_76f019730a987d 1874-1877
+bin/fm-herdr-session-cleanup.sh
+  s_adf7c59e0030ec::t_20094ccf4f35a8 81-83
+tests/fm-herdr-space-manifest.test.sh
+  s_adf7c59e0030ec::t_15ee432bbfcd52 1-15,23-34,36-39,55-73
+  s_adf7c59e0030ec::t_d0285cec841aeb 16-22,35,40-54
+bin/fm-spawn.sh
+  s_adf7c59e0030ec::t_dab302d24db1e8 1606-1608
+  s_adf7c59e0030ec::t_0d6e1cd4ec078d 1473
+  s_adf7c59e0030ec::t_b66150c06fc5a5 1600-1605,1609-1613
+bin/backends/herdr.sh
+  s_adf7c59e0030ec::t_26987ace6df493 337-338,340-341,417-421,429-432,436-437,468,479-480
+  s_adf7c59e0030ec::t_3af1e4c587613f 86-87,438-461,463-467,469-473
+  s_adf7c59e0030ec::t_d40378b472ef81 98-99
+  s_adf7c59e0030ec::t_0630b9b3130adf 462
+  s_ae7c38ff25e9c8::t_d2c8f3a83b71fb 474
+docs/herdr-backend.md
+  s_adf7c59e0030ec::t_ad6d97e403dc92 100-101
+  s_adf7c59e0030ec::t_03b34c279ad80c 131
+  s_adf7c59e0030ec::t_910b3cb0194096 87-89,125-128
+  s_adf7c59e0030ec::t_4b42dd0e8baa2d 46-50
+  s_adf7c59e0030ec::t_5587b7c9c86e41 129-130
+  s_28836b35d2c6c0::t_5804fab54ba0a8 132
+tests/fm-backend-herdr-presentation-e2e.test.sh
+  s_adf7c59e0030ec::t_de9678f944d375 152,158-159
+  s_adf7c59e0030ec::t_9378aaa8b96bb3 756-757,1076,1078
+docs/verification/runtime-backends.md
+  s_adf7c59e0030ec::t_bc302bc130e5bd 203-221,223-228
+  s_adf7c59e0030ec::t_81ba4b376cc908 222
+bin/fm-herdr-space-manifest.sh
+  s_adf7c59e0030ec::t_3b6aaae4ae2c10 66-73,113,115
+  s_adf7c59e0030ec::t_de8502639f7d54 255
+  s_adf7c59e0030ec::t_d44e3867828d2c 129,131-132
+  s_adf7c59e0030ec::t_0cf1d004757c0b 226
+  s_adf7c59e0030ec::t_210cc4894ac2ec 201,215,219,222
+  s_adf7c59e0030ec::t_79f7cb837d0141 1-65,74-112,114,116-128,130,133-142,144,146-190,192-197,199-200,202-203,206-208,211-214,216-218,220-221,223-225,228-254,256-260
+  s_adf7c59e0030ec::t_ba7e8605c00c76 227
+  s_adf7c59e0030ec::t_13a853fc176afe 143,145,191,198,204-205,209-210
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "6494a574dcc1d4e0a33d000923c0ccde5404fdb4",
+  "prompts": {},
+  "sessions": {
+    "s_28836b35d2c6c0": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fcb6e-5fbd-7144-9d53-8c72c98be482",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_adf7c59e0030ec": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fcb6e-7119-7ad7-a98d-1e4090ccfc21",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_ae7c38ff25e9c8": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fcb6d-4809-774b-96f8-6255a0cfc2b9",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
