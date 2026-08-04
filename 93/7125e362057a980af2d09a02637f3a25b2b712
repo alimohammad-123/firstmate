@@ -1,0 +1,21 @@
+.agents/skills/agent-watchdog/SKILL.md
+  s_c56c8b6d5ab81a::t_58813c2e1e6fb1 67-68
+.agents/skills/initiative-secondmate/SKILL.md
+  s_c56c8b6d5ab81a::t_36778f566002a3 103-107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "937125e362057a980af2d09a02637f3a25b2b712",
+  "prompts": {},
+  "sessions": {
+    "s_c56c8b6d5ab81a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa056-82e3-78e9-9643-d3a18702b7a5",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
