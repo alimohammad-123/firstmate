@@ -1,0 +1,55 @@
+.agents/skills/e2e-proof/SKILL.md
+  s_0f9353bebb7c8b::t_f0a301a0c64d1c 168,170-176,186-187,203,206-207,219,221,224-231,233
+.agents/skills/e2e-proof/windowrec.swift
+  s_c56c8b6d5ab81a::t_b7d6a47dc9f5a2 8-93,102-105,109-114,144,146-150,156,169,173-175,177-189,193,201-212,218-220,223-229,232-234,237-238,244-247,251-252,256-257,260
+bin/fm-brief.sh
+  s_60f86c52088dc2::t_ae2b6cbc184343 332-342
+bin/fm-spawn.sh
+  s_b33676f7f7e039::t_eaefb033c77755 1266-1273,1300-1307,2227-2232
+tests/fm-brief.test.sh
+  s_b33676f7f7e039::t_0e672d6749efd8 754-781,803
+tests/fm-e2e-proof.test.sh
+  s_b33676f7f7e039::t_9d31917e2d5482 10,21-22,58-139,141-143
+tests/fm-spawn-dispatch-profile.test.sh
+  s_b33676f7f7e039::t_97dd001922bf7a 742-810,839-841
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "01748cf2bdefa26f622f0975ff3fb704ac86cfd9",
+  "prompts": {},
+  "sessions": {
+    "s_0f9353bebb7c8b": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fcec1-a4ca-7873-8308-b4621fda6a96",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_60f86c52088dc2": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fcec5-73a2-7ac5-9a43-4025be06712a",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_b33676f7f7e039": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fced8-37c9-7f45-8e4d-19d160543bdf",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_c56c8b6d5ab81a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa056-82e3-78e9-9643-d3a18702b7a5",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
