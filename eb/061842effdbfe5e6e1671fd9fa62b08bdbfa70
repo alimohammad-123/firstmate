@@ -1,0 +1,24 @@
+tests/fm-agent-watchdog.test.sh
+  s_3a088bf8748059::t_edc09b5faa2f06 1-5,7-54
+  s_3a088bf8748059::t_41a403e6e14c69 6
+.agents/skills/agent-watchdog/SKILL.md
+  s_3a088bf8748059::t_cdb4b3503eb953 17
+  s_3a088bf8748059::t_fdea24a314e27e 1-16,18-29,31-59
+  s_3a088bf8748059::t_16256f31eab9d4 30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "eb061842effdbfe5e6e1671fd9fa62b08bdbfa70",
+  "prompts": {},
+  "sessions": {
+    "s_3a088bf8748059": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fce83-dff4-76c1-bd8a-b76f147447b7",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
