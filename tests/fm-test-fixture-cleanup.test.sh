@@ -62,6 +62,23 @@ test_fixture_root_gone_after_sigterm() {
   pass "fm_test_tmproot cleans up its fixture root on SIGTERM"
 }
 
+test_cleanup_registry_resists_precreation() {
+  local harness shared_tmp victim
+  harness=$(fm_test_tmproot fm-test-cleanup-registry-harness)
+  shared_tmp="$harness/shared-tmp"
+  victim="$harness/victim"
+  mkdir -p "$shared_tmp" "$victim"
+
+  TMPDIR="$shared_tmp" bash -c '
+    printf "%s\n" "$1" > "$TMPDIR/.fm-test-cleanup.$$"
+    . "$2"
+  ' _ "$victim" "$LIB"
+
+  assert_present "$victim" \
+    "a precreated predictable cleanup registry injected an arbitrary deletion target"
+  pass "the cleanup registry cannot be injected through path precreation"
+}
+
 test_orphan_sweep_respects_fixture_ownership() {
   local harness dirfile active_dir stale_dir fresh_dir pid tries
   harness=$(fm_test_tmproot fm-test-cleanup-orphan-harness)
@@ -111,4 +128,5 @@ test_orphan_sweep_respects_fixture_ownership() {
 
 test_fixture_root_gone_after_normal_exit
 test_fixture_root_gone_after_sigterm
+test_cleanup_registry_resists_precreation
 test_orphan_sweep_respects_fixture_ownership

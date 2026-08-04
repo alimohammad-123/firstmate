@@ -72,7 +72,7 @@ pass() {
 # real caller, never a subshell.
 
 FM_TEST_CLEANUP_DIRS=()
-FM_TEST_CLEANUP_REGISTRY="${TMPDIR:-/tmp}/.fm-test-cleanup.$$"
+FM_TEST_CLEANUP_REGISTRY=$(mktemp "${TMPDIR:-/tmp}/.fm-test-cleanup.$$.XXXXXX") || return 1
 
 fm_test_cleanup() {
   local d
