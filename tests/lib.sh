@@ -89,13 +89,16 @@ fm_test_cleanup() {
 
 fm_test_tmproot() {
   local prefix=${1:-fm-test} root owner_identity
-  root=$(mktemp -d "${TMPDIR:-/tmp}/${prefix}.XXXXXX")
+  root=$(mktemp -d "${TMPDIR:-/tmp}/${prefix}.XXXXXX") || return 1
   owner_identity=$(fm_pid_identity "$$") || {
     rm -rf "$root"
     return 1
   }
-  printf '%s\n%s\n' "$$" "$owner_identity" > "$root/.fm-test-fixture"
-  printf '%s\n' "$root" >> "$FM_TEST_CLEANUP_REGISTRY"
+  if ! printf '%s\n%s\n' "$$" "$owner_identity" > "$root/.fm-test-fixture" ||
+    ! printf '%s\n' "$root" >> "$FM_TEST_CLEANUP_REGISTRY"; then
+    rm -rf "$root"
+    return 1
+  fi
   printf '%s\n' "$root"
 }
 

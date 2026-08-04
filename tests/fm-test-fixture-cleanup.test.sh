@@ -79,6 +79,24 @@ test_cleanup_registry_resists_precreation() {
   pass "the cleanup registry cannot be injected through path precreation"
 }
 
+test_fixture_registration_failure_rolls_back_root() {
+  local harness failure_tmp registry_dir output leaked_root
+  harness=$(fm_test_tmproot fm-test-cleanup-registration-harness)
+  failure_tmp="$harness/tmp"
+  registry_dir="$harness/registry-dir"
+  mkdir -p "$failure_tmp" "$registry_dir"
+
+  if output=$(TMPDIR="$failure_tmp" FM_TEST_CLEANUP_REGISTRY="$registry_dir" \
+    fm_test_tmproot fm-test-cleanup-registration-failure 2>/dev/null); then
+    fail "fm_test_tmproot succeeded after its cleanup registry rejected registration"
+  fi
+  [ -z "$output" ] || fail "fm_test_tmproot published an unregistered fixture root"
+  for leaked_root in "$failure_tmp"/fm-test-cleanup-registration-failure.*; do
+    [ ! -e "$leaked_root" ] || fail "fm_test_tmproot leaked a root after registration failed"
+  done
+  pass "failed fixture registration rolls back the new root"
+}
+
 test_orphan_sweep_respects_fixture_ownership() {
   local harness dirfile active_dir stale_dir fresh_dir pid tries
   harness=$(fm_test_tmproot fm-test-cleanup-orphan-harness)
@@ -129,4 +147,5 @@ test_orphan_sweep_respects_fixture_ownership() {
 test_fixture_root_gone_after_normal_exit
 test_fixture_root_gone_after_sigterm
 test_cleanup_registry_resists_precreation
+test_fixture_registration_failure_rolls_back_root
 test_orphan_sweep_respects_fixture_ownership
