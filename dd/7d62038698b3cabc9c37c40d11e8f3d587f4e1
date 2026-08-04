@@ -1,0 +1,24 @@
+.no-mistakes.yaml
+  s_28836b35d2c6c0::t_dfb56884fdb0e3 25-28,30
+docs/configuration.md
+  s_28836b35d2c6c0::t_a815862cf2f35c 131-132
+CONTRIBUTING.md
+  s_28836b35d2c6c0::t_b3866d5ec53c37 95-96
+  s_28836b35d2c6c0::t_f392cfb0b4fe69 67-68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "dd7d62038698b3cabc9c37c40d11e8f3d587f4e1",
+  "prompts": {},
+  "sessions": {
+    "s_28836b35d2c6c0": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fcb6e-5fbd-7144-9d53-8c72c98be482",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
