@@ -1,0 +1,25 @@
+bin/fm-herdr-lab.sh
+  s_ae7c38ff25e9c8::t_f845751a8e25ab 22-23,246-253,255,263-279
+bin/fm-spawn.sh
+  s_ae7c38ff25e9c8::t_0bc55f8ba29c42 708-711,713,718,1423
+docs/herdr-backend.md
+  s_ae7c38ff25e9c8::t_7afe8e36409b49 46-47,130
+tests/fm-herdr-lab.test.sh
+  s_ae7c38ff25e9c8::t_cffd3201c956f4 40-51,71-75,101,254-282,290
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "8d120bb86906b507aac308fc09ccc66a03b03481",
+  "prompts": {},
+  "sessions": {
+    "s_ae7c38ff25e9c8": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fcb6d-4809-774b-96f8-6255a0cfc2b9",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
