@@ -1,0 +1,23 @@
+.agents/skills/post-pr-retrospective/SKILL.md
+  s_1eed58d0ab5329::t_547248d950734d 13,19,27,40,48,50-55,60-62,67,71-72
+AGENTS.md
+  s_1eed58d0ab5329::t_a929f1de04a73d 514
+docs/documentation-audiences.json
+  s_1eed58d0ab5329::t_a5048360de6583 157-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "66b7761aac262232a2cb27f6d9d607a4220148d2",
+  "prompts": {},
+  "sessions": {
+    "s_1eed58d0ab5329": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f82daa8e-8cba-45e5-88d4-25a794aabe1f",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
