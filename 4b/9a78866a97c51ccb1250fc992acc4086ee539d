@@ -1,0 +1,19 @@
+tests/fm-backend-herdr-presentation-e2e.test.sh
+  s_e8c7733cf3125a::t_f0aacfa4aef2f5 518-520
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "4b9a78866a97c51ccb1250fc992acc4086ee539d",
+  "prompts": {},
+  "sessions": {
+    "s_e8c7733cf3125a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "710698c3-f6bf-432b-911b-f353789b5a3f",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
