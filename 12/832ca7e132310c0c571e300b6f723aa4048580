@@ -1,0 +1,21 @@
+bin/fm-backend-hometag-lib.sh
+  s_0324ea25e2b9ab::t_c3152056d0e522 15-21,28-29
+docs/herdr-backend.md
+  s_0324ea25e2b9ab::t_1e39cdfe161aef 131
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "12832ca7e132310c0c571e300b6f723aa4048580",
+  "prompts": {},
+  "sessions": {
+    "s_0324ea25e2b9ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f1491bd5-b966-45a3-a9e7-17a3a572dc0c",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
