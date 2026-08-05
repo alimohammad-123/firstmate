@@ -1,0 +1,31 @@
+CONTRIBUTING.md
+  s_6f76b60fe105fe::t_daf196088bae4a 102-103,105-106
+bin/fm-test-run.sh
+  s_c56c8b6d5ab81a::t_dd9975fd9ec691 862-882,1067-1070
+tests/fm-test-run.test.sh
+  s_6f76b60fe105fe::t_9c492d6f18704f 121,161-168,238,317-321,327-328,336,377-397,406-412,423-431,452-453,458-463,469-472,525
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "de7862b1e3cae21dad4745d73cabf8c3ed094691",
+  "prompts": {},
+  "sessions": {
+    "s_6f76b60fe105fe": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fcebf-862d-73a0-96e3-d6b1263a3827",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_c56c8b6d5ab81a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa056-82e3-78e9-9643-d3a18702b7a5",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

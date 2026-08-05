@@ -1,0 +1,19 @@
+tests/fm-e2e-proof.test.sh
+  s_63aadb9fa3abb9::t_5ec3d45fd8182d 86,115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "9fc42030765f91c26f69a31d87aa419981279261",
+  "prompts": {},
+  "sessions": {
+    "s_63aadb9fa3abb9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "af9fe5c3-7632-4e88-ac42-eb784e09752d",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

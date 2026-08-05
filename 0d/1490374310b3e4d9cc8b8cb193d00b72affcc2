@@ -1,0 +1,21 @@
+bin/backends/herdr.sh
+  s_24dbf652bb6004::t_506ee7d4e8c197 449-457,460,477,486-487,800,807-808
+tests/fm-herdr-space-manifest.test.sh
+  s_24dbf652bb6004::t_ccb1846cd6e6cc 17,63-84,152
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "0d1490374310b3e4d9cc8b8cb193d00b72affcc2",
+  "prompts": {},
+  "sessions": {
+    "s_24dbf652bb6004": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "459aae67-ac39-44fb-a5b8-8af24c4d17ca",
+        "model": "unknown"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

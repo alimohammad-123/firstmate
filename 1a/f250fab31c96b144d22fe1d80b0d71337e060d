@@ -1,0 +1,14 @@
+docs/herdr-backend.md
+  h_e917d96537cdf9 46-50,135
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "1af250fab31c96b144d22fe1d80b0d71337e060d",
+  "prompts": {},
+  "humans": {
+    "h_e917d96537cdf9": {
+      "author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

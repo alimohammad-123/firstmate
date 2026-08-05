@@ -1,0 +1,31 @@
+.agents/skills/e2e-proof/SKILL.md
+  s_b33676f7f7e039::t_8ef7c681179917 168,174-176
+.agents/skills/e2e-proof/windowrec.swift
+  s_1e4a9a273fc2fe::t_1a88fcb6ee1e32 47-49,90-93,97-101,106-111,128-133,165-169,171,179-181,205-207,209-210,216-222,262-269
+tests/fm-e2e-proof.test.sh
+  s_b33676f7f7e039::t_6a8bbd4c997180 76,78,80-85,108-113,147-153
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "c68de7f1b56cbef4da611c04c4494a1524b42226",
+  "prompts": {},
+  "sessions": {
+    "s_1e4a9a273fc2fe": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fceb5-1d7c-78d6-aacf-a2f1b7a5acfa",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_b33676f7f7e039": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fced8-37c9-7f45-8e4d-19d160543bdf",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
