@@ -1,0 +1,33 @@
+tests/fm-secondmate-harness.test.sh
+  s_2e2418a9eb94cb::t_32523316db29ca 35-43,740-830,2562-2565
+bin/fm-spawn.sh
+  s_2e2418a9eb94cb::t_f1ee31006a3c2f 339-374,376,428,438-448,546
+  s_2e2418a9eb94cb::t_7801feb38b67a1 91-101,226,874,955-960,975-982,1070-1075,2152,2155
+tests/fm-remote-secondmate-trace-context.test.sh
+  s_2e2418a9eb94cb::t_82bcce123a03c5 123,182-184
+bin/fm-harness.sh
+  s_2e2418a9eb94cb::t_c3661956d55915 16-24,108-110,121,156-165,171
+AGENTS.md
+  s_2e2418a9eb94cb::t_91381cb6e84544 69
+bin/fm-remote-secondmate-control.sh
+  s_2e2418a9eb94cb::t_ced76f19ae25ff 301
+  s_2e2418a9eb94cb::t_b22848f5442021 5,136,139-147,178,182
+docs/configuration.md
+  s_2e2418a9eb94cb::t_f578ade1e3e908 220-226,228-229
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "6e2e0019f79ce9e262a02560083b4d47d61d778b",
+  "prompts": {},
+  "sessions": {
+    "s_2e2418a9eb94cb": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fd337-f046-74e5-bb2a-449521422c3d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
