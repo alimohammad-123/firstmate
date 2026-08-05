@@ -1,0 +1,59 @@
+tests/fm-claude-autocompact-live-e2e.test.sh
+  s_f234ca34d2c99d::t_f9d171c63c6dd5 1-15,17-19,21-86,104-108
+  s_f234ca34d2c99d::t_77f2b52dea2ed7 16,20,87-103
+bin/fm-remote-secondmate-control.sh
+  s_f234ca34d2c99d::t_e0d3593856a88f 291
+  s_f234ca34d2c99d::t_b8aa3fe76d621d 5,136,168-169
+bin/fm-spawn.sh
+  s_f234ca34d2c99d::t_1ce7d3110f61f9 355,513,516-517,519-521
+  s_f234ca34d2c99d::t_c63c5566f68beb 4-6,25-32,126
+  s_f234ca34d2c99d::t_e1c58234c87e06 849,1001-1002,1004-1022
+  s_f234ca34d2c99d::t_61ea63b53582ec 1003
+  s_f234ca34d2c99d::t_da82803184fec3 514-515
+  s_f234ca34d2c99d::t_75818690ed7e0b 2141,2144,2158-2170
+  s_f234ca34d2c99d::t_19cd7997efdcbc 952-956
+  s_f234ca34d2c99d::t_e540fe39cff456 33-35
+  s_f234ca34d2c99d::t_724e0a4b9bef8a 236,244,260,279-280,296
+  s_f234ca34d2c99d::t_77719cfeef7f2c 774
+  s_f234ca34d2c99d::t_16f50d21dd5c9a 142
+  s_9110fe775a020c::t_7f4342454752ad 1023
+docs/verification/runtime-backends.md
+  s_f234ca34d2c99d::t_40ea30bf7c5eab 138-165,167
+  s_f234ca34d2c99d::t_d05b35c10d886a 166
+bin/fm-test-run.sh
+  s_f234ca34d2c99d::t_b48d283da26976 182
+tests/fm-secondmate-harness.test.sh
+  s_f234ca34d2c99d::t_a885704edd6108 712-713,734-735
+tests/fm-spawn-dispatch-profile.test.sh
+  s_f234ca34d2c99d::t_9565fdc51f9a5e 137-147,149-164,166-207,227-248,252-256,259-261
+  s_f234ca34d2c99d::t_2e7e885e1335b5 208-226,806
+  s_f234ca34d2c99d::t_385f22c65a4104 802-805,807-808
+  s_f234ca34d2c99d::t_91fdebcc70031c 148,165
+  s_f234ca34d2c99d::t_cb595e566caa49 249-251,257-258
+.agents/skills/harness-adapters/SKILL.md
+  s_f234ca34d2c99d::t_b3d59592a583c5 124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "4a75718a81fa94de10150bc31118cf945b656873",
+  "prompts": {},
+  "sessions": {
+    "s_9110fe775a020c": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fd07d-6dc4-7bbf-ac64-1e97e990a23e",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_f234ca34d2c99d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fd077-13dd-7914-9c7f-a9aa92e420e9",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
