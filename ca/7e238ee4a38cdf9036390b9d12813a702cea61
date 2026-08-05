@@ -1,0 +1,36 @@
+.agents/skills/agent-watchdog/SKILL.md
+  s_c56c8b6d5ab81a::t_5e332c28c78948 21-22,66,88-89
+tests/fm-spawn-dispatch-profile.test.sh
+  s_c56c8b6d5ab81a::t_7db27023d15473 672-675,677,686,717,727-728,731-732,736-753,799
+  s_c56c8b6d5ab81a::t_5bbe7f27baf3c2 676
+bin/fm-spawn.sh
+  s_c56c8b6d5ab81a::t_95b85f5b272146 1270-1275,2256-2257,2259-2260,2262-2263
+  s_c56c8b6d5ab81a::t_e55943e9de2ca3 2258,2261
+  s_c56c8b6d5ab81a::t_f7fa87ed142c15 13-17,793-794,1257-1269,1276,1299-1302,2196
+  s_c56c8b6d5ab81a::t_224aa5951f2ac3 563
+.agents/skills/initiative-secondmate/SKILL.md
+  s_c56c8b6d5ab81a::t_8050dca6f1264a 58-59,71-73,122,125,132,136-138,140
+AGENTS.md
+  s_c56c8b6d5ab81a::t_dffb62943923c3 313,486
+bin/fm-brief.sh
+  s_c56c8b6d5ab81a::t_fd9b8a45264682 30-32,196-199,361
+tests/fm-brief.test.sh
+  s_c56c8b6d5ab81a::t_07a86906385f10 734-735,741-746
+  s_c56c8b6d5ab81a::t_124cae4fa3d6ee 747
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "ca7e238ee4a38cdf9036390b9d12813a702cea61",
+  "prompts": {},
+  "sessions": {
+    "s_c56c8b6d5ab81a": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fa056-82e3-78e9-9643-d3a18702b7a5",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
