@@ -726,6 +726,7 @@ backend_kill_event_pattern() {  # <backend>
 
 secondmate_backend_title() {  # <backend> <home> <task-id>
   local backend=$1 home=$2 task_id=$3
+  # shellcheck disable=SC2030 # The subshell intentionally isolates another home's backend globals.
   ( unset FM_ROOT_OVERRIDE; FM_HOME=$home FM_ROOT=$home
     . "$ROOT/bin/fm-backend.sh"
     fm_backend_source "$backend"
