@@ -1,0 +1,19 @@
+tests/fm-treehouse-task-lease.test.sh
+  s_05699bed262cb8::t_da6f546ece60f3 729
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "6a43a7574933ebf68aa1ec1fe21cc66bb09d112d",
+  "prompts": {},
+  "sessions": {
+    "s_05699bed262cb8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd7df-098a-72f2-9b50-a66236ffffda",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
