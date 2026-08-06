@@ -1,0 +1,47 @@
+tests/fm-backend-zellij.test.sh
+  s_aa2cf123948a96::t_44109bc13e03d7 947-952
+  s_aa2cf123948a96::t_9d3c4cdc268ce5 877-880
+  s_aa2cf123948a96::t_0f208215c07171 881-884
+bin/fm-teardown.sh
+  s_aa2cf123948a96::t_63f9299717f7c3 2646-2647
+tests/fm-teardown.test.sh
+  s_aa2cf123948a96::t_cd6c8d19509a94 1928
+  s_aa2cf123948a96::t_98dcca01f7fc71 92-97
+  s_aa2cf123948a96::t_8180896b64918b 2212-2215
+  s_aa2cf123948a96::t_b2d7618b4a53d2 222
+  s_aa2cf123948a96::t_6f83b76a39b690 1732-1733
+tests/fm-backend.test.sh
+  s_aa2cf123948a96::t_98dcca01f7fc71 932-936,961,963,970-971,1004-1006,1010
+  s_aa2cf123948a96::t_0bca03bdf6407b 139-141
+  s_aa2cf123948a96::t_44109bc13e03d7 1026-1027,1030-1031,1033
+  s_aa2cf123948a96::t_0f208215c07171 979-981
+  s_aa2cf123948a96::t_8a1225ef51bb4c 142,145
+tests/fm-backend-cmux.test.sh
+  s_aa2cf123948a96::t_63f9299717f7c3 988-993
+AGENTS.md
+  s_da3d827dae951c::t_e24d9bf35639c6 94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "5fc2b021b7d2244ab2b7eba3469a288dc0b327cd",
+  "prompts": {},
+  "sessions": {
+    "s_aa2cf123948a96": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd78b-f1aa-7f20-9e53-2311fae0a67a",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_da3d827dae951c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd7a5-cae5-7e61-9be8-393ad0b2e8c8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
