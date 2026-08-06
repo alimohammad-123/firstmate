@@ -1,0 +1,27 @@
+docs/configuration.md
+  s_df6e8431fec1a7::t_8d15ca0a1feb08 86
+bin/fm-teardown.sh
+  s_df6e8431fec1a7::t_8d15ca0a1feb08 163-164,428-432
+docs/architecture.md
+  s_df6e8431fec1a7::t_8d15ca0a1feb08 113
+docs/verification/runtime-backends.md
+  s_df6e8431fec1a7::t_8d15ca0a1feb08 163
+docs/verification/public-followup.md
+  s_df6e8431fec1a7::t_af14b91dc15e6f 102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "8eeff7f03f44074cd32da80fe425b1ab3df478dd",
+  "prompts": {},
+  "sessions": {
+    "s_df6e8431fec1a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd542-71fd-7b63-9b59-c792a85ce480",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
