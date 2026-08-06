@@ -32,7 +32,8 @@ ENDPOINT_COUNTER="$WORLD/backend-endpoint-counter"
 CMUX_FOCUS_MARKER="$WORLD/cmux-focus-moved"
 EVENT_LOG="$WORLD/events.log"
 FM_REAL_MV=$(command -v mv)
-export TREEHOUSE_STATE TREEHOUSE_POOL TREEHOUSE_COUNTER TREEHOUSE_LOG TMUX_LOG TMUX_WINDOWS TMUX_COUNTER ENDPOINT_STATE ENDPOINT_COUNTER CMUX_FOCUS_MARKER EVENT_LOG FM_REAL_MV
+FM_REAL_SLEEP=$(command -v sleep)
+export TREEHOUSE_STATE TREEHOUSE_POOL TREEHOUSE_COUNTER TREEHOUSE_LOG TMUX_LOG TMUX_WINDOWS TMUX_COUNTER ENDPOINT_STATE ENDPOINT_COUNTER CMUX_FOCUS_MARKER EVENT_LOG FM_REAL_MV FM_REAL_SLEEP
 
 mkdir -p "$HOME_A/data" "$HOME_A/state" "$HOME_A/config" "$HOME_A/projects" \
   "$HOME_B/data" "$HOME_B/state" "$HOME_B/config" "$HOME_B/projects"
@@ -387,8 +388,19 @@ cat > "$FAKEBIN/mv" <<'SH'
 #!/usr/bin/env bash
 set -u
 dest=${!#}
+if [ "${FM_FAKE_BLOCK_BEFORE_META_PUBLISH:-0}" = 1 ] \
+   && [ "$dest" = "${FM_STATE_OVERRIDE:-}/${FM_FAKE_PUBLISH_ID:-}.meta" ]; then
+  : > "$FM_FAKE_PUBLISH_READY"
+  while [ ! -f "$FM_FAKE_PUBLISH_RELEASE" ]; do
+    "$FM_REAL_SLEEP" 0.05
+  done
+fi
 "$FM_REAL_MV" "$@"
 status=$?
+if [ "$status" -eq 0 ] \
+   && [ "$dest" = "${FM_STATE_OVERRIDE:-}/${FM_FAKE_PUBLISH_ID:-}.meta" ]; then
+  printf 'metadata-published %s\n' "${FM_FAKE_PUBLISH_ID:-}" >> "$EVENT_LOG"
+fi
 if [ "$status" -eq 0 ] \
    && [ "${FM_FAKE_TERM_AFTER_META_PUBLISH:-0}" = 1 ] \
    && [ "$dest" = "${FM_STATE_OVERRIDE:-}/$FM_FAKE_PUBLISH_ID.meta" ]; then
@@ -724,6 +736,49 @@ return_count_after=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
 run_teardown_force "$HOME_A" publication-handoff >/dev/null \
   || fail 'publication-boundary committed task could not be torn down normally'
 pass 'exact atomic metadata publication is the committed rollback handoff boundary'
+
+make_brief "$HOME_A" lifecycle-order
+run_spawn "$HOME_A" lifecycle-order "$WT1" --backend tmux >/dev/null \
+  || fail 'lifecycle ordering fixture could not publish its first endpoint'
+LIFECYCLE_META="$HOME_A/state/lifecycle-order.meta"
+lifecycle_old_identity=$(sed -n 's/^tmux_window_id=//p' "$LIFECYCLE_META")
+backend_endpoint_remove tmux "$lifecycle_old_identity"
+LIFECYCLE_READY="$WORLD/lifecycle-publish.ready"
+LIFECYCLE_RELEASE="$WORLD/lifecycle-publish.release"
+FM_FAKE_BLOCK_BEFORE_META_PUBLISH=1 FM_FAKE_PUBLISH_ID=lifecycle-order \
+  FM_FAKE_PUBLISH_READY="$LIFECYCLE_READY" FM_FAKE_PUBLISH_RELEASE="$LIFECYCLE_RELEASE" \
+  run_spawn "$HOME_A" lifecycle-order "$WT1" --backend tmux \
+  >"$WORLD/lifecycle-spawn.out" 2>"$WORLD/lifecycle-spawn.err" &
+lifecycle_spawn_pid=$!
+i=0
+while [ ! -f "$LIFECYCLE_READY" ] && [ "$i" -lt 100 ]; do
+  sleep 0.05
+  i=$((i + 1))
+done
+[ -f "$LIFECYCLE_READY" ] || fail 'replacement spawn did not reach its guarded publication boundary'
+lifecycle_returns_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+run_teardown_force "$HOME_A" lifecycle-order \
+  >"$WORLD/lifecycle-teardown.out" 2>"$WORLD/lifecycle-teardown.err" &
+lifecycle_teardown_pid=$!
+sleep 0.2
+lifecycle_returns_held=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+[ "$lifecycle_returns_held" -eq "$lifecycle_returns_before" ] \
+  || fail 'teardown returned the lease while replacement publication held the task lifecycle'
+kill -0 "$lifecycle_teardown_pid" 2>/dev/null \
+  || fail 'teardown did not wait for replacement publication to release the task lifecycle'
+: > "$LIFECYCLE_RELEASE"
+wait "$lifecycle_spawn_pid" \
+  || fail "replacement spawn failed after lifecycle release\n$(cat "$WORLD/lifecycle-spawn.err")"
+wait "$lifecycle_teardown_pid" \
+  || fail "teardown failed after replacement publication\n$(cat "$WORLD/lifecycle-teardown.err")"
+lifecycle_publish_line=$(grep -n '^metadata-published lifecycle-order$' "$EVENT_LOG" | tail -1 | cut -d: -f1)
+lifecycle_return_line=$(grep -n '^treehouse return --force ' "$EVENT_LOG" | tail -1 | cut -d: -f1)
+[ -n "$lifecycle_publish_line" ] && [ -n "$lifecycle_return_line" ] \
+  || fail 'lifecycle ordering did not record publication and conditional return'
+[ "$lifecycle_publish_line" -lt "$lifecycle_return_line" ] \
+  || fail 'teardown returned the lease before replacement metadata publication completed'
+assert_absent "$LIFECYCLE_META" 'ordered teardown retained replacement task metadata'
+pass 'replacement publication and exact lease return serialize on one task lifecycle'
 
 make_brief "$HOME_A" ambiguous-acquire
 return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)

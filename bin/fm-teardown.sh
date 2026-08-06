@@ -174,6 +174,25 @@ FORCE=${2:-}
 fm_refuse_if_gate_agent
 FM_LOCK_LOG_PREFIX=teardown
 
+TEARDOWN_TASK_LOCK="$STATE/.spawn-$ID.lock"
+TEARDOWN_TASK_LOCK_HELD=0
+TEARDOWN_HERDR_LOCK_RECORDS=
+teardown_exit_cleanup() {
+  local status=$?
+  if declare -F teardown_release_herdr_locks >/dev/null 2>&1; then
+    teardown_release_herdr_locks
+  fi
+  if [ "$TEARDOWN_TASK_LOCK_HELD" = 1 ]; then
+    TEARDOWN_TASK_LOCK_HELD=0
+    fm_lock_release "$TEARDOWN_TASK_LOCK" || true
+  fi
+  return "$status"
+}
+[ -d "$STATE" ] || { echo "error: no state directory at $STATE" >&2; exit 1; }
+fm_lock_acquire_wait "$TEARDOWN_TASK_LOCK"
+TEARDOWN_TASK_LOCK_HELD=1
+trap teardown_exit_cleanup EXIT
+
 META="$STATE/$ID.meta"
 [ -f "$META" ] || { echo "error: no meta for task $ID at $META" >&2; exit 1; }
 
@@ -1935,7 +1954,6 @@ validate_firstmate_home_children_removal() {
   done
 }
 
-TEARDOWN_HERDR_LOCK_RECORDS=
 teardown_release_herdr_locks() {
   local lock_session lock_path
   [ -n "$TEARDOWN_HERDR_LOCK_RECORDS" ] || return 0
@@ -2037,7 +2055,6 @@ $session	$lock_path"
       else
         TEARDOWN_HERDR_LOCK_RECORDS="$session	$lock_path"
       fi
-      trap teardown_release_herdr_locks EXIT
       return 0
     fi
     sleep 0.1
