@@ -32,8 +32,10 @@ ENDPOINT_COUNTER="$WORLD/backend-endpoint-counter"
 CMUX_FOCUS_MARKER="$WORLD/cmux-focus-moved"
 EVENT_LOG="$WORLD/events.log"
 FM_REAL_MV=$(command -v mv)
+FM_REAL_RM=$(command -v rm)
+FM_REAL_CP=$(command -v cp)
 FM_REAL_SLEEP=$(command -v sleep)
-export TREEHOUSE_STATE TREEHOUSE_POOL TREEHOUSE_COUNTER TREEHOUSE_LOG TMUX_LOG TMUX_WINDOWS TMUX_COUNTER ENDPOINT_STATE ENDPOINT_COUNTER CMUX_FOCUS_MARKER EVENT_LOG FM_REAL_MV FM_REAL_SLEEP
+export TREEHOUSE_STATE TREEHOUSE_POOL TREEHOUSE_COUNTER TREEHOUSE_LOG TMUX_LOG TMUX_WINDOWS TMUX_COUNTER ENDPOINT_STATE ENDPOINT_COUNTER CMUX_FOCUS_MARKER EVENT_LOG FM_REAL_MV FM_REAL_RM FM_REAL_CP FM_REAL_SLEEP
 
 mkdir -p "$HOME_A/data" "$HOME_A/state" "$HOME_A/config" "$HOME_A/projects" \
   "$HOME_B/data" "$HOME_B/state" "$HOME_B/config" "$HOME_B/projects"
@@ -409,6 +411,23 @@ fi
 exit "$status"
 SH
 chmod +x "$FAKEBIN/mv"
+
+cat > "$FAKEBIN/rm" <<'SH'
+#!/usr/bin/env bash
+set -u
+target=${!#}
+if [ -n "${FM_FAKE_REMOVE_HOME:-}" ] && [ "$target" = "$FM_FAKE_REMOVE_HOME" ]; then
+  "$FM_REAL_RM" "$@"
+  "$FM_REAL_CP" -R "$FM_FAKE_RECYCLE_TEMPLATE" "$FM_FAKE_REMOVE_HOME"
+  : > "$FM_FAKE_REMOVE_READY"
+  while [ ! -f "$FM_FAKE_REMOVE_RELEASE" ]; do
+    "$FM_REAL_SLEEP" 0.05
+  done
+  exit 0
+fi
+exec "$FM_REAL_RM" "$@"
+SH
+chmod +x "$FAKEBIN/rm"
 fm_fake_exit0 "$FAKEBIN" no-mistakes gh gh-axi lsof ps sleep
 
 make_brief() {
@@ -921,6 +940,94 @@ run_teardown_force "$HOME_A" retire-ambiguous \
   || fail "ambiguous retirement retry failed\n$(cat "$WORLD/retire-ambiguous-retry.err")"
 assert_absent "$RETIRE_AMBIGUOUS_HOME" 'ambiguous retirement retry retained its home'
 pass 'ambiguous retirement preserves its barrier and exact child identity'
+
+RETIRE_REMOVAL_HOME="$WORLD/retiring-removal-secondmate"
+RETIRE_RECYCLE_TEMPLATE="$WORLD/retiring-removal-recycled"
+make_secondmate_retirement_fixture "$RETIRE_REMOVAL_HOME" retire-removal
+RETIRE_REMOVAL_HOME_CANON=$(cd "$RETIRE_REMOVAL_HOME" && pwd -P) \
+  || fail 'removal-race fixture home could not be canonicalized'
+make_brief "$RETIRE_REMOVAL_HOME" removal-held
+retire_removal_held_path=$(next_treehouse_path) \
+  || fail 'removal-race fixture had no Treehouse path for its held child'
+run_spawn "$RETIRE_REMOVAL_HOME" removal-held "$retire_removal_held_path" --backend tmux >/dev/null \
+  || fail 'removal-race fixture could not publish its held child'
+mkdir -p "$RETIRE_RECYCLE_TEMPLATE/data/removal-waiter" \
+  "$RETIRE_RECYCLE_TEMPLATE/data/removal-fresh" \
+  "$RETIRE_RECYCLE_TEMPLATE/state" "$RETIRE_RECYCLE_TEMPLATE/config" \
+  "$RETIRE_RECYCLE_TEMPLATE/projects"
+printf '%s\n' retire-removal > "$RETIRE_RECYCLE_TEMPLATE/.fm-secondmate-home"
+printf 'off\n' > "$RETIRE_RECYCLE_TEMPLATE/config/herdr-presentation-spaces"
+printf 'lease test for removal-waiter\nDelivery contract: mode=no-mistakes\n' \
+  > "$RETIRE_RECYCLE_TEMPLATE/data/removal-waiter/brief.md"
+printf 'lease test for removal-fresh\nDelivery contract: mode=no-mistakes\n' \
+  > "$RETIRE_RECYCLE_TEMPLATE/data/removal-fresh/brief.md"
+RETIRE_REMOVAL_LOCK_READY="$WORLD/retire-removal-child-lock.ready"
+RETIRE_REMOVAL_LOCK_RELEASE="$WORLD/retire-removal-child-lock.release"
+hold_task_lifecycle_lock "$RETIRE_REMOVAL_HOME/state/.spawn-removal-held.lock" \
+  "$RETIRE_REMOVAL_LOCK_READY" "$RETIRE_REMOVAL_LOCK_RELEASE"
+i=0
+while [ ! -f "$RETIRE_REMOVAL_LOCK_READY" ] && [ "$i" -lt 100 ]; do
+  sleep 0.05
+  i=$((i + 1))
+done
+[ -f "$RETIRE_REMOVAL_LOCK_READY" ] \
+  || fail 'removal-race fixture did not hold its child lifecycle'
+RETIRE_REMOVE_READY="$WORLD/retire-remove.ready"
+RETIRE_REMOVE_RELEASE="$WORLD/retire-remove.release"
+FM_FAKE_REMOVE_HOME="$RETIRE_REMOVAL_HOME_CANON" \
+  FM_FAKE_RECYCLE_TEMPLATE="$RETIRE_RECYCLE_TEMPLATE" \
+  FM_FAKE_REMOVE_READY="$RETIRE_REMOVE_READY" \
+  FM_FAKE_REMOVE_RELEASE="$RETIRE_REMOVE_RELEASE" \
+  run_teardown_force "$HOME_A" retire-removal \
+    >"$WORLD/retire-removal.out" 2>"$WORLD/retire-removal.err" &
+retire_removal_pid=$!
+"$FM_REAL_SLEEP" 0.2
+retire_removal_waiter_path=$(next_treehouse_path) \
+  || fail 'removal-race fixture had no Treehouse path for its waiting child'
+retire_removal_gets_before=$(grep -c '^get ' "$TREEHOUSE_LOG")
+run_spawn "$RETIRE_REMOVAL_HOME" removal-waiter "$retire_removal_waiter_path" --backend tmux \
+  >"$WORLD/removal-waiter.out" 2>"$WORLD/removal-waiter.err" &
+retire_removal_waiter_pid=$!
+"$FM_REAL_SLEEP" 0.2
+retire_removal_gets_waiting=$(grep -c '^get ' "$TREEHOUSE_LOG")
+[ "$retire_removal_gets_waiting" -eq "$retire_removal_gets_before" ] \
+  || fail 'waiting child acquired a lease during removal preflight'
+kill -STOP "$retire_removal_waiter_pid"
+: > "$RETIRE_REMOVAL_LOCK_RELEASE"
+wait "$HELD_LOCK_PID" || fail 'removal-race held child lifecycle did not release cleanly'
+i=0
+while [ ! -f "$RETIRE_REMOVE_READY" ] && [ "$i" -lt 100 ]; do
+  sleep 0.05
+  i=$((i + 1))
+done
+[ -f "$RETIRE_REMOVE_READY" ] || fail 'secondmate removal did not reach recycled-home boundary'
+kill -CONT "$retire_removal_waiter_pid"
+"$FM_REAL_SLEEP" 0.2
+if wait "$retire_removal_waiter_pid"; then
+  fail 'pre-removal child launch entered the recycled secondmate home'
+fi
+retire_removal_gets_held=$(grep -c '^get ' "$TREEHOUSE_LOG")
+[ "$retire_removal_gets_held" -eq "$retire_removal_gets_before" ] \
+  || fail 'waiting child acquired from a recycled home before retirement released admission'
+run_spawn "$RETIRE_REMOVAL_HOME" removal-fresh "$retire_removal_waiter_path" --backend tmux \
+  >"$WORLD/removal-fresh.out" 2>"$WORLD/removal-fresh.err" &
+retire_removal_fresh_pid=$!
+"$FM_REAL_SLEEP" 0.2
+kill -0 "$retire_removal_fresh_pid" 2>/dev/null \
+  || fail 'recycled-home launch escaped the admission barrier during removal'
+retire_removal_gets_fresh=$(grep -c '^get ' "$TREEHOUSE_LOG")
+[ "$retire_removal_gets_fresh" -eq "$retire_removal_gets_before" ] \
+  || fail 'recycled-home launch acquired a lease while removal retained admission'
+kill -TERM "$retire_removal_fresh_pid"
+wait "$retire_removal_fresh_pid" 2>/dev/null || true
+: > "$RETIRE_REMOVE_RELEASE"
+wait "$retire_removal_pid" \
+  || fail "secondmate removal race teardown failed\n$(cat "$WORLD/retire-removal.err")"
+retire_removal_gets_after=$(grep -c '^get ' "$TREEHOUSE_LOG")
+[ "$retire_removal_gets_after" -eq "$retire_removal_gets_before" ] \
+  || fail 'pre-removal child launch acquired a lease from the recycled home'
+"$FM_REAL_RM" -rf -- "$RETIRE_REMOVAL_HOME"
+pass 'secondmate admission barrier survives removal and rejects stale waiters'
 
 RETIRE_REPLACEMENT_HOME="$WORLD/retiring-replacement-secondmate"
 make_secondmate_retirement_fixture "$RETIRE_REPLACEMENT_HOME" retire-replacement

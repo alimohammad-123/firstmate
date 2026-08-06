@@ -29,7 +29,8 @@
 # cleanup, then passes both conditional predicates to every return retry.
 # Missing or legacy identity, a different owning-home holder, a path mismatch,
 # or a current Treehouse mismatch preserves the task and prints an actionable
-# recovery refusal. Orca and persistent secondmate-home cleanup are unchanged.
+# recovery refusal. Orca and the persistent secondmate-home lease
+# acquisition/return path are unchanged.
 # local-only projects additionally accept work merged into the local default
 # branch (firstmate performs that merge after configured approval) as a fallback
 # for the common case where there is no remote at all.
@@ -2049,7 +2050,7 @@ teardown_secondmate_home_retirement_begin() {  # <home>
   local home=$1 state admission meta lock receipt base id ids='' task_lock
   state="$home/state"
   [ -d "$state" ] || return 0
-  admission=$(fm_secondmate_retirement_lock_path "$state") || return 1
+  admission=$(fm_secondmate_retirement_lock_path "$home") || return 1
   if ! teardown_secondmate_admission_lock_held "$admission"; then
     fm_lock_acquire_wait "$admission" || return 1
     if [ -n "$TEARDOWN_HOME_ADMISSION_LOCKS" ]; then
