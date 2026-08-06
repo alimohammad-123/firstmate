@@ -534,6 +534,15 @@ if [ -n "${FM_FAKE_RESTART_AFTER_REAP_TASK:-}" ] \
   printf '@reap-restart-%s\tfirstmate\tfm-%s\n' \
     "$FM_FAKE_RESTART_AFTER_REAP_TASK" "$FM_FAKE_RESTART_AFTER_REAP_TASK" >> "$TMUX_WINDOWS"
 fi
+if [ -n "${FM_FAKE_LSOF_PROCESS_PID_FILE:-}" ] \
+   && [ -f "$FM_FAKE_LSOF_PROCESS_PID_FILE" ] \
+   && { [ -z "${FM_FAKE_LSOF_PROCESS_READY_FILE:-}" ] \
+        || [ -f "$FM_FAKE_LSOF_PROCESS_READY_FILE" ]; }; then
+  pid=$(cat "$FM_FAKE_LSOF_PROCESS_PID_FILE")
+  if kill -0 "$pid" 2>/dev/null; then
+    printf 'p%s\nfcwd\nn%s\n' "$pid" "$FM_FAKE_LSOF_PROCESS_CWD"
+  fi
+fi
 exit 0
 SH
 chmod +x "$FAKEBIN/lsof"
@@ -1027,6 +1036,34 @@ run_teardown_force "$HOME_A" reap-ambiguous >/dev/null \
   || fail 'ambiguous reap fixture did not recover on a readable retry'
 pass 'ambiguous process scans refuse before conditional lease return'
 
+make_brief "$HOME_A" endpoint-before-reap
+run_spawn "$HOME_A" endpoint-before-reap "$WT1" >/dev/null \
+  || fail 'pre-reap endpoint restoration fixture could not publish'
+ENDPOINT_BEFORE_REAP_META="$HOME_A/state/endpoint-before-reap.meta"
+endpoint_before_reap_lease=$(sed -n 's/^treehouse_lease_id=//p' "$ENDPOINT_BEFORE_REAP_META")
+if FM_FAKE_LSOF_MALFORMED=1 run_teardown_force "$HOME_A" endpoint-before-reap >/dev/null 2>&1; then
+  fail 'pre-reap endpoint restoration fixture did not preserve retired-endpoint evidence'
+fi
+assert_grep 'treehouse_endpoint_retired=1' "$ENDPOINT_BEFORE_REAP_META" \
+  'pre-reap endpoint restoration fixture did not publish retirement evidence'
+printf '@restored-before-reap\tfirstmate\tfm-endpoint-before-reap\n' >> "$TMUX_WINDOWS"
+event_before=$(wc -l < "$EVENT_LOG" | tr -d ' ')
+if FM_FAKE_RECORD_REAP=1 run_teardown_force "$HOME_A" endpoint-before-reap >/dev/null 2>&1; then
+  fail 'retired marker allowed a restored task endpoint to reach process reaping'
+fi
+tail -n "+$((event_before + 1))" "$EVENT_LOG" > "$WORLD/endpoint-before-reap.events"
+if grep -Fq 'reap-scan ' "$WORLD/endpoint-before-reap.events"; then
+  fail 'retired marker reaped processes before task-wide endpoint re-correlation'
+fi
+backend_endpoint_is_live tmux @restored-before-reap \
+  || fail 'pre-reap identity check mutated the restored endpoint'
+grep -Fq "$WT1"$'\t'"$endpoint_before_reap_lease"$'\t' "$TREEHOUSE_STATE" \
+  || fail 'pre-reap endpoint restoration released the exact lease'
+backend_endpoint_remove tmux @restored-before-reap
+run_teardown_force "$HOME_A" endpoint-before-reap >/dev/null \
+  || fail 'pre-reap endpoint restoration fixture did not recover after exact removal'
+pass 'retired endpoint evidence is re-correlated before process reaping'
+
 make_brief "$HOME_A" endpoint-after-reap
 run_spawn "$HOME_A" endpoint-after-reap "$WT1" >/dev/null \
   || fail 'post-reap endpoint restart fixture could not publish'
@@ -1069,6 +1106,51 @@ backend_endpoint_remove tmux @return-restart-endpoint-on-return-retry
 run_teardown_force "$HOME_A" endpoint-on-return-retry >/dev/null \
   || fail 'return-retry endpoint fixture did not recover after exact removal'
 pass 'every conditional return retry freshly rechecks endpoint identity'
+
+make_brief "$HOME_A" process-on-return-retry
+run_spawn "$HOME_A" process-on-return-retry "$WT1" >/dev/null \
+  || fail 'return-retry process fixture could not publish'
+PROCESS_RETRY_META="$HOME_A/state/process-on-return-retry.meta"
+process_retry_lease=$(sed -n 's/^treehouse_lease_id=//p' "$PROCESS_RETRY_META")
+PROCESS_RETRY_PID_FILE="$WORLD/process-on-return-retry.pid"
+PROCESS_RETRY_READY="$WORLD/process-on-return-retry.ready"
+PROCESS_RETRY_TRIGGER="$TREEHOUSE_STATE.return-lock-$process_retry_lease"
+PROCESS_RETRY_WT=$(cd "$WT1" && pwd -P)
+"$FM_REAL_PYTHON3" -c '
+import os, sys, time
+while not os.path.exists(sys.argv[1]):
+    time.sleep(0.01)
+os.chdir(sys.argv[2])
+open(sys.argv[3], "w").close()
+time.sleep(60)
+' "$PROCESS_RETRY_TRIGGER" "$PROCESS_RETRY_WT" "$PROCESS_RETRY_READY" &
+process_retry_pid=$!
+printf '%s\n' "$process_retry_pid" > "$PROCESS_RETRY_PID_FILE"
+FM_TEST_RETURN_RETRIES=1 FM_FAKE_RETURN_INDEX_LOCK_ID="$process_retry_lease" \
+  FM_FAKE_LSOF_PROCESS_CWD="$PROCESS_RETRY_WT" FM_FAKE_LSOF_PROCESS_PID_FILE="$PROCESS_RETRY_PID_FILE" \
+  FM_FAKE_LSOF_PROCESS_READY_FILE="$PROCESS_RETRY_READY" \
+  FM_FAKE_REAL_PS=1 FM_FAKE_REAL_SLEEP=1 \
+  run_teardown_force "$HOME_A" process-on-return-retry >/dev/null \
+  || fail 'return retry did not reap a process that entered after the first attempt'
+i=0
+while [ "$i" -lt 100 ]; do
+  process_retry_state=$("$FM_REAL_PS" -o stat= -p "$process_retry_pid" 2>/dev/null | tr -d '[:space:]')
+  case "$process_retry_state" in ''|Z*) break ;; esac
+  "$FM_REAL_SLEEP" 0.05
+  i=$((i + 1))
+done
+case "$process_retry_state" in
+  ''|Z*) ;;
+  *) kill -KILL "$process_retry_pid" 2>/dev/null || true; wait "$process_retry_pid" 2>/dev/null || true
+     fail 'conditional return retry left a newly entered detached process alive' ;;
+esac
+wait "$process_retry_pid" 2>/dev/null || true
+if kill -0 "$process_retry_pid" 2>/dev/null; then
+  fail 'conditional return retry left a newly entered detached process alive'
+fi
+assert_absent "$PROCESS_RETRY_META" \
+  'return-retry process fixture retained task metadata after safe return'
+pass 'every conditional return retry repeats process safety immediately before return'
 
 make_brief "$HOME_A" tmux-final-rebound
 run_spawn "$HOME_A" tmux-final-rebound "$WT1" >/dev/null \
@@ -1534,7 +1616,6 @@ fi
 retire_ambiguous_gets_after=$(grep -c '^get ' "$TREEHOUSE_LOG")
 [ "$retire_ambiguous_gets_after" -eq "$retire_ambiguous_gets_before" ] \
   || fail 'retirement barrier allowed a new Treehouse acquisition after ambiguous progress'
-printf '@ambiguous-child-recovery\tfirstmate\tfm-ambiguous-child\n' >> "$TMUX_WINDOWS"
 run_teardown_force "$HOME_A" retire-ambiguous \
   >"$WORLD/retire-ambiguous-retry.out" 2>"$WORLD/retire-ambiguous-retry.err" \
   || fail "ambiguous retirement retry failed\n$(cat "$WORLD/retire-ambiguous-retry.err")"
@@ -1782,6 +1863,45 @@ for backend in tmux herdr zellij cmux; do
     "$backend surviving-endpoint retirement retry retained its secondmate home"
 done
 pass 'forced secondmate cleanup confirms every backend endpoint absent before lease return'
+
+RETIRE_PROCESS_HOME="$WORLD/retiring-child-process"
+make_secondmate_retirement_fixture "$RETIRE_PROCESS_HOME" retire-child-process
+make_brief "$RETIRE_PROCESS_HOME" detached-child
+retire_process_path=$(next_treehouse_path) \
+  || fail 'forced child process fixture had no free Treehouse path'
+run_spawn "$RETIRE_PROCESS_HOME" detached-child "$retire_process_path" --backend tmux >/dev/null \
+  || fail 'forced child process fixture could not publish its child'
+RETIRE_PROCESS_PID_FILE="$WORLD/retiring-child-process.pid"
+RETIRE_PROCESS_WT=$(cd "$retire_process_path" && pwd -P)
+"$FM_REAL_PYTHON3" -c \
+  'import os,sys,time; os.chdir(sys.argv[1]); time.sleep(60)' \
+  "$RETIRE_PROCESS_WT" &
+retire_process_pid=$!
+printf '%s\n' "$retire_process_pid" > "$RETIRE_PROCESS_PID_FILE"
+FM_FAKE_LSOF_PROCESS_CWD="$RETIRE_PROCESS_WT" \
+  FM_FAKE_LSOF_PROCESS_PID_FILE="$RETIRE_PROCESS_PID_FILE" \
+  FM_FAKE_REAL_PS=1 FM_FAKE_REAL_SLEEP=1 \
+  run_teardown_force "$HOME_A" retire-child-process >/dev/null \
+  || fail 'forced secondmate cleanup did not reap the detached child process'
+i=0
+while [ "$i" -lt 100 ]; do
+  retire_process_state=$("$FM_REAL_PS" -o stat= -p "$retire_process_pid" 2>/dev/null | tr -d '[:space:]')
+  case "$retire_process_state" in ''|Z*) break ;; esac
+  "$FM_REAL_SLEEP" 0.05
+  i=$((i + 1))
+done
+case "$retire_process_state" in
+  ''|Z*) ;;
+  *) kill -KILL "$retire_process_pid" 2>/dev/null || true; wait "$retire_process_pid" 2>/dev/null || true
+     fail 'forced secondmate cleanup returned a child lease with a surviving detached process' ;;
+esac
+wait "$retire_process_pid" 2>/dev/null || true
+if kill -0 "$retire_process_pid" 2>/dev/null; then
+  fail 'forced secondmate cleanup returned a child lease with a surviving detached process'
+fi
+assert_absent "$RETIRE_PROCESS_HOME" \
+  'forced child process cleanup retained the retired secondmate home'
+pass 'forced secondmate child leases share the complete pre-return safety boundary'
 
 make_brief "$HOME_A" acquisition-handoff
 acquisition_handoff_counter_before=$(cat "$TREEHOUSE_COUNTER")

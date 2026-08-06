@@ -1109,6 +1109,21 @@ teardown_treehouse_return_once() {  # <dir> <cd-dir> [lease-id] [holder]
   fi
 }
 
+teardown_treehouse_pre_return_guard() {  # <meta> <task-id> <backend> <home> <label> <dir> <tasktmp> [leader] [identity] [pgid]
+  local meta=$1 task_id=$2 backend=$3 endpoint_home=$4 label=$5 dir=$6 tasktmp=$7
+  local fallback_leader=${8:-} fallback_identity=${9:-} fallback_pgid=${10:-}
+  teardown_treehouse_endpoint_absent_exact "$meta" "$task_id" "$backend" "$endpoint_home" || return 1
+  (
+    ID=$task_id
+    BACKEND=$backend
+    TEARDOWN_FALLBACK_LEADER=$fallback_leader
+    TEARDOWN_FALLBACK_LEADER_IDENTITY=$fallback_identity
+    TEARDOWN_FALLBACK_PGID=$fallback_pgid
+    reap_task_worktree_processes "$label" "$dir" "$tasktmp"
+  ) || return 1
+  teardown_treehouse_endpoint_absent_exact "$meta" "$task_id" "$backend" "$endpoint_home"
+}
+
 # Return a worktree/home via Treehouse, tolerating a transient or stale git
 # index.lock left by a killed crew process. Ordinary task call sites pass the
 # exact lease id and holder; persistent secondmate homes retain their existing
@@ -1118,12 +1133,17 @@ teardown_treehouse_return() {
   local lease_id=${5:-} lease_holder=${6:-}
   local endpoint_meta=${7:-} endpoint_task_id=${8:-} endpoint_backend=${9:-}
   local endpoint_home=${10:-}
+  local process_label=${11:-worktree} process_dir=${12:-$dir} process_tasktmp=${13:-}
+  local fallback_leader=${14:-} fallback_identity=${15:-} fallback_pgid=${16:-}
   local out lock attempt=0 max_retries lock_desc
 
   # Capture stdout+stderr so non-lock failures stay visible and lock failures can
   # be matched by signature even when the lock file is already gone mid-check.
   if [ -n "$lease_id" ]; then
-    teardown_treehouse_endpoint_absent_exact "$endpoint_meta" "$endpoint_task_id" "$endpoint_backend" "$endpoint_home" || return 1
+    teardown_treehouse_pre_return_guard \
+      "$endpoint_meta" "$endpoint_task_id" "$endpoint_backend" "$endpoint_home" \
+      "$process_label" "$process_dir" "$process_tasktmp" \
+      "$fallback_leader" "$fallback_identity" "$fallback_pgid" || return 1
   fi
   if out=$(teardown_treehouse_return_once "$dir" "$cd_dir" "$lease_id" "$lease_holder" 2>&1); then
     [ -n "$out" ] && printf '%s\n' "$out"
@@ -1151,7 +1171,10 @@ teardown_treehouse_return() {
     sleep "$TREEHOUSE_RETURN_LOCK_RETRY_WAIT_SECS"
 
     if [ -n "$lease_id" ]; then
-      teardown_treehouse_endpoint_absent_exact "$endpoint_meta" "$endpoint_task_id" "$endpoint_backend" "$endpoint_home" || return 1
+      teardown_treehouse_pre_return_guard \
+        "$endpoint_meta" "$endpoint_task_id" "$endpoint_backend" "$endpoint_home" \
+        "$process_label" "$process_dir" "$process_tasktmp" \
+        "$fallback_leader" "$fallback_identity" "$fallback_pgid" || return 1
     fi
     if out=$(teardown_treehouse_return_once "$dir" "$cd_dir" "$lease_id" "$lease_holder" 2>&1); then
       [ -n "$out" ] && printf '%s\n' "$out"
@@ -1181,7 +1204,10 @@ teardown_treehouse_return() {
         fi
       fi
       if [ -n "$lease_id" ]; then
-        teardown_treehouse_endpoint_absent_exact "$endpoint_meta" "$endpoint_task_id" "$endpoint_backend" "$endpoint_home" || return 1
+        teardown_treehouse_pre_return_guard \
+          "$endpoint_meta" "$endpoint_task_id" "$endpoint_backend" "$endpoint_home" \
+          "$process_label" "$process_dir" "$process_tasktmp" \
+          "$fallback_leader" "$fallback_identity" "$fallback_pgid" || return 1
       fi
       if out=$(teardown_treehouse_return_once "$dir" "$cd_dir" "$lease_id" "$lease_holder" 2>&1); then
         [ -n "$out" ] && printf '%s\n' "$out"
@@ -1256,10 +1282,7 @@ teardown_treehouse_endpoint_retire_exact() {  # <meta> <task-id> <backend>
   [ "$expected_backend" != zellij ] || tab_id=$(meta_value "$meta" zellij_tab_id)
   endpoint_retired=$(meta_value "$meta" treehouse_endpoint_retired)
   if [ "$endpoint_retired" = 1 ]; then
-    fm_backend_endpoint_confirmed_gone "$expected_backend" "$target" "$tab_id" "fm-$task_id" >/dev/null 2>&1 || {
-      echo "error: endpoint-retirement evidence for $task_id no longer proves exact absence; preserving its lease and records" >&2
-      return 1
-    }
+    teardown_treehouse_endpoint_absent_exact "$meta" "$task_id" "$expected_backend" || return 1
     T=$target
     TEARDOWN_ENDPOINT_RETIRED=1
     return 0
@@ -1357,6 +1380,22 @@ teardown_treehouse_endpoint_absent_exact() {  # <meta> <task-id> <backend> [home
       ;;
     *) return 1 ;;
   esac
+}
+
+teardown_treehouse_endpoint_retire_scoped() {  # <meta> <task-id> <backend> <home>
+  local meta=$1 task_id=$2 backend=$3 home=$4
+  (
+    unset FM_ROOT_OVERRIDE
+    FM_HOME=$home
+    FM_ROOT=$home
+    STATE=$home/state
+    T=
+    TEARDOWN_ENDPOINT_RETIRED=0
+    HERDR_PRESENTATION_RETIRE_CANDIDATE=0
+    HERDR_PRESENTATION_SESSION=
+    HERDR_PRESENTATION_PANE=
+    teardown_treehouse_endpoint_retire_exact "$meta" "$task_id" "$backend"
+  )
 }
 
 validate_worktree_teardown_safety() {
@@ -1630,6 +1669,18 @@ capture_task_backend_process_group() {
   TEARDOWN_FALLBACK_LEADER=$leader
   TEARDOWN_FALLBACK_LEADER_IDENTITY=$leader_start
   TEARDOWN_FALLBACK_PGID=$pgid
+}
+
+capture_task_backend_process_group_scoped() {  # <task-id> <backend> <target>
+  local ID=$1 BACKEND=$2 T=$3
+  local TEARDOWN_FALLBACK_LEADER= TEARDOWN_FALLBACK_LEADER_IDENTITY= TEARDOWN_FALLBACK_PGID=
+  SCOPED_FALLBACK_LEADER=
+  SCOPED_FALLBACK_LEADER_IDENTITY=
+  SCOPED_FALLBACK_PGID=
+  capture_task_backend_process_group || return 1
+  SCOPED_FALLBACK_LEADER=$TEARDOWN_FALLBACK_LEADER
+  SCOPED_FALLBACK_LEADER_IDENTITY=$TEARDOWN_FALLBACK_LEADER_IDENTITY
+  SCOPED_FALLBACK_PGID=$TEARDOWN_FALLBACK_PGID
 }
 
 reap_task_backend_process_group() {  # <label>
@@ -2508,6 +2559,7 @@ cleanup_firstmate_home_children() {
   local home=$1 sub_state child_meta child_id child_endpoint child_t child_wt child_proj child_kind child_home child_backend child_orca_worktree_id child_busy_gen
   local child_tab_id child_window child_session child_name
   local child_treehouse_lease_id child_treehouse_lease_holder
+  local child_fallback_leader child_fallback_identity child_fallback_pgid child_tasktmp
   sub_state="$home/state"
   [ -d "$sub_state" ] || return 0
   for child_meta in "$sub_state"/*.meta; do
@@ -2524,6 +2576,12 @@ cleanup_firstmate_home_children() {
     child_proj=$(meta_value "$child_meta" project)
     child_kind=$(meta_value "$child_meta" kind)
     [ -n "$child_kind" ] || child_kind=ship
+    child_treehouse_lease_id=
+    child_treehouse_lease_holder=
+    child_fallback_leader=
+    child_fallback_identity=
+    child_fallback_pgid=
+    child_tasktmp=$(meta_value "$child_meta" tasktmp)
     if [ "$child_backend" = orca ] && [ "$child_kind" != secondmate ]; then
       child_orca_worktree_id=$(require_orca_worktree_id "$child_meta") || return 1
       if [ -n "$child_wt" ] && [ -e "$child_wt" ]; then
@@ -2534,8 +2592,17 @@ cleanup_firstmate_home_children() {
       [ "$TREEHOUSE_LEASE_PATH" = "$child_wt" ] || return 1
       child_treehouse_lease_id=$TREEHOUSE_LEASE_ID
       child_treehouse_lease_holder=$TREEHOUSE_LEASE_HOLDER
+      if [ -d "$child_wt" ] && ! command -v "$TEARDOWN_LSOF_BIN" >/dev/null 2>&1; then
+        capture_task_backend_process_group_scoped "$child_id" "$child_backend" "$child_t" || return 1
+        child_fallback_leader=$SCOPED_FALLBACK_LEADER
+        child_fallback_identity=$SCOPED_FALLBACK_LEADER_IDENTITY
+        child_fallback_pgid=$SCOPED_FALLBACK_PGID
+      fi
+      teardown_treehouse_endpoint_retire_scoped \
+        "$child_meta" "$child_id" "$child_backend" "$home" || return 1
     fi
-    if [ -n "$child_t" ]; then
+    if [ -n "$child_t" ] \
+       && { [ "$child_kind" = secondmate ] || [ "$child_backend" = orca ]; }; then
       if [ "$child_backend" = herdr ]; then
         fm_backend_herdr_parse_target "$child_t" || return 1
         if ! teardown_herdr_session_lock_held "$FM_BACKEND_HERDR_SESSION"; then
@@ -2602,7 +2669,9 @@ cleanup_firstmate_home_children() {
       if [ -n "$child_proj" ] && [ -d "$child_proj" ] && command -v treehouse >/dev/null 2>&1; then
         teardown_treehouse_return "$child_wt" "$child_proj" "child worktree" "" \
           "$child_treehouse_lease_id" "$child_treehouse_lease_holder" \
-          "$child_meta" "$child_id" "$child_backend" "$home" || return $?
+          "$child_meta" "$child_id" "$child_backend" "$home" \
+          "child worktree" "$child_wt" "$child_tasktmp" \
+          "$child_fallback_leader" "$child_fallback_identity" "$child_fallback_pgid" || return $?
       else
         echo "REFUSED: exact Treehouse lease return prerequisites are unavailable for child $child_id; preserving the child and secondmate home" >&2
         return 1
@@ -2795,7 +2864,7 @@ if [ -d "$WT" ] && [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ]; then
   teardown_treehouse_endpoint_retire_exact "$META" "$ID" "$BACKEND" || exit 1
 fi
 
-if [ "$KIND" != secondmate ]; then
+if [ "$KIND" != secondmate ] && [ "$BACKEND" = orca ]; then
   reap_task_worktree_processes worktree "$WT" "$TASK_TMP" || exit 1
 fi
 
@@ -2842,7 +2911,9 @@ elif [ -d "$WT" ] && [ "$KIND" != secondmate ]; then
     post_lock_cleanup_check=validate_worktree_teardown_safety
   fi
   teardown_treehouse_return "$WT" "$PROJ" "worktree" "$post_lock_cleanup_check" \
-    "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" "$META" "$ID" "$BACKEND" || {
+    "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" "$META" "$ID" "$BACKEND" "" \
+    "worktree" "$WT" "$TASK_TMP" \
+    "$TEARDOWN_FALLBACK_LEADER" "$TEARDOWN_FALLBACK_LEADER_IDENTITY" "$TEARDOWN_FALLBACK_PGID" || {
     echo "error: exact conditional Treehouse lease return failed for worktree $WT; teardown aborted with task identity preserved" >&2
     exit 1
   }
