@@ -151,6 +151,15 @@ record_worktree() {  # <meta>
   return 0
 }
 
+forget_worktree() {  # <worktree>
+  local target=$1 wt
+  local kept=()
+  for wt in ${WORKTREES[@]+"${WORKTREES[@]}"}; do
+    [ "$wt" = "$target" ] || kept+=("$wt")
+  done
+  WORKTREES=("${kept[@]}")
+}
+
 LAB_SOCKET=$(lab session list --json 2>/dev/null \
   | jq -r --arg s "$HERDR_LAB_SESSION" '.sessions[]? | select(.name == $s) | .socket_path' 2>/dev/null)
 [ -n "$LAB_SOCKET" ] || fail "could not read the isolated lab session's socket path"
@@ -298,6 +307,8 @@ while [ ! -f "$TMP_ROOT/dupC.rc" ] && [ "$i" -lt 120 ]; do sleep 2; i=$((i + 1))
 
 DUPC_META="$PRIMARY_HOME/state/dupC.meta"
 record_worktree "$DUPC_META"
+DUPC_WORKTREE=$(grep '^worktree=' "$DUPC_META" | cut -d= -f2-)
+[ -n "$DUPC_WORKTREE" ] || fail "dupC meta is missing its worktree"
 DUPC_PANE=$(grep '^herdr_pane_id=' "$DUPC_META" | cut -d= -f2-)
 DUPC_WS=$(workspace_of_pane "$DUPC_PANE")
 [ "$DUPC_WS" = "$WS_PRIMARY_DUP" ] \
@@ -416,7 +427,7 @@ pass "real herdr E2E: a --secondmate launch still stands up that secondmate's ow
 
 # --- 8. teardown closes only the worker's own pane --------------------------
 
-FM_ROOT_OVERRIDE="$ROOT" FM_STATE_OVERRIDE="$PRIMARY_HOME/state" FM_DATA_OVERRIDE="$PRIMARY_HOME/data" \
+FM_HOME="$PRIMARY_HOME" FM_ROOT_OVERRIDE="$ROOT" FM_STATE_OVERRIDE="$PRIMARY_HOME/state" FM_DATA_OVERRIDE="$PRIMARY_HOME/data" \
   FM_CONFIG_OVERRIDE="$PRIMARY_HOME/config" \
   "$ROOT/bin/fm-teardown.sh" dupC >"$TMP_ROOT/teardown.out" 2>&1
 status=$?
@@ -425,6 +436,7 @@ status=$?
 if lab pane get "$DUPC_PANE" >/dev/null 2>&1; then
   fail "fm-teardown.sh did not close dupC's own pane"
 fi
+forget_worktree "$DUPC_WORKTREE"
 lab pane get "$LAUNCH_DUP_PANE" >/dev/null 2>&1 || fail "teardown closed the launcher's own pane"
 lab pane get "$UNIQB_PANE" >/dev/null 2>&1 || fail "teardown closed an unrelated worker's pane in the other same-labeled workspace"
 [ "$(label_of_workspace "$WS_PRIMARY_DUP")" = firstmate ] || fail "teardown removed or renamed the launcher's workspace"
