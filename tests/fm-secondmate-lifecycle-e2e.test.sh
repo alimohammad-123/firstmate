@@ -119,6 +119,10 @@ phase_spawn() {
 
   local meta="$HOME_DIR/state/design.meta"
   assert_grep 'kind=secondmate' "$meta" "spawn meta did not record kind=secondmate"
+  assert_grep 'endpoint_task_id=design' "$meta" "spawn meta did not bind the secondmate endpoint"
+  assert_grep 'tmux_window_id=@fm-design' "$meta" "spawn meta did not record the secondmate's stable tmux identity"
+  assert_no_grep 'treehouse_lease_id=' "$meta" "secondmate spawn recorded an ordinary-task Treehouse lease id"
+  assert_no_grep 'treehouse_lease_holder=' "$meta" "secondmate spawn recorded an ordinary-task Treehouse lease holder"
   assert_grep "home=$SUB_ABS" "$meta" "spawn meta did not record the subhome"
   assert_grep 'projects=alpha, beta, gamma' "$meta" "spawn meta did not record the project list"
   # Launch ran in the subhome, with the persistent charter and cleared overrides,
@@ -206,6 +210,8 @@ phase_recovery() {
   assert_grep "home=$SUB_ABS" "$meta" "respawn did not preserve the persistent home from the registry"
   assert_grep 'projects=alpha, beta, gamma' "$meta" "respawn did not preserve the project list from the registry"
   assert_grep 'window=firstmate:fm-design' "$meta" "respawn did not reconstruct the direct-report window"
+  assert_grep 'endpoint_task_id=design' "$meta" "respawn did not bind the replacement secondmate endpoint"
+  assert_grep 'tmux_window_id=@fm-design' "$meta" "respawn did not record the replacement secondmate's stable tmux identity"
   pass "recovery: respawns from the durable registry and persistent home"
 }
 
@@ -213,6 +219,7 @@ phase_teardown() {
   local teardown_out
   : > "$LOG"
   teardown_out=$(PATH="$FAKEBIN:$PATH" FM_HOME="$HOME_DIR" FM_FAKE_TMUX_LOG="$LOG" FM_FAKE_TMUX_CAPTURE="$PANE" \
+    FM_FAKE_TMUX_WINDOW=$'@fm-design\tfirstmate\tfm-design' \
     "$ROOT/bin/fm-teardown.sh" design 2>&1) \
     || fail "teardown failed for the empty secondmate home"
   printf '%s\n' "$teardown_out" | grep -F 'Backlog:' >/dev/null \

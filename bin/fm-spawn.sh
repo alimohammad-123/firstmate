@@ -696,21 +696,22 @@ spawn_treehouse_endpoint_creation_complete() {  # <stable-endpoint-target>
   fi
 }
 
-spawn_write_treehouse_endpoint_identity() {
+spawn_write_endpoint_identity() {  # <stable-endpoint-target>
+  local target=$1
   case "${BACKEND:-tmux}" in
     tmux)
-      fm_backend_endpoint_metadata_write tmux "$ID" "$TREEHOUSE_ENDPOINT_ABORT_TARGET"
+      fm_backend_endpoint_metadata_write tmux "$ID" "$target"
       ;;
     herdr)
       fm_backend_endpoint_metadata_write \
-        herdr "$ID" "$TREEHOUSE_ENDPOINT_ABORT_TARGET" "$HERDR_WORKSPACE_ID" "$HERDR_TAB_ID"
+        herdr "$ID" "$target" "$HERDR_WORKSPACE_ID" "$HERDR_TAB_ID"
       ;;
     zellij)
       fm_backend_endpoint_metadata_write \
-        zellij "$ID" "$TREEHOUSE_ENDPOINT_ABORT_TARGET" "$ZELLIJ_TAB_ID"
+        zellij "$ID" "$target" "$ZELLIJ_TAB_ID"
       ;;
     cmux)
-      fm_backend_endpoint_metadata_write cmux "$ID" "$TREEHOUSE_ENDPOINT_ABORT_TARGET"
+      fm_backend_endpoint_metadata_write cmux "$ID" "$target"
       ;;
   esac
 }
@@ -780,7 +781,7 @@ spawn_preserve_treehouse_lease_evidence() {
   {
     echo "window=${T:-}"
     if [ -n "${TREEHOUSE_ENDPOINT_ABORT_TARGET:-}" ]; then
-      spawn_write_treehouse_endpoint_identity
+      spawn_write_endpoint_identity "$TREEHOUSE_ENDPOINT_ABORT_TARGET"
     else
       fm_backend_endpoint_metadata_write_binding "${BACKEND:-tmux}" "$ID"
     fi
@@ -2520,7 +2521,7 @@ SPAWN_META_TMP="$STATE/.$ID.meta.$$"
   # backend= is written only for a non-default (non-tmux) backend, so the
   # default path omits that field (absent backend= means tmux).
   if [ "$BACKEND" != orca ]; then
-    spawn_write_treehouse_endpoint_identity
+    spawn_write_endpoint_identity "$WT_TARGET"
   fi
   if [ "$BACKEND" = orca ]; then
     fm_backend_endpoint_metadata_write orca "$ID" "$ORCA_TERMINAL" "$ORCA_WORKTREE_ID"

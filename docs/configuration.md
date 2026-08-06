@@ -16,7 +16,7 @@ The tracked code root contains the shared instruction, skill, documentation, wor
 Persistent secondmate retirement admission locks and non-reusable home generations live outside removable homes under `$XDG_STATE_HOME/firstmate/secondmate-lifecycle/` (default `~/.local/state/firstmate/secondmate-lifecycle/`).
 They are Firstmate-owned recovery evidence keyed by canonical home identity; `bin/fm-secondmate-lifecycle-lib.sh` owns their exact lifecycle and operators should preserve them when a retirement reports ambiguity.
 
-`bin/fm-spawn.sh` owns the base task-metadata fields it emits, while the runtime-backend section below owns backend-specific fields and selector interpretation.
+This document owns the top-level task-metadata schema; producing script headers and helpers own their exact fields and mutation contracts, with `bin/fm-backend.sh` owning the backend endpoint subset and selector mechanics.
 The producing PR and Relay helpers own the fields they append, `bin/fm-classify-lib.sh` owns status-event vocabulary, and `bin/fm-crew-state.sh` owns current-state reconciliation.
 Wake, watcher, away-mode, and Relay-specific state mechanics remain with their named scripts and reference sections rather than being duplicated into one exhaustive state tree here.
 

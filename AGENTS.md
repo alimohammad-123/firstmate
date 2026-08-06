@@ -92,7 +92,7 @@ state/               volatile runtime signals; gitignored
   <id>.grok-turnend-token   firstmate-owned grok hook registry token for the task; removed by teardown
   <id>.kimi-turnend-token   firstmate-owned Kimi hook registry token for the task; removed by teardown
   <id>.muse-session  muse busy-source binding (sessions root plus task worktree) written by fm-spawn; removed by teardown
-  <id>.meta          task routing and lifecycle metadata written by fm-spawn and extended by the PR and X-link owners; docs/configuration.md owns the complete common, backend, lease, trace, remote-secondmate, PR, and X-link field schema, with bin/fm-backend.sh owning backend mechanics and sections 8 and 14 owning the operating procedures
+  <id>.meta          task routing and lifecycle metadata written by fm-spawn and extended by the PR and X-link owners; docs/configuration.md owns the top-level schema and routes exact fields to their producing script headers and helpers, bin/fm-backend.sh owns the backend endpoint subset, and sections 8 and 14 own the operating procedures
   <id>.herdr-presentation  quarantinable attempt and restart-binding journal for Herdr's optional visual projection; never task or endpoint authority; see docs/herdr-backend.md "Presentation spaces"
   <id>.check.sh      authenticated slow poll; the watcher dispatches validated PR data and the byte-identified Relay shim through trusted repository scripts, runs registered custom checks from hash-validated private snapshots, and rejects every other state check without execution
   <id>.check-trust   private content binding created by fm-check-register.sh for an intentional custom check
