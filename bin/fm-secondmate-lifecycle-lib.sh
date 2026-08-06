@@ -27,17 +27,29 @@ fm_secondmate_spawn_task_lock_acquire() {  # <home> <state> <task-lock>
   return "$rc"
 }
 
-fm_secondmate_retirement_mark_locked() {  # <state>
-  local state=$1 marker tmp
+fm_secondmate_retirement_mark_locked() {  # <state> <owner>
+  local state=$1 owner=$2 marker tmp
+  FM_SECONDMATE_RETIREMENT_MARKER_CREATED=0
   marker=$(fm_secondmate_retirement_marker_path "$state") || return 1
   if [ -e "$marker" ] || [ -L "$marker" ]; then
     [ -f "$marker" ] && [ ! -L "$marker" ]
     return $?
   fi
   tmp="$marker.tmp.$$"
-  printf 'version=1\n' > "$tmp" || return 1
+  printf 'version=1\nowner=%s\n' "$owner" > "$tmp" || return 1
   mv -f -- "$tmp" "$marker" || {
     rm -f -- "$tmp"
     return 1
   }
+  FM_SECONDMATE_RETIREMENT_MARKER_CREATED=1
+}
+
+fm_secondmate_retirement_unmark_exact() {  # <state> <owner>
+  local state=$1 owner=$2 marker actual expected
+  marker=$(fm_secondmate_retirement_marker_path "$state") || return 1
+  [ -f "$marker" ] && [ ! -L "$marker" ] || return 1
+  actual=$(cat "$marker") || return 1
+  expected=$(printf 'version=1\nowner=%s\n' "$owner")
+  [ "$actual" = "$expected" ] || return 1
+  rm -f -- "$marker"
 }

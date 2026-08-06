@@ -180,18 +180,29 @@ TEARDOWN_TASK_LOCK="$STATE/.spawn-$ID.lock"
 TEARDOWN_TASK_LOCK_HELD=0
 TEARDOWN_HERDR_LOCK_RECORDS=
 TEARDOWN_CHILD_TASK_LOCKS=
-TEARDOWN_ACTIVE_HOME_ADMISSION_LOCK=
+TEARDOWN_HOME_ADMISSION_LOCKS=
+TEARDOWN_RETIREMENT_STATES=
+TEARDOWN_RETIREMENT_MARKERS_CREATED=
+TEARDOWN_RETIREMENT_PROGRESS=0
+TEARDOWN_RETIREMENT_OWNER="${BASHPID:-$$}.$ID"
 teardown_exit_cleanup() {
-  local status=$?
+  local status=$? state owner
   if declare -F teardown_release_herdr_locks >/dev/null 2>&1; then
     teardown_release_herdr_locks
   fi
   if declare -F teardown_secondmate_child_locks_release >/dev/null 2>&1; then
     teardown_secondmate_child_locks_release
   fi
-  if [ -n "$TEARDOWN_ACTIVE_HOME_ADMISSION_LOCK" ]; then
-    fm_lock_release "$TEARDOWN_ACTIVE_HOME_ADMISSION_LOCK" || true
-    TEARDOWN_ACTIVE_HOME_ADMISSION_LOCK=
+  if [ "$TEARDOWN_RETIREMENT_PROGRESS" != 1 ] && [ -n "$TEARDOWN_RETIREMENT_MARKERS_CREATED" ]; then
+    while IFS=$'\t' read -r state owner; do
+      [ -n "$state" ] || continue
+      fm_secondmate_retirement_unmark_exact "$state" "$owner" || true
+    done <<FMEOF
+$TEARDOWN_RETIREMENT_MARKERS_CREATED
+FMEOF
+  fi
+  if declare -F teardown_secondmate_admission_locks_release >/dev/null 2>&1; then
+    teardown_secondmate_admission_locks_release
   fi
   if [ "$TEARDOWN_TASK_LOCK_HELD" = 1 ]; then
     TEARDOWN_TASK_LOCK_HELD=0
@@ -1990,17 +2001,79 @@ FMEOF
   TEARDOWN_CHILD_TASK_LOCKS=
 }
 
+teardown_secondmate_admission_lock_held() {  # <lock>
+  local expected=$1 held
+  [ -n "$TEARDOWN_HOME_ADMISSION_LOCKS" ] || return 1
+  while IFS= read -r held; do
+    [ "$held" != "$expected" ] || return 0
+  done <<FMEOF
+$TEARDOWN_HOME_ADMISSION_LOCKS
+FMEOF
+  return 1
+}
+
+teardown_secondmate_admission_locks_release() {
+  local held
+  [ -n "$TEARDOWN_HOME_ADMISSION_LOCKS" ] || return 0
+  while IFS= read -r held; do
+    [ -n "$held" ] || continue
+    fm_lock_release "$held" || true
+  done <<FMEOF
+$TEARDOWN_HOME_ADMISSION_LOCKS
+FMEOF
+  TEARDOWN_HOME_ADMISSION_LOCKS=
+}
+
+teardown_secondmate_retirement_commit() {
+  local state
+  while IFS= read -r state; do
+    [ -n "$state" ] || continue
+    if ! fm_secondmate_retirement_mark_locked "$state" "$TEARDOWN_RETIREMENT_OWNER"; then
+      echo "REFUSED: secondmate retirement marker is unsafe for ${state%/state}; preserving the home and every child" >&2
+      return 1
+    fi
+    if [ "$FM_SECONDMATE_RETIREMENT_MARKER_CREATED" = 1 ]; then
+      if [ -n "$TEARDOWN_RETIREMENT_MARKERS_CREATED" ]; then
+        TEARDOWN_RETIREMENT_MARKERS_CREATED="$TEARDOWN_RETIREMENT_MARKERS_CREATED
+$state	$TEARDOWN_RETIREMENT_OWNER"
+      else
+        TEARDOWN_RETIREMENT_MARKERS_CREATED="$state	$TEARDOWN_RETIREMENT_OWNER"
+      fi
+    fi
+  done <<FMEOF
+$TEARDOWN_RETIREMENT_STATES
+FMEOF
+}
+
 teardown_secondmate_home_retirement_begin() {  # <home>
   local home=$1 state admission meta lock receipt base id ids='' task_lock
   state="$home/state"
   [ -d "$state" ] || return 0
   admission=$(fm_secondmate_retirement_lock_path "$state") || return 1
-  TEARDOWN_ACTIVE_HOME_ADMISSION_LOCK=$admission
-  fm_lock_acquire_wait "$admission" || return 1
-  if ! fm_secondmate_retirement_mark_locked "$state"; then
-    echo "REFUSED: secondmate retirement marker is unsafe for $home; preserving the home and every child" >&2
-    return 1
+  if ! teardown_secondmate_admission_lock_held "$admission"; then
+    fm_lock_acquire_wait "$admission" || return 1
+    if [ -n "$TEARDOWN_HOME_ADMISSION_LOCKS" ]; then
+      TEARDOWN_HOME_ADMISSION_LOCKS="$TEARDOWN_HOME_ADMISSION_LOCKS
+$admission"
+    else
+      TEARDOWN_HOME_ADMISSION_LOCKS=$admission
+    fi
   fi
+  case "
+$TEARDOWN_RETIREMENT_STATES
+" in
+    *"
+$state
+"*) ;;
+    *)
+      if [ -n "$TEARDOWN_RETIREMENT_STATES" ]; then
+        TEARDOWN_RETIREMENT_STATES="$TEARDOWN_RETIREMENT_STATES
+$state"
+      else
+        TEARDOWN_RETIREMENT_STATES=$state
+      fi
+      ;;
+  esac
   for meta in "$state"/*.meta; do
     [ -e "$meta" ] || continue
     id=$(basename "$meta" .meta)
@@ -2040,8 +2113,6 @@ $task_lock"
   done <<FMEOF
 $(printf '%s\n' "$ids" | sed '/^$/d' | sort -u)
 FMEOF
-  fm_lock_release "$admission" || true
-  TEARDOWN_ACTIVE_HOME_ADMISSION_LOCK=
 }
 
 validate_secondmate_home_acquisition_evidence() {  # <home>
@@ -2338,6 +2409,8 @@ if [ "$KIND" = secondmate ]; then
 fi
 
 if [ "$KIND" = secondmate ] && [ "$FORCE" = "--force" ]; then
+  teardown_secondmate_retirement_commit || exit 1
+  TEARDOWN_RETIREMENT_PROGRESS=1
   cleanup_firstmate_home_children "$HOME_PATH" || exit $?
 fi
 
@@ -2428,6 +2501,11 @@ if [ "$BACKEND" = herdr ]; then
   fm_backend_herdr_parse_target "$T" || exit 1
   TEARDOWN_HERDR_SESSION=$FM_BACKEND_HERDR_SESSION
   TEARDOWN_HERDR_PANE=$FM_BACKEND_HERDR_PANE
+fi
+
+if [ "$KIND" = secondmate ] && [ "$FORCE" != "--force" ]; then
+  teardown_secondmate_retirement_commit || exit 1
+  TEARDOWN_RETIREMENT_PROGRESS=1
 fi
 
 # Best-effort: drop the local task branch so the shared repo does not accumulate refs.

@@ -417,6 +417,16 @@ make_brief() {
   printf 'lease test for %s\nDelivery contract: mode=no-mistakes\n' "$id" > "$home/data/$id/brief.md"
 }
 
+next_treehouse_path() {
+  local candidate
+  while IFS= read -r candidate; do
+    grep -Fq "$candidate"$'\t' "$TREEHOUSE_STATE" 2>/dev/null && continue
+    printf '%s\n' "$candidate"
+    return 0
+  done < "$TREEHOUSE_POOL"
+  return 1
+}
+
 run_spawn() {
   local home=$1 id=$2 expected_path=$3
   shift 3
@@ -434,6 +444,14 @@ run_teardown_force() {
     FM_DATA_OVERRIDE="$home/data" FM_CONFIG_OVERRIDE="$home/config" \
     FM_TEARDOWN_GUARD_DONE=1 FM_TREEHOUSE_RETURN_LOCK_RETRIES=0 \
     PATH="$FAKEBIN:$PATH" "$TEARDOWN" "$id" --force
+}
+
+run_teardown() {
+  local home=$1 id=$2
+  FM_ROOT_OVERRIDE="$ROOT" FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" \
+    FM_DATA_OVERRIDE="$home/data" FM_CONFIG_OVERRIDE="$home/config" \
+    FM_TEARDOWN_GUARD_DONE=1 FM_TREEHOUSE_RETURN_LOCK_RETRIES=0 \
+    PATH="$FAKEBIN:$PATH" "$TEARDOWN" "$id"
 }
 
 make_secondmate_retirement_fixture() {  # <home> <parent-id>
@@ -833,34 +851,76 @@ while [ ! -f "$RETIRE_LOCK_READY" ] && [ "$i" -lt 100 ]; do
   i=$((i + 1))
 done
 [ -f "$RETIRE_LOCK_READY" ] || fail 'retirement fixture did not hold the existing child lifecycle'
-run_teardown_force "$HOME_A" retire-admission \
+run_teardown "$HOME_A" retire-admission \
   >"$WORLD/retire-admission.out" 2>"$WORLD/retire-admission.err" &
 retire_pid=$!
 RETIRE_MARKER="$RETIRE_HOME/state/.secondmate-retiring"
-i=0
-while [ ! -f "$RETIRE_MARKER" ] && [ "$i" -lt 100 ]; do
-  sleep 0.05
-  i=$((i + 1))
-done
-[ -f "$RETIRE_MARKER" ] || fail 'forced secondmate retirement did not publish its admission barrier'
-make_brief "$RETIRE_HOME" refused-child
+"$FM_REAL_SLEEP" 0.2
+assert_absent "$RETIRE_MARKER" 'refusal-prone retirement published a durable admission barrier'
+make_brief "$RETIRE_HOME" admitted-child
+retire_admitted_path=$(next_treehouse_path) \
+  || fail 'retirement admission fixture had no free Treehouse path'
 retire_gets_before=$(grep -c '^get ' "$TREEHOUSE_LOG")
-if run_spawn "$RETIRE_HOME" refused-child "$WT2" --backend tmux \
-  >"$WORLD/refused-child.out" 2>"$WORLD/refused-child.err"; then
-  fail 'child launch passed admission after secondmate retirement began'
-fi
+run_spawn "$RETIRE_HOME" admitted-child "$retire_admitted_path" --backend tmux \
+  >"$WORLD/admitted-child.out" 2>"$WORLD/admitted-child.err" &
+retire_admitted_pid=$!
+"$FM_REAL_SLEEP" 0.2
 retire_gets_after=$(grep -c '^get ' "$TREEHOUSE_LOG")
 [ "$retire_gets_after" -eq "$retire_gets_before" ] \
-  || fail 'retiring-home refusal acquired a child Treehouse lease'
-assert_absent "$RETIRE_HOME/state/refused-child.meta" 'retiring-home refusal published child metadata'
-assert_absent "$RETIRE_HOME/state/.refused-child.treehouse-lease-acquire.json" \
-  'retiring-home refusal left child acquisition evidence'
+  || fail 'child launch passed home admission during retirement preflight'
+kill -0 "$retire_admitted_pid" 2>/dev/null \
+  || fail 'child admission did not wait for retirement preflight'
 : > "$RETIRE_LOCK_RELEASE"
 wait "$HELD_LOCK_PID" || fail 'held child lifecycle lock did not release cleanly'
-wait "$retire_pid" \
-  || fail "forced secondmate retirement failed after admission proof\n$(cat "$WORLD/retire-admission.err")"
+if wait "$retire_pid"; then
+  fail 'ordinary secondmate retirement unexpectedly discarded active child work'
+fi
+assert_absent "$RETIRE_MARKER" 'ordinary retirement refusal permanently drained the secondmate home'
+wait "$retire_admitted_pid" \
+  || fail "child admission did not resume after ordinary refusal\n$(cat "$WORLD/admitted-child.err")"
+assert_present "$RETIRE_HOME/state/admitted-child.meta" \
+  'resumed child admission did not publish after retirement refusal'
+run_teardown_force "$HOME_A" retire-admission \
+  >"$WORLD/retire-admission-retry.out" 2>"$WORLD/retire-admission-retry.err" \
+  || fail "forced retirement retry failed\n$(cat "$WORLD/retire-admission-retry.err")"
 assert_absent "$RETIRE_HOME" 'completed secondmate retirement retained its home'
-pass 'secondmate retirement blocks every later child launch before acquisition'
+pass 'secondmate refusal releases admission and allows a guarded retirement retry'
+
+RETIRE_AMBIGUOUS_HOME="$WORLD/retiring-ambiguous-secondmate"
+make_secondmate_retirement_fixture "$RETIRE_AMBIGUOUS_HOME" retire-ambiguous
+make_brief "$RETIRE_AMBIGUOUS_HOME" ambiguous-child
+retire_ambiguous_path=$(next_treehouse_path) \
+  || fail 'ambiguous retirement fixture had no free Treehouse path'
+run_spawn "$RETIRE_AMBIGUOUS_HOME" ambiguous-child "$retire_ambiguous_path" --backend tmux >/dev/null \
+  || fail 'ambiguous retirement fixture could not publish its child'
+RETIRE_AMBIGUOUS_META="$RETIRE_AMBIGUOUS_HOME/state/ambiguous-child.meta"
+retire_ambiguous_lease=$(sed -n 's/^treehouse_lease_id=//p' "$RETIRE_AMBIGUOUS_META")
+RETIRE_AMBIGUOUS_MARKER="$RETIRE_AMBIGUOUS_HOME/state/.secondmate-retiring"
+if FM_FAKE_RETURN_FAIL_ID="$retire_ambiguous_lease" \
+  run_teardown_force "$HOME_A" retire-ambiguous \
+    >"$WORLD/retire-ambiguous.out" 2>"$WORLD/retire-ambiguous.err"; then
+  fail 'ambiguous forced retirement unexpectedly completed'
+fi
+assert_present "$RETIRE_AMBIGUOUS_MARKER" \
+  'ambiguous destructive retirement did not preserve its durable admission barrier'
+assert_present "$RETIRE_AMBIGUOUS_META" \
+  'ambiguous destructive retirement erased child lease identity'
+grep -Fq "$retire_ambiguous_path"$'\t'"$retire_ambiguous_lease"$'\t' "$TREEHOUSE_STATE" \
+  || fail 'ambiguous destructive retirement released or lost the child lease'
+make_brief "$RETIRE_AMBIGUOUS_HOME" blocked-after-progress
+retire_ambiguous_gets_before=$(grep -c '^get ' "$TREEHOUSE_LOG")
+if run_spawn "$RETIRE_AMBIGUOUS_HOME" blocked-after-progress "$WT2" --backend tmux \
+  >"$WORLD/blocked-after-progress.out" 2>"$WORLD/blocked-after-progress.err"; then
+  fail 'child launch passed admission after ambiguous destructive retirement'
+fi
+retire_ambiguous_gets_after=$(grep -c '^get ' "$TREEHOUSE_LOG")
+[ "$retire_ambiguous_gets_after" -eq "$retire_ambiguous_gets_before" ] \
+  || fail 'retirement barrier allowed a new Treehouse acquisition after ambiguous progress'
+run_teardown_force "$HOME_A" retire-ambiguous \
+  >"$WORLD/retire-ambiguous-retry.out" 2>"$WORLD/retire-ambiguous-retry.err" \
+  || fail "ambiguous retirement retry failed\n$(cat "$WORLD/retire-ambiguous-retry.err")"
+assert_absent "$RETIRE_AMBIGUOUS_HOME" 'ambiguous retirement retry retained its home'
+pass 'ambiguous retirement preserves its barrier and exact child identity'
 
 RETIRE_REPLACEMENT_HOME="$WORLD/retiring-replacement-secondmate"
 make_secondmate_retirement_fixture "$RETIRE_REPLACEMENT_HOME" retire-replacement
@@ -890,14 +950,9 @@ run_teardown_force "$HOME_A" retire-replacement \
   >"$WORLD/retire-replacement.out" 2>"$WORLD/retire-replacement.err" &
 retire_replacement_pid=$!
 RETIRE_REPLACEMENT_MARKER="$RETIRE_REPLACEMENT_HOME/state/.secondmate-retiring"
-i=0
-while [ ! -f "$RETIRE_REPLACEMENT_MARKER" ] && [ "$i" -lt 100 ]; do
-  sleep 0.05
-  i=$((i + 1))
-done
-[ -f "$RETIRE_REPLACEMENT_MARKER" ] \
-  || fail 'replacement retirement did not publish its admission barrier'
-sleep 0.2
+"$FM_REAL_SLEEP" 0.2
+assert_absent "$RETIRE_REPLACEMENT_MARKER" \
+  'replacement retirement committed before child publication preflight completed'
 retire_replacement_returns_held=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
 [ "$retire_replacement_returns_held" -eq "$retire_replacement_returns_before" ] \
   || fail 'forced secondmate cleanup returned a child lease during replacement publication'
