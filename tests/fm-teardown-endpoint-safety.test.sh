@@ -153,6 +153,11 @@ test_supported_backend_endpoint_records_validate() {
   fm_write_meta "$dir/home/state/$id.meta" \
     "window=workspace-1:surface-2" "endpoint_task_id=$id" "worktree=$dir/worktree" "project=$dir/project" \
     "backend=cmux" "cmux_workspace_id=workspace-1" "cmux_surface_id=surface-2"
+  fm_backend_source cmux || fail "cmux adapter could not load"
+  fm_backend_cmux_correlate_task_workspace() {
+    FM_BACKEND_CMUX_CORRELATED_WORKSPACE=$1
+    FM_BACKEND_CMUX_CORRELATION_ERROR=
+  }
   fm_backend_validate_task_endpoint "$dir/home/state/$id.meta" "$id" || fail "valid cmux endpoint refused"
 
   for backend in tmux herdr zellij orca cmux; do

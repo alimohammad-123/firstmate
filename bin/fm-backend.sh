@@ -357,12 +357,13 @@ fm_backend_target_of_meta() {  # <meta-file>
   [ -n "$window" ] && printf '%s' "$window"
 }
 
-# fm_backend_validate_task_endpoint: validate a task cleanup record entirely
-# from its durable metadata before any runtime command or cleanup mutation.
-# The validation binds the exact task id, selected backend, target, project,
-# and worktree. New non-tmux records carry endpoint_task_id because their
-# opaque runtime ids do not encode the task label. Legacy tmux records remain
-# valid only when their window name itself is exactly fm-<task-id>.
+# fm_backend_validate_task_endpoint: validate a task cleanup record before any
+# cleanup mutation. Durable metadata binds the exact task id, selected backend,
+# target, project, and worktree; restart-scoped tmux and cmux ids are then
+# correlated against live exact task identity. New non-tmux records carry
+# endpoint_task_id because their opaque runtime ids do not encode the task
+# label. Legacy tmux records remain valid only when their window name itself is
+# exactly fm-<task-id>.
 # On success, sets FM_BACKEND_VALIDATED_BACKEND and
 # FM_BACKEND_VALIDATED_TARGET. On failure, prints one refusal and returns 1.
 fm_backend_meta_exact_value() {  # <meta-file> <key>
@@ -383,7 +384,7 @@ fm_backend_endpoint_atom_valid() {  # <value>
 fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
   local meta=$1 id=$2 backend_count backend window worktree project binding_count binding
   local session pane recorded_session workspace tab terminal worktree_id surface
-  local tmux_window_id tmux_window_id_count tmux_resolved tmux_reason
+  local tmux_window_id tmux_window_id_count tmux_resolved tmux_reason cmux_resolved cmux_reason
   FM_BACKEND_VALIDATED_BACKEND=
   FM_BACKEND_VALIDATED_TARGET=
   [ -f "$meta" ] && [ ! -L "$meta" ] || {
@@ -555,6 +556,22 @@ fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
         echo "REFUSED: cmux endpoint metadata for task $id is malformed or inconsistent; preserving task state." >&2
         return 1
       fi
+      fm_backend_source cmux || {
+        echo "REFUSED: cmux endpoint '$window' cannot load its runtime identity verifier; preserving task state." >&2
+        return 1
+      }
+      FM_BACKEND_CMUX_CORRELATION_ERROR=unreadable
+      fm_backend_cmux_correlate_task_workspace "$workspace" "fm-$id" || {
+        cmux_reason=${FM_BACKEND_CMUX_CORRELATION_ERROR:-unreadable}
+        echo "REFUSED: cmux endpoint '$window' has $cmux_reason live workspace identity; preserving task state." >&2
+        return 1
+      }
+      cmux_resolved=${FM_BACKEND_CMUX_CORRELATED_WORKSPACE:-}
+      [ -n "$cmux_resolved" ] || {
+        echo "REFUSED: cmux endpoint '$window' has unreadable live workspace identity; preserving task state." >&2
+        return 1
+      }
+      window="$cmux_resolved:$surface"
       ;;
   esac
   # shellcheck disable=SC2034 # Output globals are consumed by sourcing callers.

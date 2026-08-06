@@ -30,12 +30,13 @@ TMUX_COUNTER="$WORLD/tmux-counter"
 ENDPOINT_STATE="$WORLD/backend-endpoints.tsv"
 ENDPOINT_COUNTER="$WORLD/backend-endpoint-counter"
 CMUX_FOCUS_MARKER="$WORLD/cmux-focus-moved"
+XDG_STATE_HOME="$WORLD/xdg-state"
 EVENT_LOG="$WORLD/events.log"
 FM_REAL_MV=$(command -v mv)
 FM_REAL_RM=$(command -v rm)
 FM_REAL_CP=$(command -v cp)
 FM_REAL_SLEEP=$(command -v sleep)
-export TREEHOUSE_STATE TREEHOUSE_POOL TREEHOUSE_COUNTER TREEHOUSE_LOG TMUX_LOG TMUX_WINDOWS TMUX_COUNTER ENDPOINT_STATE ENDPOINT_COUNTER CMUX_FOCUS_MARKER EVENT_LOG FM_REAL_MV FM_REAL_RM FM_REAL_CP FM_REAL_SLEEP
+export TREEHOUSE_STATE TREEHOUSE_POOL TREEHOUSE_COUNTER TREEHOUSE_LOG TMUX_LOG TMUX_WINDOWS TMUX_COUNTER ENDPOINT_STATE ENDPOINT_COUNTER CMUX_FOCUS_MARKER XDG_STATE_HOME EVENT_LOG FM_REAL_MV FM_REAL_RM FM_REAL_CP FM_REAL_SLEEP
 
 mkdir -p "$HOME_A/data" "$HOME_A/state" "$HOME_A/config" "$HOME_A/projects" \
   "$HOME_B/data" "$HOME_B/state" "$HOME_B/config" "$HOME_B/projects"
@@ -797,6 +798,60 @@ run_teardown_force "$HOME_A" endpoint-held >/dev/null \
   || fail 'receipt-bearing teardown reuse cleanup failed'
 pass 'exact teardown retires its matched receipt and permits task-id reuse'
 
+PRIMARY_COMPAT_PARENT="$WORLD/primary-compat-parent"
+PRIMARY_COMPAT_HOME="$PRIMARY_COMPAT_PARENT/home"
+mkdir -p "$PRIMARY_COMPAT_HOME/data" "$PRIMARY_COMPAT_HOME/state" \
+  "$PRIMARY_COMPAT_HOME/config" "$PRIMARY_COMPAT_HOME/projects"
+printf 'off\n' > "$PRIMARY_COMPAT_HOME/config/herdr-presentation-spaces"
+make_brief "$PRIMARY_COMPAT_HOME" primary-parent-compat
+chmod 500 "$PRIMARY_COMPAT_PARENT"
+set +e
+XDG_STATE_HOME="$PRIMARY_COMPAT_PARENT/xdg-state" \
+  run_spawn "$PRIMARY_COMPAT_HOME" primary-parent-compat "$WT1" --backend tmux \
+    >"$WORLD/primary-parent-compat.out" 2>"$WORLD/primary-parent-compat.err"
+primary_compat_rc=$?
+set -e
+chmod 700 "$PRIMARY_COMPAT_PARENT"
+[ "$primary_compat_rc" -eq 0 ] \
+  || fail "primary spawn required a parent-directory lifecycle write\n$(cat "$WORLD/primary-parent-compat.err")"
+assert_absent "$PRIMARY_COMPAT_PARENT/xdg-state" \
+  'primary spawn created secondmate lifecycle state outside its home'
+run_teardown_force "$PRIMARY_COMPAT_HOME" primary-parent-compat >/dev/null \
+  || fail 'primary parent-write compatibility fixture could not be torn down'
+pass 'ordinary primary spawn retains its home-local per-task lock path'
+
+make_brief "$HOME_A" cmux-duplicate-title
+run_spawn "$HOME_A" cmux-duplicate-title "$WT1" --backend cmux >/dev/null \
+  || fail 'cmux duplicate-title fixture could not publish'
+CMUX_DUPLICATE_META="$HOME_A/state/cmux-duplicate-title.meta"
+cmux_duplicate_recorded=$(sed -n 's/^cmux_workspace_id=//p' "$CMUX_DUPLICATE_META")
+cmux_duplicate_title=$(awk -F '\t' -v ws="$cmux_duplicate_recorded" \
+  '$1 == "cmux" && $2 == ws {print $4; exit}' "$ENDPOINT_STATE")
+[ -n "$cmux_duplicate_title" ] || fail 'cmux duplicate-title fixture lost its scoped title'
+backend_endpoint_remove cmux "$cmux_duplicate_recorded"
+cmux_duplicate_a=22222222-2222-2222-2222-222222222221
+cmux_duplicate_b=22222222-2222-2222-2222-222222222222
+printf 'cmux\t%s\t33333333-3333-3333-3333-333333333331\t%s\twindow-1\n' \
+  "$cmux_duplicate_a" "$cmux_duplicate_title" >> "$ENDPOINT_STATE"
+printf 'cmux\t%s\t33333333-3333-3333-3333-333333333332\t%s\twindow-2\n' \
+  "$cmux_duplicate_b" "$cmux_duplicate_title" >> "$ENDPOINT_STATE"
+return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+if run_teardown_force "$HOME_A" cmux-duplicate-title >/dev/null 2>&1; then
+  fail 'cmux teardown accepted ambiguous exact-title recovery'
+fi
+return_count_after=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+[ "$return_count_after" -eq "$return_count_before" ] \
+  || fail 'cmux duplicate-title ambiguity reached Treehouse return'
+backend_endpoint_is_live cmux "$cmux_duplicate_a" \
+  || fail 'cmux duplicate-title ambiguity closed the first arbitrary workspace'
+backend_endpoint_is_live cmux "$cmux_duplicate_b" \
+  || fail 'cmux duplicate-title ambiguity closed the second arbitrary workspace'
+assert_present "$CMUX_DUPLICATE_META" 'cmux duplicate-title refusal erased task metadata'
+backend_endpoint_remove cmux "$cmux_duplicate_b"
+run_teardown_force "$HOME_A" cmux-duplicate-title >/dev/null \
+  || fail 'cmux duplicate-title fixture could not recover after becoming unique'
+pass 'cmux duplicate-title recovery refuses before endpoint or lease mutation'
+
 for backend in tmux herdr zellij cmux; do
   id="late-$backend"
   make_brief "$HOME_A" "$id"
@@ -1108,6 +1163,10 @@ wait "$retire_removal_pid" \
 retire_removal_gets_after=$(grep -c '^get ' "$TREEHOUSE_LOG")
 [ "$retire_removal_gets_after" -eq "$retire_removal_gets_before" ] \
   || fail 'pre-removal child launch acquired a lease from the recycled home'
+for retirement_sibling in "$WORLD"/.fm-secondmate-retirement-*; do
+  [ ! -e "$retirement_sibling" ] && [ ! -L "$retirement_sibling" ] \
+    || fail 'secondmate retirement wrote lifecycle data beside a Treehouse-managed home'
+done
 "$FM_REAL_RM" -rf -- "$RETIRE_REMOVAL_HOME"
 pass 'secondmate admission barrier survives removal and rejects stale waiters'
 

@@ -230,7 +230,8 @@ wrong_identity_refused=true
 exact_identity_returned=true
 ```
 
-The stateful fake proved one home-scoped immutable lease per allocation, same-task reuse after a simulated endpoint or owner restart, exclusion from later allocation, cross-home separation for the same task id, refusal before return on wrong identity, exact conditional return on correct identity, stable endpoint retirement before return across all four Treehouse-backed backends, replacement-endpoint recovery after ambiguous cleanup, atomic publication as the committed handoff boundary, exact receipt retirement through recovery and reuse, and raw-only preservation when acquisition identity was ambiguous.
+The stateful fake proved one home-scoped immutable lease per allocation, same-task reuse after simulated endpoint or owner restart, exclusion from later allocation, cross-home separation for the same task id, refusal before return on wrong identity, and exact conditional return on correct identity.
+It also proved live tmux identity recovery and refusal across server generations, primary-home lock compatibility, duplicate-title cmux refusal before mutation, stable endpoint retirement before return across all four Treehouse-backed backends, replacement-endpoint recovery after ambiguous cleanup, atomic publication as the committed handoff boundary, serialized spawn and teardown, guarded secondmate retirement across refusal, ambiguity, removal, recycled paths, missing removable state, exact child cleanup, exact receipt retirement through recovery and reuse, and raw-only preservation when acquisition identity was ambiguous.
 
 ```text
 ok - spawn acquires and records one home-scoped durable Treehouse lease before launch
@@ -239,15 +240,26 @@ ok - a later allocation cannot select a worktree held by an earlier task lease
 ok - two homes using the same task id receive non-colliding lease identities and holders
 ok - wrong lease identity refuses before any conditional return or task-record cleanup
 ok - correct path, identity, and holder conditionally return the exact task lease
+ok - tmux teardown recovers one unique exact task window after restart
+ok - tmux teardown refuses rebound ids before lease return
+ok - tmux teardown refuses absent endpoint identity before lease return
 ok - legacy in-flight tasks are preserved with actionable recovery instead of guessed allocation or release
 ok - late pre-publication failure confirms its exact endpoint gone before returning its lease
 ok - failed exact rollback preserves both lease identity and raw acquisition evidence
 ok - matched recovery receipt retires through publication, teardown, and task-id reuse
 ok - unconfirmed endpoint cleanup preserves the exact lease and acquisition evidence
 ok - exact teardown retires its matched receipt and permits task-id reuse
+ok - ordinary primary spawn retains its home-local per-task lock path
+ok - cmux duplicate-title recovery refuses before endpoint or lease mutation
 ok - tmux, Herdr, Zellij, and cmux retire exact late endpoints before return and preserve ambiguity
 ok - recovered leases preserve each backend replacement endpoint identity after ambiguous cleanup
 ok - exact atomic metadata publication is the committed rollback handoff boundary
+ok - replacement publication and exact lease return serialize on one task lifecycle
+ok - secondmate refusal releases admission and allows a guarded retirement retry
+ok - ambiguous retirement preserves its barrier and exact child identity
+ok - secondmate admission barrier survives removal and rejects stale waiters
+ok - missing state and marker cannot bypass external retirement admission
+ok - forced secondmate cleanup retains child lifecycle ownership through exact return
 ok - ambiguous acquisition preserves raw evidence and never guesses a lease release
 ```
 

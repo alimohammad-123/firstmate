@@ -627,6 +627,47 @@ fm_backend_cmux_window_of_workspace() {  # <workspace_id> -> "<window_id> <count
   ' 2>/dev/null
 }
 
+fm_backend_cmux_correlate_task_workspace() {  # <recorded-workspace-id> <expected-label>
+  local recorded=$1 expected_label=$2 expected_title inventory recorded_count recorded_title title_count resolved
+  FM_BACKEND_CMUX_CORRELATION_ERROR=unreadable
+  FM_BACKEND_CMUX_CORRELATED_WORKSPACE=
+  expected_title=$(fm_backend_cmux_scoped_title "$expected_label") || return 1
+  inventory=$(fm_backend_cmux_all_window_workspaces) || return 1
+  recorded_count=$(printf '%s\n' "$inventory" | jq -sr --arg id "$recorded" \
+    '[.[] | select(.id == $id)] | length' 2>/dev/null) || return 1
+  case "$recorded_count" in
+    1)
+      recorded_title=$(printf '%s\n' "$inventory" | jq -sr --arg id "$recorded" \
+        'first(.[] | select(.id == $id) | .title)' 2>/dev/null) || return 1
+      if [ "$recorded_title" = "$expected_title" ]; then
+        FM_BACKEND_CMUX_CORRELATED_WORKSPACE=$recorded
+        return 0
+      fi
+      FM_BACKEND_CMUX_CORRELATION_ERROR=rebound
+      return 1
+      ;;
+    0) ;;
+    *)
+      FM_BACKEND_CMUX_CORRELATION_ERROR=ambiguous
+      return 1
+      ;;
+  esac
+  title_count=$(printf '%s\n' "$inventory" | jq -sr --arg title "$expected_title" \
+    '[.[] | select(.title == $title)] | length' 2>/dev/null) || return 1
+  case "$title_count" in
+    1)
+      resolved=$(printf '%s\n' "$inventory" | jq -sr --arg title "$expected_title" \
+        'first(.[] | select(.title == $title) | .id)' 2>/dev/null) || return 1
+      [ -n "$resolved" ] || return 1
+      FM_BACKEND_CMUX_CORRELATED_WORKSPACE=$resolved
+      return 0
+      ;;
+    0) FM_BACKEND_CMUX_CORRELATION_ERROR=absent ;;
+    *) FM_BACKEND_CMUX_CORRELATION_ERROR=ambiguous ;;
+  esac
+  return 1
+}
+
 # fm_backend_cmux_kill: remove the task's whole workspace, best-effort (mirrors
 # every other backend's `kill` `|| true` contract). A cmux task owns one
 # workspace, so teardown reclaims that workspace and all of its surfaces.
@@ -644,26 +685,14 @@ fm_backend_cmux_window_of_workspace() {  # <workspace_id> -> "<window_id> <count
 # leaving that window a fresh default workspace (never an fm-<home>- title, so
 # recovery/list_live ignore it) - cmux's own "closed the last tab" outcome.
 fm_backend_cmux_kill() {  # <target> [unused] [expected-label]
-  local expected_label=${3:-} expected_title inventory title wsid wininfo win count
+  local expected_label=${3:-} wsid wininfo win count
   if [ -n "$expected_label" ]; then
     if fm_backend_cmux_target_ready "$1" "$expected_label"; then
       :
     else
       fm_backend_cmux_parse_target "$1" || return 0
-      expected_title=$(fm_backend_cmux_scoped_title "$expected_label")
-      inventory=$(fm_backend_cmux_all_window_workspaces) || return 0
-      title=$(printf '%s\n' "$inventory" | jq -sr --arg id "$FM_BACKEND_CMUX_WORKSPACE" \
-        'first(.[] | select(.id == $id) | .title) // empty' 2>/dev/null)
-      if [ "$title" = "$expected_title" ]; then
-        :
-      elif [ -n "$title" ]; then
-        return 0
-      else
-        wsid=$(printf '%s\n' "$inventory" | jq -sr --arg title "$expected_title" \
-          'first(.[] | select(.title == $title) | .id) // empty' 2>/dev/null)
-        [ -n "$wsid" ] || return 0
-        FM_BACKEND_CMUX_WORKSPACE=$wsid
-      fi
+      fm_backend_cmux_correlate_task_workspace "$FM_BACKEND_CMUX_WORKSPACE" "$expected_label" || return 0
+      FM_BACKEND_CMUX_WORKSPACE=$FM_BACKEND_CMUX_CORRELATED_WORKSPACE
     fi
   else
     fm_backend_cmux_parse_target "$1" || return 0

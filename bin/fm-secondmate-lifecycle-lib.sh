@@ -3,11 +3,10 @@
 #
 # Source this file only after bin/fm-wake-lib.sh has provided
 # fm_lock_try_acquire and fm_lock_release.
-# The admission lock lives beside the canonical home rather than inside it and
-# is keyed by the canonical home path, so teardown can retain it while the home
-# itself is returned or removed. A sibling epoch survives removal and changes
-# at retirement commit so a waiter from an earlier home generation cannot enter
-# a recycled path.
+# The admission lock and epoch live under the machine's existing Firstmate XDG
+# state root and are keyed by the canonical home path, so teardown can retain
+# them while the home itself is returned or removed without writing inside a
+# Treehouse-managed hierarchy.
 # Spawn acquires the home admission lock before its per-task lifecycle lock;
 # teardown acquires the same home lock before retaining child lifecycle locks.
 # fm_secondmate_spawn_task_lock_acquire returns 0 with the task lock held, 1
@@ -24,11 +23,29 @@ fm_secondmate_canonical_home() {  # <home>
   printf '%s\n' "$canonical"
 }
 
+fm_secondmate_lifecycle_root() {
+  local root
+  root="${XDG_STATE_HOME:-$HOME/.local/state}/firstmate/secondmate-lifecycle"
+  case "$root" in /*) ;; *) return 1 ;; esac
+  case "$root" in *$'\n'*|*$'\r'*) return 1 ;; esac
+  printf '%s\n' "$root"
+}
+
+fm_secondmate_lifecycle_root_ensure() {
+  local root
+  root=$(fm_secondmate_lifecycle_root) || return 1
+  if [ -e "$root" ] || [ -L "$root" ]; then
+    [ -d "$root" ] && [ ! -L "$root" ]
+    return $?
+  fi
+  mkdir -p -- "$root" || return 1
+  [ -d "$root" ] && [ ! -L "$root" ]
+}
+
 fm_secondmate_retirement_external_path() {  # <home> <suffix>
-  local canonical parent digest
+  local canonical root digest
   canonical=$(fm_secondmate_canonical_home "$1") || return 1
-  parent=${canonical%/*}
-  [ -n "$parent" ] || parent=/
+  root=$(fm_secondmate_lifecycle_root) || return 1
   if command -v shasum >/dev/null 2>&1; then
     digest=$(printf '%s' "$canonical" | shasum -a 256 | awk '{print $1}') || return 1
   elif command -v sha256sum >/dev/null 2>&1; then
@@ -37,10 +54,13 @@ fm_secondmate_retirement_external_path() {  # <home> <suffix>
     return 1
   fi
   case "$digest" in ''|*[!A-Fa-f0-9]*) return 1 ;; esac
-  printf '%s/.fm-secondmate-retirement-%s.%s\n' "$parent" "$digest" "$2"
+  printf '%s/secondmate-retirement-%s.%s\n' "$root" "$digest" "$2"
 }
 
-fm_secondmate_retirement_lock_path() { fm_secondmate_retirement_external_path "$1" lock; }
+fm_secondmate_retirement_lock_path() {
+  fm_secondmate_lifecycle_root_ensure || return 1
+  fm_secondmate_retirement_external_path "$1" lock
+}
 
 fm_secondmate_retirement_epoch_path() { fm_secondmate_retirement_external_path "$1" epoch; }
 
@@ -90,7 +110,14 @@ fm_secondmate_retirement_epoch_advance_locked() {  # <home> <owner>
 fm_secondmate_retirement_marker_path() { printf '%s/.secondmate-retiring\n' "$1"; }
 
 fm_secondmate_spawn_task_lock_acquire() {  # <home> <state> <task-lock>
-  local home=$1 state=$2 task_lock=$3 admission marker epoch current_epoch epoch_owner held_pid home_marker rc
+  local home=$1 state=$2 task_lock=$3 admission marker epoch_path epoch current_epoch epoch_owner held_pid home_marker rc
+  home_marker="$home/.fm-secondmate-home"
+  epoch_path=$(fm_secondmate_retirement_epoch_path "$home") || return 1
+  if [ ! -e "$home_marker" ] && [ ! -L "$home_marker" ] \
+    && [ ! -e "$epoch_path" ] && [ ! -L "$epoch_path" ]; then
+    fm_lock_try_acquire "$task_lock"
+    return $?
+  fi
   admission=$(fm_secondmate_retirement_lock_path "$home") || return 1
   epoch=$(fm_secondmate_retirement_epoch_read "$home") || return 2
   while ! fm_lock_try_acquire "$admission"; do
@@ -109,7 +136,6 @@ fm_secondmate_spawn_task_lock_acquire() {  # <home> <state> <task-lock>
     fm_lock_release "$admission" || true
     return 2
   fi
-  home_marker="$home/.fm-secondmate-home"
   if [ -e "$home_marker" ] || [ -L "$home_marker" ]; then
     if [ ! -f "$home_marker" ] || [ -L "$home_marker" ] || [ ! -d "$state" ]; then
       fm_lock_release "$admission" || true
