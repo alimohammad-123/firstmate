@@ -195,6 +195,41 @@ tests/fm-treehouse-task-lease.test.sh
 
 The installed CLI exposed `get --lease --json --lease-holder`, `status --json`, and both `return --if-lease-id` and `return --if-lease-holder`.
 An isolated temporary-home probe against that binary confirmed leased JSON status, exclusion from the next allocation, refusal on a wrong conditional identity, and successful return on the exact identity.
+
+```sh
+probe_root=$(mktemp -d "${TMPDIR:-/tmp}/treehouse-lease-probe.XXXXXX")
+trap 'find "$probe_root" -depth -delete' EXIT
+export HOME="$probe_root/home"
+repo="$probe_root/repo"
+mkdir -p "$HOME" "$repo"
+git -C "$repo" init -q
+git -C "$repo" config user.name probe
+git -C "$repo" config user.email probe@example.invalid
+git -C "$repo" commit --allow-empty -qm init
+(cd "$repo" && treehouse init >/dev/null 2>&1)
+first=$(cd "$repo" && treehouse get --lease --json --lease-holder probe:first 2>/dev/null)
+second=$(cd "$repo" && treehouse get --lease --json --lease-holder probe:second 2>/dev/null)
+first_path=$(printf '%s\n' "$first" | jq -r .path)
+first_id=$(printf '%s\n' "$first" | jq -r .lease_id)
+second_path=$(printf '%s\n' "$second" | jq -r .path)
+second_id=$(printf '%s\n' "$second" | jq -r .lease_id)
+pool_status=$(cd "$repo" && treehouse status --json)
+printf 'first_leased=%s\n' "$(printf '%s\n' "$pool_status" | jq -r --arg path "$first_path" 'any(.[]; .path == $path and .status == "leased")')"
+printf 'held_copy_excluded=%s\n' "$([ "$first_path" != "$second_path" ] && printf true || printf false)"
+if (cd "$repo" && treehouse return --force "$first_path" --if-lease-id wrong --if-lease-holder probe:first) >/dev/null 2>&1; then wrong_refused=false; else wrong_refused=true; fi
+printf 'wrong_identity_refused=%s\n' "$wrong_refused"
+if (cd "$repo" && treehouse return --force "$first_path" --if-lease-id "$first_id" --if-lease-holder probe:first) >/dev/null 2>&1; then exact_returned=true; else exact_returned=false; fi
+printf 'exact_identity_returned=%s\n' "$exact_returned"
+(cd "$repo" && treehouse return --force "$second_path" --if-lease-id "$second_id" --if-lease-holder probe:second) >/dev/null 2>&1
+```
+
+```text
+first_leased=true
+held_copy_excluded=true
+wrong_identity_refused=true
+exact_identity_returned=true
+```
+
 The stateful fake proved one home-scoped immutable lease per allocation, same-task reuse after a simulated endpoint or owner restart, exclusion from later allocation, cross-home separation for the same task id, refusal before return on wrong identity, exact conditional return on correct identity, exact rollback after pre-publication failure, retained metadata plus raw acquisition evidence when rollback failed, and raw-only preservation when acquisition identity was ambiguous.
 
 ```text
