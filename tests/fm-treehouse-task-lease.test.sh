@@ -25,7 +25,9 @@ TREEHOUSE_POOL="$WORLD/treehouse-pool.txt"
 TREEHOUSE_COUNTER="$WORLD/treehouse-counter"
 TREEHOUSE_LOG="$WORLD/treehouse.log"
 TMUX_LOG="$WORLD/tmux.log"
-export TREEHOUSE_STATE TREEHOUSE_POOL TREEHOUSE_COUNTER TREEHOUSE_LOG TMUX_LOG
+TMUX_WINDOWS="$WORLD/tmux-windows"
+EVENT_LOG="$WORLD/events.log"
+export TREEHOUSE_STATE TREEHOUSE_POOL TREEHOUSE_COUNTER TREEHOUSE_LOG TMUX_LOG TMUX_WINDOWS EVENT_LOG
 
 mkdir -p "$HOME_A/data" "$HOME_A/state" "$HOME_A/config" "$HOME_A/projects" \
   "$HOME_B/data" "$HOME_B/state" "$HOME_B/config" "$HOME_B/projects"
@@ -39,12 +41,15 @@ printf '%s\n' "$WT1" "$WT2" "$WT3" "$WT4" > "$TREEHOUSE_POOL"
 : > "$TREEHOUSE_STATE"
 : > "$TREEHOUSE_LOG"
 : > "$TMUX_LOG"
+: > "$TMUX_WINDOWS"
+: > "$EVENT_LOG"
 printf '0\n' > "$TREEHOUSE_COUNTER"
 
 cat > "$FAKEBIN/treehouse" <<'SH'
 #!/usr/bin/env bash
 set -eu
 printf '%s\n' "$*" >> "$TREEHOUSE_LOG"
+printf 'treehouse %s\n' "$*" >> "$EVENT_LOG"
 case "${1:-}" in
   get)
     shift
@@ -124,18 +129,33 @@ cat > "$FAKEBIN/tmux" <<'SH'
 #!/usr/bin/env bash
 set -u
 printf '%s\n' "$*" >> "$TMUX_LOG"
+printf 'tmux %s\n' "$*" >> "$EVENT_LOG"
 case "$*" in
-  *"#{pane_current_path}"*) printf '%s\n' "${FM_FAKE_PANE_PATH:-}"; exit 0 ;;
+  *"#{pane_current_path}"*) [ "${FM_FAKE_CURRENT_PATH_FAIL:-0}" != 1 ] && printf '%s\n' "${FM_FAKE_PANE_PATH:-}"; exit 0 ;;
   *"#{pane_id}"*) printf '%%1\n'; exit 0 ;;
   *"#{pane_current_command}"*) printf 'zsh\n'; exit 0 ;;
   *"#{pane_tty}"*) printf '/dev/null\n'; exit 0 ;;
 esac
 case "${1:-}" in
   display-message) printf 'firstmate\n'; exit 0 ;;
-  list-windows) exit 0 ;;
-  has-session|new-session|set-window-option|send-keys|kill-window) exit 0 ;;
+  list-windows) cat "$TMUX_WINDOWS"; exit 0 ;;
+  has-session|new-session|set-window-option|send-keys) exit 0 ;;
+  kill-window)
+    [ "${FM_FAKE_TMUX_KILL_FAIL:-0}" != 1 ] || exit 0
+    target=${3:-}
+    window=${target##*:=}
+    grep -Fvx "$window" "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp" || true
+    mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
+    exit 0
+    ;;
   new-window)
     [ "${FM_FAKE_TMUX_CREATE_FAIL:-0}" != 1 ] || exit 1
+    name=
+    while [ "$#" -gt 0 ]; do
+      [ "$1" != -n ] || { shift; name=${1:-}; }
+      shift
+    done
+    [ -z "$name" ] || printf '%s\n' "$name" >> "$TMUX_WINDOWS"
     printf '@lease-window\n'
     exit 0
     ;;
@@ -143,7 +163,7 @@ esac
 exit 0
 SH
 chmod +x "$FAKEBIN/tmux"
-fm_fake_exit0 "$FAKEBIN" no-mistakes gh gh-axi lsof ps
+fm_fake_exit0 "$FAKEBIN" no-mistakes gh gh-axi lsof ps sleep
 
 make_brief() {
   local home=$1 id=$2
@@ -183,6 +203,8 @@ assert_grep "cd -- '$WT1'" "$TMUX_LOG" 'endpoint did not explicitly enter the re
 pass 'spawn acquires and records one home-scoped durable Treehouse lease before launch'
 
 get_count_before=$(grep -c '^get ' "$TREEHOUSE_LOG")
+grep -Fvx 'fm-alpha' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp" || true
+mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
 run_spawn "$HOME_A" alpha "$WT1" >/dev/null || fail 'same-task endpoint restart failed'
 get_count_after=$(grep -c '^get ' "$TREEHOUSE_LOG")
 [ "$get_count_after" -eq "$get_count_before" ] || fail 'endpoint restart allocated a second Treehouse lease'
@@ -199,6 +221,8 @@ assert_grep "worktree=$WT2" "$HOME_A/state/beta.meta" \
 pass 'a later allocation cannot select a worktree held by an earlier task lease'
 
 make_brief "$HOME_B" alpha
+grep -Fvx 'fm-alpha' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp" || true
+mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
 run_spawn "$HOME_B" alpha "$WT3" >/dev/null || fail 'same-id other-home spawn failed'
 assert_grep "treehouse_lease_holder=firstmate-task:$HOME_B_REAL:alpha" "$HOME_B/state/alpha.meta" \
   'same task id in another home did not receive a distinct holder'
@@ -252,8 +276,8 @@ assert_present "$HOME_A/state/legacy.meta" 'legacy compatibility refusal erased 
 pass 'legacy in-flight tasks are preserved with actionable recovery instead of guessed allocation or release'
 
 make_brief "$HOME_A" rollback
-if FM_FAKE_TMUX_CREATE_FAIL=1 run_spawn "$HOME_A" rollback "$WT1" >/dev/null 2>&1; then
-  fail 'spawn unexpectedly succeeded after simulated endpoint creation failure'
+if FM_FAKE_CURRENT_PATH_FAIL=1 run_spawn "$HOME_A" rollback "$WT1" >/dev/null 2>&1; then
+  fail 'spawn unexpectedly succeeded after a late pre-publication failure'
 fi
 if grep -Fq "$WT1"$'\t' "$TREEHOUSE_STATE"; then
   fail 'spawn failure retained its newly acquired lease despite successful rollback'
@@ -264,10 +288,14 @@ grep -Fq "$WT3"$'\tlease-3\t' "$TREEHOUSE_STATE" \
   || fail 'spawn failure rolled back another home lease'
 assert_grep "return --force $WT1 --if-lease-id lease-4 --if-lease-holder firstmate-task:$HOME_A_REAL:rollback" \
   "$TREEHOUSE_LOG" 'spawn failure did not roll back only the exact acquired lease'
-pass 'pre-publication spawn failure rolls back only its own exact lease'
+kill_line=$(grep -n '^tmux kill-window ' "$EVENT_LOG" | tail -1 | cut -d: -f1)
+return_line=$(grep -n "^treehouse return --force $WT1 --if-lease-id lease-4 " "$EVENT_LOG" | cut -d: -f1)
+[ -n "$kill_line" ] && [ -n "$return_line" ] || fail 'late rollback did not record endpoint and lease cleanup'
+[ "$kill_line" -lt "$return_line" ] || fail 'late rollback returned its lease before endpoint removal'
+pass 'late pre-publication failure confirms its exact endpoint gone before returning its lease'
 
 make_brief "$HOME_A" rollback-held
-if FM_FAKE_TMUX_CREATE_FAIL=1 FM_FAKE_RETURN_FAIL_ID=lease-5 \
+if FM_FAKE_CURRENT_PATH_FAIL=1 FM_FAKE_RETURN_FAIL_ID=lease-5 \
   run_spawn "$HOME_A" rollback-held "$WT1" >/dev/null 2>&1; then
   fail 'spawn unexpectedly succeeded when exact rollback was configured to fail'
 fi
@@ -281,6 +309,40 @@ assert_grep 'treehouse_lease_recovery=spawn-rollback-failed' "$HELD_META" \
 grep -Fq "$WT1"$'\tlease-5\t' "$TREEHOUSE_STATE" \
   || fail 'failed rollback hid the still-held Treehouse lease'
 pass 'failed exact rollback preserves both lease identity and raw acquisition evidence'
+
+run_spawn "$HOME_A" rollback-held "$WT1" >/dev/null \
+  || fail 'exact preserved-lease recovery did not publish successfully'
+assert_absent "$HELD_RECEIPT" 'successful exact recovery left its matched acquisition receipt behind'
+run_teardown_force "$HOME_A" rollback-held >/dev/null \
+  || fail 'teardown after exact preserved-lease recovery failed'
+make_brief "$HOME_A" rollback-held
+run_spawn "$HOME_A" rollback-held "$WT1" >/dev/null \
+  || fail 'task id could not be reused after exact recovery and teardown'
+pass 'matched recovery receipt retires through publication, teardown, and task-id reuse'
+run_teardown_force "$HOME_A" rollback-held >/dev/null \
+  || fail 'task-id reuse cleanup failed'
+
+make_brief "$HOME_A" endpoint-held
+if FM_FAKE_CURRENT_PATH_FAIL=1 FM_FAKE_TMUX_KILL_FAIL=1 \
+  run_spawn "$HOME_A" endpoint-held "$WT1" >/dev/null 2>&1; then
+  fail 'spawn unexpectedly succeeded when endpoint rollback confirmation failed'
+fi
+ENDPOINT_HELD_META="$HOME_A/state/endpoint-held.meta"
+ENDPOINT_HELD_RECEIPT="$HOME_A/state/.endpoint-held.treehouse-lease-acquire.json"
+assert_present "$ENDPOINT_HELD_META" 'ambiguous endpoint cleanup did not preserve lease metadata'
+assert_present "$ENDPOINT_HELD_RECEIPT" 'ambiguous endpoint cleanup did not preserve acquisition evidence'
+grep -Fq "$WT1"$'\t' "$TREEHOUSE_STATE" \
+  || fail 'ambiguous endpoint cleanup returned the still-entered lease'
+pass 'unconfirmed endpoint cleanup preserves the exact lease and acquisition evidence'
+run_teardown_force "$HOME_A" endpoint-held >/dev/null \
+  || fail 'exact teardown could not recover the endpoint-held lease'
+assert_absent "$ENDPOINT_HELD_RECEIPT" 'exact teardown left its matched acquisition receipt behind'
+make_brief "$HOME_A" endpoint-held
+run_spawn "$HOME_A" endpoint-held "$WT1" >/dev/null \
+  || fail 'task id could not be reused after exact receipt-bearing teardown'
+run_teardown_force "$HOME_A" endpoint-held >/dev/null \
+  || fail 'receipt-bearing teardown reuse cleanup failed'
+pass 'exact teardown retires its matched receipt and permits task-id reuse'
 
 # The shared lease seam runs before every Treehouse-backed endpoint adapter.
 # Fail each non-tmux adapter at its first fake CLI call and prove its freshly
@@ -313,6 +375,7 @@ pass 'Herdr, Zellij, and cmux share the durable pre-endpoint lease and exact rol
 
 make_brief "$HOME_A" ambiguous-acquire
 return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+held_count_before=$(wc -l < "$TREEHOUSE_STATE" | tr -d ' ')
 if FM_FAKE_GET_MALFORMED=1 run_spawn "$HOME_A" ambiguous-acquire "$WT4" >/dev/null 2>&1; then
   fail 'spawn accepted an unreadable Treehouse acquisition identity'
 fi
@@ -323,8 +386,9 @@ assert_absent "$HOME_A/state/ambiguous-acquire.meta" \
 return_count_after=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
 [ "$return_count_after" -eq "$return_count_before" ] \
   || fail 'ambiguous acquisition guessed a conditional return without an exact identity'
-grep -Fq "$WT4"$'\tlease-9\t' "$TREEHOUSE_STATE" \
-  || fail 'ambiguous acquisition hid that the fake Treehouse copy remained held'
+held_count_after=$(wc -l < "$TREEHOUSE_STATE" | tr -d ' ')
+[ "$held_count_after" -eq $((held_count_before + 1)) ] \
+  || fail 'ambiguous acquisition hid or duplicated its fake Treehouse held-copy record'
 pass 'ambiguous acquisition preserves raw evidence and never guesses a lease release'
 
 echo '# all fm-treehouse-task-lease tests passed'

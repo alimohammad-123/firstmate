@@ -411,6 +411,8 @@ MODE=$(grep '^mode=' "$META" | cut -d= -f2- || true)
 TREEHOUSE_LEASE_PATH=
 TREEHOUSE_LEASE_ID=
 TREEHOUSE_LEASE_HOLDER=
+TREEHOUSE_LEASE_RECEIPT="$STATE/.$ID.treehouse-lease-acquire.json"
+TREEHOUSE_LEASE_RECEIPT_RETIRE=0
 
 treehouse_task_lease_require() {  # <meta> <owning-home> <task-id>
   local meta=$1 owning_home=$2 task_id=$3 home_real expected_holder project_dir
@@ -444,6 +446,15 @@ if [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ]; then
     echo "REFUSED: task $ID's Treehouse lease path does not exactly match worktree= metadata. Preserving both identities for recovery." >&2
     exit 1
   }
+  if [ -e "$TREEHOUSE_LEASE_RECEIPT" ] || [ -L "$TREEHOUSE_LEASE_RECEIPT" ]; then
+    if ! fm_treehouse_lease_receipt_matches_exact \
+      "$TREEHOUSE_LEASE_RECEIPT" "$TREEHOUSE_LEASE_PATH" \
+      "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER"; then
+      echo "REFUSED: task $ID's preserved Treehouse acquisition receipt does not exactly match its recorded lease identity. Preserving the task and receipt for manual recovery." >&2
+      exit 1
+    fi
+    TREEHOUSE_LEASE_RECEIPT_RETIRE=1
+  fi
 fi
 if [ "${FM_TEARDOWN_GUARD_DONE:-0}" != 1 ]; then
   "$FM_ROOT/bin/fm-guard.sh" || true
@@ -2422,6 +2433,9 @@ rm -f "$STATE/$ID.status" "$STATE/$ID.turn-ended" "$STATE/$ID.meta" \
   "$STATE/$ID.kimi-turnend-token" "$STATE/$ID.muse-session" \
   "$STATE/$ID.muse-session-current" \
   "$STATE/.$ID.open-decisions-cursor"
+if [ "$TREEHOUSE_LEASE_RECEIPT_RETIRE" = 1 ]; then
+  rm -f -- "$TREEHOUSE_LEASE_RECEIPT"
+fi
 if [ "$KIND" != scout ] && [ "$KIND" != secondmate ] && [ "$MODE" != local-only ]; then
   "$FM_ROOT/bin/fm-fleet-sync.sh" "$PROJ" || true
 fi

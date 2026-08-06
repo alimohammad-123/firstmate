@@ -68,25 +68,10 @@ TMP_ROOT=$(mktemp -d "$(cd "${TMPDIR:-/tmp}" && pwd -P)/fm-herdr-e2e.XXXXXX")
 SESSION="fm-lab-herdr-e2e-$$"
 export HERDR_SESSION="$SESSION"
 WT1=; WT2=
-return_test_lease_exact() {  # <worktree>
-  local wt=$1 meta recorded lease_id holder project
-  while IFS= read -r meta; do
-    recorded=$(sed -n 's/^worktree=//p' "$meta")
-    [ "$recorded" = "$wt" ] || continue
-    lease_id=$(sed -n 's/^treehouse_lease_id=//p' "$meta")
-    holder=$(sed -n 's/^treehouse_lease_holder=//p' "$meta")
-    project=$(sed -n 's/^project=//p' "$meta")
-    [ -n "$lease_id" ] && [ -n "$holder" ] && [ -d "$project" ] || return 1
-    (cd "$project" && treehouse return --force "$wt" \
-      --if-lease-id "$lease_id" --if-lease-holder "$holder") >/dev/null 2>&1
-    return $?
-  done < <(find "$TMP_ROOT" -type f -path '*/state/*.meta' -print)
-  return 1
-}
 cleanup_all() {
   local status=0
-  [ -z "$WT1" ] || return_test_lease_exact "$WT1" || status=$?
-  [ -z "$WT2" ] || return_test_lease_exact "$WT2" || status=$?
+  [ -z "$WT1" ] || herdr_return_test_lease_exact "$TMP_ROOT" "$WT1" || status=$?
+  [ -z "$WT2" ] || herdr_return_test_lease_exact "$TMP_ROOT" "$WT2" || status=$?
   herdr_safe_stop_and_delete "$SESSION" || status=$?
   if [ "$status" -eq 0 ]; then
     rm -rf "$TMP_ROOT"

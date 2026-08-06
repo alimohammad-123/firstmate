@@ -57,21 +57,6 @@ export HERDR_SESSION="$HERDR_LAB_SESSION"
 
 WORKTREES=()
 CLEANED=0
-return_test_lease_exact() {  # <worktree>
-  local wt=$1 meta recorded lease_id holder project
-  while IFS= read -r meta; do
-    recorded=$(sed -n 's/^worktree=//p' "$meta")
-    [ "$recorded" = "$wt" ] || continue
-    lease_id=$(sed -n 's/^treehouse_lease_id=//p' "$meta")
-    holder=$(sed -n 's/^treehouse_lease_holder=//p' "$meta")
-    project=$(sed -n 's/^project=//p' "$meta")
-    [ -n "$lease_id" ] && [ -n "$holder" ] && [ -d "$project" ] || return 1
-    (cd "$project" && treehouse return --force "$wt" \
-      --if-lease-id "$lease_id" --if-lease-holder "$holder") >/dev/null 2>&1
-    return $?
-  done < <(find "$TMP_ROOT" -type f -path '*/state/*.meta' -print)
-  return 1
-}
 # Idempotent: fail() cleans up before exiting and the EXIT trap fires after it,
 # so a second teardown would otherwise report the already-consumed fleet-state
 # tripwire as if the lab had gone wrong.
@@ -80,7 +65,7 @@ cleanup_all() {
   [ "$CLEANED" = 0 ] || return 0
   CLEANED=1
   for wt in ${WORKTREES[@]+"${WORKTREES[@]}"}; do
-    [ -z "$wt" ] || return_test_lease_exact "$wt" || status=$?
+    [ -z "$wt" ] || herdr_return_test_lease_exact "$TMP_ROOT" "$wt" || status=$?
   done
   WORKTREES=()
   "$HERDR_LAB_HELPER" teardown "$HERDR_LAB_SESSION" || status=$?

@@ -40,3 +40,19 @@ herdr_refuse_if_default() { # <session>
 herdr_safe_stop_and_delete() { # <session>
   fm_herdr_lab_teardown "$1"
 }
+
+herdr_return_test_lease_exact() {  # <fixture-root> <worktree>
+  local fixture_root=$1 wt=$2 meta recorded lease_id holder project
+  while IFS= read -r meta; do
+    recorded=$(sed -n 's/^worktree=//p' "$meta")
+    [ "$recorded" = "$wt" ] || continue
+    lease_id=$(sed -n 's/^treehouse_lease_id=//p' "$meta")
+    holder=$(sed -n 's/^treehouse_lease_holder=//p' "$meta")
+    project=$(sed -n 's/^project=//p' "$meta")
+    [ -n "$lease_id" ] && [ -n "$holder" ] && [ -d "$project" ] || return 1
+    (cd "$project" && treehouse return --force "$wt" \
+      --if-lease-id "$lease_id" --if-lease-holder "$holder") >/dev/null 2>&1
+    return $?
+  done < <(find "$fixture_root" -type f -path '*/state/*.meta' -print)
+  return 1
+}

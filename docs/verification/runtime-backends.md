@@ -230,7 +230,7 @@ wrong_identity_refused=true
 exact_identity_returned=true
 ```
 
-The stateful fake proved one home-scoped immutable lease per allocation, same-task reuse after a simulated endpoint or owner restart, exclusion from later allocation, cross-home separation for the same task id, refusal before return on wrong identity, exact conditional return on correct identity, exact rollback after pre-publication failure, retained metadata plus raw acquisition evidence when rollback failed, and raw-only preservation when acquisition identity was ambiguous.
+The stateful fake proved one home-scoped immutable lease per allocation, same-task reuse after a simulated endpoint or owner restart, exclusion from later allocation, cross-home separation for the same task id, refusal before return on wrong identity, exact conditional return on correct identity, confirmed endpoint retirement before a late pre-publication lease return, exact receipt retirement through recovery and reuse, retained metadata plus raw acquisition evidence when endpoint cleanup or lease return failed, and raw-only preservation when acquisition identity was ambiguous.
 
 ```text
 ok - spawn acquires and records one home-scoped durable Treehouse lease before launch
@@ -240,8 +240,11 @@ ok - two homes using the same task id receive non-colliding lease identities and
 ok - wrong lease identity refuses before any conditional return or task-record cleanup
 ok - correct path, identity, and holder conditionally return the exact task lease
 ok - legacy in-flight tasks are preserved with actionable recovery instead of guessed allocation or release
-ok - pre-publication spawn failure rolls back only its own exact lease
+ok - late pre-publication failure confirms its exact endpoint gone before returning its lease
 ok - failed exact rollback preserves both lease identity and raw acquisition evidence
+ok - matched recovery receipt retires through publication, teardown, and task-id reuse
+ok - unconfirmed endpoint cleanup preserves the exact lease and acquisition evidence
+ok - exact teardown retires its matched receipt and permits task-id reuse
 ok - Herdr, Zellij, and cmux share the durable pre-endpoint lease and exact rollback guarantee
 ok - ambiguous acquisition preserves raw evidence and never guesses a lease release
 ```

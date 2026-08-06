@@ -60,6 +60,14 @@ fm_treehouse_lease_parse_receipt() {  # <receipt-json> <expected-holder>
   return 0
 }
 
+fm_treehouse_lease_receipt_matches_exact() {  # <receipt-json> <path> <lease-id> <holder>
+  local receipt=$1 path=$2 lease_id=$3 holder=$4
+  fm_treehouse_lease_parse_receipt "$receipt" "$holder" || return 1
+  [ "$FM_TREEHOUSE_LEASE_PATH" = "$path" ] \
+    && [ "$FM_TREEHOUSE_LEASE_ID" = "$lease_id" ] \
+    && [ "$FM_TREEHOUSE_LEASE_HOLDER" = "$holder" ]
+}
+
 fm_treehouse_lease_acquire() {  # <project-dir> <holder> <receipt-json>
   local project=$1 holder=$2 receipt=$3 receipt_dir
   fm_treehouse_lease_value_line_safe "$project" || return 1

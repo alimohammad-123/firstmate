@@ -1006,6 +1006,26 @@ test_kill_recovers_stale_target_by_label() {
   pass "fm_backend_cmux_kill: recovers stale workspace/surface ids by expected label"
 }
 
+test_endpoint_confirmation_requires_structured_workspace_absence() {
+  local dir fb status target
+  target="aaaaaaaa-0000-0000-0000-000000000000:bbbbbbbb-1111-1111-1111-111111111111"
+  dir="$TMP_ROOT/endpoint-confirmed-gone"; mkdir -p "$dir/responses"
+  cmux_workspace_list_response "$dir" 1
+  fb=$(make_cmux_fakebin "$dir")
+  PATH="$fb:$PATH" FM_CMUX_LOG="$dir/log" FM_CMUX_RESPONSES="$dir/responses" \
+    fm_backend_endpoint_confirmed_gone cmux "$target" "" fm-task
+  expect_code 0 $? "structured absence of the exact cmux workspace should confirm endpoint removal"
+
+  dir="$TMP_ROOT/endpoint-confirmation-unreadable"; mkdir -p "$dir/responses"
+  printf 'not-json\n' > "$dir/responses/1.out"
+  fb=$(make_cmux_fakebin "$dir")
+  PATH="$fb:$PATH" FM_CMUX_LOG="$dir/log" FM_CMUX_RESPONSES="$dir/responses" \
+    fm_backend_endpoint_confirmed_gone cmux "$target" "" fm-task >/dev/null 2>&1
+  status=$?
+  [ "$status" -ne 0 ] || fail "unreadable cmux inventory must not confirm endpoint removal"
+  pass "fm_backend_endpoint_confirmed_gone: cmux requires structured workspace absence"
+}
+
 # --- list_live: label-based orphan discovery ---------------------------------
 
 test_list_live_filters_by_title_prefix() {
@@ -1101,5 +1121,6 @@ test_kill_closes_workspace_directly_when_not_last
 test_kill_adds_sibling_when_last_in_window
 test_kill_is_best_effort_when_close_workspace_fails
 test_kill_recovers_stale_target_by_label
+test_endpoint_confirmation_requires_structured_workspace_absence
 test_list_live_filters_by_title_prefix
 test_secondmate_spawn_refuses_cmux_backend

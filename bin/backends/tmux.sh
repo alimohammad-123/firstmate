@@ -136,6 +136,10 @@ fm_backend_tmux_kill() {  # <target>
   tmux kill-window -t "=$session:=$window" 2>/dev/null || true
 }
 
+fm_backend_tmux_endpoint_confirmed_gone() {  # <target>
+  [ "$(fm_backend_tmux_agent_state "$1")" = missing ]
+}
+
 # fm_backend_tmux_current_command: <target>'s live foreground process name -
 # tmux's own `#{pane_current_command}`, already resolved from the pty's
 # foreground process group (verified empirically with real tmux 3.6a: a

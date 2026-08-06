@@ -68,18 +68,8 @@ export HERDR_SESSION="$HERDR_LAB_SESSION"
 ID="autodetectsmoke1"
 WT=
 cleanup_all() {
-  local cleanup_status=0 state=${STATE:-} meta='' lease_id='' lease_holder='' project=''
-  [ -z "$state" ] || meta="$state/$ID.meta"
-  if [ -n "$WT" ] && [ -n "$meta" ] && [ -f "$meta" ] && command -v treehouse >/dev/null 2>&1; then
-    lease_id=$(sed -n 's/^treehouse_lease_id=//p' "$meta")
-    lease_holder=$(sed -n 's/^treehouse_lease_holder=//p' "$meta")
-    project=$(sed -n 's/^project=//p' "$meta")
-    if [ -n "$lease_id" ] && [ -n "$lease_holder" ] && [ -d "$project" ]; then
-      (cd "$project" && treehouse return --force "$WT" \
-        --if-lease-id "$lease_id" --if-lease-holder "$lease_holder") >/dev/null 2>&1 \
-        || cleanup_status=$?
-    fi
-  fi
+  local cleanup_status=0
+  [ -z "$WT" ] || herdr_return_test_lease_exact "$TMP_ROOT" "$WT" || cleanup_status=$?
   "$HERDR_LAB_HELPER" teardown "$HERDR_LAB_SESSION" || cleanup_status=$?
   if [ "$cleanup_status" -eq 0 ]; then
     rm -rf "$TMP_ROOT"

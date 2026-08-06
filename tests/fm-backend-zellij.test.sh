@@ -830,6 +830,28 @@ test_kill_is_noop_when_session_absent() {
   pass "fm_backend_zellij_kill: never fails when the target session no longer exists"
 }
 
+test_endpoint_confirmation_requires_structured_pane_and_tab_absence() {
+  local dir fb status
+  dir="$TMP_ROOT/endpoint-confirmed-gone"; mkdir -p "$dir/responses"
+  printf '[]\n' > "$dir/responses/1.out"
+  printf '[]\n' > "$dir/responses/2.out"
+  fb=$(make_zellij_fakebin "$dir")
+  PATH="$fb:$PATH" FM_ZELLIJ_LOG="$dir/log" FM_ZELLIJ_RESPONSES="$dir/responses" \
+    FM_ZELLIJ_SESSION_LIST=firstmate \
+    fm_backend_endpoint_confirmed_gone zellij firstmate:7 3 fm-task
+  expect_code 0 $? "structured absence of the exact zellij pane and tab should confirm endpoint removal"
+
+  dir="$TMP_ROOT/endpoint-confirmation-unreadable"; mkdir -p "$dir/responses"
+  printf 'not-json\n' > "$dir/responses/1.out"
+  fb=$(make_zellij_fakebin "$dir")
+  PATH="$fb:$PATH" FM_ZELLIJ_LOG="$dir/log" FM_ZELLIJ_RESPONSES="$dir/responses" \
+    FM_ZELLIJ_SESSION_LIST=firstmate \
+    fm_backend_endpoint_confirmed_gone zellij firstmate:7 3 fm-task >/dev/null 2>&1
+  status=$?
+  [ "$status" -ne 0 ] || fail "unreadable zellij inventory must not confirm endpoint removal"
+  pass "fm_backend_endpoint_confirmed_gone: zellij requires structured pane and tab absence"
+}
+
 test_teardown_passes_recorded_tab_id_to_zellij_kill() {
   local dir state data config project fb out status
   dir="$TMP_ROOT/teardown-zellij-ghost"; state="$dir/state"; data="$dir/data"; config="$dir/config"; project="$dir/project"
@@ -1138,6 +1160,7 @@ test_kill_falls_back_to_close_pane_when_tab_lookup_empty
 test_kill_closes_recorded_tab_when_pane_already_gone
 test_kill_skips_recorded_tab_when_label_mismatches
 test_kill_is_noop_when_session_absent
+test_endpoint_confirmation_requires_structured_pane_and_tab_absence
 test_teardown_passes_recorded_tab_id_to_zellij_kill
 test_forced_secondmate_teardown_kills_zellij_children_with_child_home_tag
 test_send_text_submit_detects_landed_send

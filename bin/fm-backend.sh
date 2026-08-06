@@ -754,6 +754,19 @@ fm_backend_kill() {  # <backend> <target>
   esac
 }
 
+fm_backend_endpoint_confirmed_gone() {  # <backend> <target> [backend-fields...]
+  local backend=$1
+  shift
+  fm_backend_source "$backend" || return 1
+  case "$backend" in
+    tmux) fm_backend_tmux_endpoint_confirmed_gone "$@" ;;
+    herdr) fm_backend_herdr_endpoint_confirmed_gone "$@" ;;
+    zellij) fm_backend_zellij_endpoint_confirmed_gone "$@" ;;
+    cmux) fm_backend_cmux_endpoint_confirmed_gone "$@" ;;
+    *) return 1 ;;
+  esac
+}
+
 fm_backend_remove_worktree() {  # <backend> <worktree-id>
   local backend=$1
   shift

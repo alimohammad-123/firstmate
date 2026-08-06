@@ -533,6 +533,28 @@ fm_backend_zellij_kill() {  # <target> [tab_id] [expected_label]
   fi
 }
 
+fm_backend_zellij_endpoint_confirmed_gone() {  # <target> [tab_id] [expected-label]
+  local target=$1 tab_id=${2:-} expected_label=${3:-} expected_title sessions panes tabs
+  fm_backend_zellij_parse_target "$target" || return 1
+  sessions=$(zellij list-sessions --short --no-formatting 2>/dev/null) || return 1
+  if ! printf '%s\n' "$sessions" | grep -qxF "$FM_BACKEND_ZELLIJ_SESSION"; then
+    return 0
+  fi
+  panes=$(fm_backend_zellij_cli "$FM_BACKEND_ZELLIJ_SESSION" action list-panes --json 2>/dev/null) || return 1
+  printf '%s\n' "$panes" | jq -e --argjson pane "$FM_BACKEND_ZELLIJ_PANE" \
+    'type == "array" and ([.[]? | select(.id == $pane and .is_plugin == false)] | length) == 0' \
+    >/dev/null 2>&1 || return 1
+  case "$tab_id" in
+    ''|*[!0-9]*) return 1 ;;
+  esac
+  [ -n "$expected_label" ] || return 1
+  expected_title=$(fm_backend_zellij_scoped_title "$expected_label")
+  tabs=$(fm_backend_zellij_cli "$FM_BACKEND_ZELLIJ_SESSION" action list-tabs --json 2>/dev/null) || return 1
+  printf '%s\n' "$tabs" | jq -e --argjson tab "$tab_id" --arg title "$expected_title" \
+    'type == "array" and ([.[]? | select(.tab_id == $tab or .name == $title)] | length) == 0' \
+    >/dev/null 2>&1
+}
+
 # fm_backend_zellij_list_live: recovery/orphan discovery. Lists every tab in
 # <session> whose title carries THIS firstmate home's own tag
 # (fm-<hometag>-, fm_backend_zellij_home_label) - never any other home's

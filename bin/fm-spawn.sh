@@ -38,9 +38,11 @@
 #   that exact path. The holder includes this home's absolute identity, and
 #   metadata records the immutable lease id and holder beside worktree=.
 #   Relaunch verifies and reuses that exact lease instead of allocating again.
-#   A pre-publication failure conditionally returns only the acquired lease;
-#   ambiguous or failed rollback preserves an acquisition receipt and recovery
-#   metadata. Orca owns both the task worktree and terminal and never uses this
+#   A pre-publication failure first removes and confirms only its invocation-created
+#   endpoint, then conditionally returns only the acquired lease. Ambiguous or failed
+#   endpoint cleanup or lease return preserves an acquisition receipt and recovery
+#   metadata. A matching recovery receipt retires only after exact publication or
+#   teardown. Orca owns both the task worktree and terminal and never uses this
 #   path; persistent secondmate-home leases remain unchanged. An
 #   auto-detected herdr or cmux spawn prints a loud stderr notice;
 #   auto-detected tmux stays silent; zellij and orca are never auto-detected.
@@ -634,7 +636,10 @@ TREEHOUSE_LEASE_PATH=
 TREEHOUSE_LEASE_ID=
 TREEHOUSE_LEASE_HOLDER=
 TREEHOUSE_LEASE_RECEIPT=
+TREEHOUSE_LEASE_RECEIPT_RETIRE=0
 TREEHOUSE_LEASE_ROLLBACK=0
+TREEHOUSE_ENDPOINT_CREATION_ATTEMPTED=0
+TREEHOUSE_ENDPOINT_ABORT_CLEANUP=0
 SPAWN_META_TMP=
 HERDR_PROJECTION_ABORT_CLEANUP=0
 HERDR_PROJECTION_ABORT_SESSION=
@@ -661,6 +666,19 @@ parse_orca_worktree_result() {
     ORCA_TERMINAL=${rest#*$'\t'}
   else
     ORCA_TERMINAL=
+  fi
+}
+
+spawn_treehouse_endpoint_creation_begin() {
+  if [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ]; then
+    TREEHOUSE_ENDPOINT_CREATION_ATTEMPTED=1
+  fi
+}
+
+spawn_treehouse_endpoint_creation_complete() {
+  if [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ]; then
+    TREEHOUSE_ENDPOINT_CREATION_ATTEMPTED=0
+    TREEHOUSE_ENDPOINT_ABORT_CLEANUP=1
   fi
 }
 
@@ -691,7 +709,7 @@ spawn_preserve_treehouse_lease_evidence() {
 }
 
 spawn_abort_cleanup() {
-  local status=$?
+  local status=$? endpoint_cleanup_failed=0
   if [ "$HERDR_PROJECTION_ABORT_CLEANUP" = 1 ] \
      && [ "$HERDR_PRESENTATION_ORDER_LOCK_HELD" != 1 ]; then
     if ! spawn_herdr_presentation_order_lock_acquire "${HERDR_PROJECTION_ABORT_SESSION:-}"; then
@@ -738,9 +756,22 @@ spawn_abort_cleanup() {
       fi
     fi
   fi
+  if [ "$TREEHOUSE_ENDPOINT_CREATION_ATTEMPTED" = 1 ]; then
+    endpoint_cleanup_failed=1
+  elif [ "$TREEHOUSE_ENDPOINT_ABORT_CLEANUP" = 1 ]; then
+    if fm_backend_kill "$BACKEND" "$T" "${ZELLIJ_TAB_ID:-}" "$W" >/dev/null 2>&1 \
+       && fm_backend_endpoint_confirmed_gone "$BACKEND" "$T" "${ZELLIJ_TAB_ID:-}" "$W" >/dev/null 2>&1; then
+      TREEHOUSE_ENDPOINT_ABORT_CLEANUP=0
+    else
+      endpoint_cleanup_failed=1
+    fi
+  fi
   if [ "$TREEHOUSE_LEASE_ROLLBACK" = 1 ]; then
     TREEHOUSE_LEASE_ROLLBACK=0
-    if fm_treehouse_lease_return_exact \
+    if [ "$endpoint_cleanup_failed" = 1 ]; then
+      spawn_preserve_treehouse_lease_evidence
+      echo "error: could not confirm removal of the exact invocation-created endpoint for $ID; preserved its Treehouse lease identity and acquisition receipt without returning the worktree" >&2
+    elif fm_treehouse_lease_return_exact \
       "$TREEHOUSE_LEASE_PATH" "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" "$PROJ_ABS" >/dev/null 2>&1; then
       [ -z "$TREEHOUSE_LEASE_RECEIPT" ] || rm -f -- "$TREEHOUSE_LEASE_RECEIPT"
     else
@@ -1488,6 +1519,7 @@ prepare_treehouse_task_lease() {
     return 1
   }
   meta="$STATE/$ID.meta"
+  TREEHOUSE_LEASE_RECEIPT="$STATE/.$ID.treehouse-lease-acquire.json"
   if [ -e "$meta" ] || [ -L "$meta" ]; then
     [ -f "$meta" ] && [ ! -L "$meta" ] || {
       echo "error: existing metadata for $ID is not a regular file; refusing to acquire or enter any Treehouse worktree" >&2
@@ -1526,13 +1558,21 @@ prepare_treehouse_task_lease() {
       echo "REFUSED: task $ID's recorded Treehouse lease does not exactly match the current leased path, identity, and holder. Preserving the task for manual recovery." >&2
       return 1
     fi
+    if [ -e "$TREEHOUSE_LEASE_RECEIPT" ] || [ -L "$TREEHOUSE_LEASE_RECEIPT" ]; then
+      if ! fm_treehouse_lease_receipt_matches_exact \
+        "$TREEHOUSE_LEASE_RECEIPT" "$TREEHOUSE_LEASE_PATH" \
+        "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER"; then
+        echo "REFUSED: task $ID's preserved Treehouse acquisition receipt does not exactly match its recorded lease identity; preserving both for manual recovery." >&2
+        return 1
+      fi
+      TREEHOUSE_LEASE_RECEIPT_RETIRE=1
+    fi
     WT=$TREEHOUSE_LEASE_PATH
     validate_spawn_worktree "recorded Treehouse durable lease" "$meta"
     return 0
   fi
 
   TREEHOUSE_LEASE_HOLDER=$expected_holder
-  TREEHOUSE_LEASE_RECEIPT="$STATE/.$ID.treehouse-lease-acquire.json"
   if ! fm_treehouse_lease_acquire "$PROJ_ABS" "$TREEHOUSE_LEASE_HOLDER" "$TREEHOUSE_LEASE_RECEIPT"; then
     TREEHOUSE_LEASE_PATH=${FM_TREEHOUSE_LEASE_PATH:-}
     TREEHOUSE_LEASE_ID=${FM_TREEHOUSE_LEASE_ID:-}
@@ -1547,6 +1587,7 @@ prepare_treehouse_task_lease() {
   TREEHOUSE_LEASE_PATH=$FM_TREEHOUSE_LEASE_PATH
   TREEHOUSE_LEASE_ID=$FM_TREEHOUSE_LEASE_ID
   TREEHOUSE_LEASE_HOLDER=$FM_TREEHOUSE_LEASE_HOLDER
+  TREEHOUSE_LEASE_RECEIPT_RETIRE=1
   TREEHOUSE_LEASE_ROLLBACK=1
   WT=$TREEHOUSE_LEASE_PATH
   validate_spawn_worktree "Treehouse durable lease" "$PROJ_ABS"
@@ -1629,8 +1670,10 @@ case "$BACKEND" in
     # treehouse cd's into the worktree. WT_TARGET carries that stable id for the
     # rename-critical worktree-detection steps below; the persisted window= handle
     # stays $T (the name form), which is safe now that rename is disabled.
+    spawn_treehouse_endpoint_creation_begin
     WID=$(fm_backend_tmux_create_task "$SES" "$W" "$PROJ_ABS") || exit 1
     WT_TARGET="$WID"
+    spawn_treehouse_endpoint_creation_complete
     ;;
   herdr)
     # fm_backend_herdr_workspace_label resolves the target workspace from
@@ -1678,6 +1721,7 @@ case "$BACKEND" in
           "$HERDR_SES" "$HERDR_PRESENTATION_JOURNAL" "$ID" || exit 1
         if [ "${HERDR_RECOVERY_BACKEND:-}" = herdr ]; then
           set +e
+          spawn_treehouse_endpoint_creation_begin
           FM_HOME="$HERDR_LABEL_HOME" fm_backend_herdr_projection_reclaim_task \
             "$HERDR_SES" "$HERDR_PRESENTATION_JOURNAL" "$ID" "$HERDR_LABEL_HOME" \
             "$HERDR_RECOVERY_WORKSPACE_ID" "$HERDR_RECOVERY_TAB_ID" "$HERDR_RECOVERY_PANE_ID" \
@@ -1697,6 +1741,7 @@ case "$BACKEND" in
               HERDR_PROJECTION_ABORT_SEEDED_PANE=""
               ;;
             2)
+              TREEHOUSE_ENDPOINT_CREATION_ATTEMPTED=0
               spawn_herdr_presentation_order_lock_release
               ;;
             *) exit 1 ;;
@@ -1734,6 +1779,7 @@ case "$BACKEND" in
           else
             HERDR_PROJECTION_ID=$(fm_backend_herdr_projection_journal_create "$STATE" "$ID") || exit 1
             HERDR_PROJECTION_LABEL=$(fm_backend_herdr_projection_workspace_label "$ID" "$HERDR_PROJECTION_ID")
+            spawn_treehouse_endpoint_creation_begin
             if ! FM_HOME="$HERDR_LABEL_HOME" fm_backend_herdr_projection_create_task \
               "$PROJ_ABS" "$HERDR_PROJECTION_LABEL" "$W"; then
               if [ "${FM_BACKEND_HERDR_PROJECTION_CLEANUP_SAFE:-0}" = 1 ]; then
@@ -1788,6 +1834,7 @@ case "$BACKEND" in
       HERDR_SEEDED_DEFAULT_TAB_ID=${HERDR_CONTAINER_RAW#*$'\t'}
       HERDR_SES=${CONTAINER%%:*}
       HERDR_WORKSPACE_ID=${CONTAINER#*:}
+      spawn_treehouse_endpoint_creation_begin
       HERDR_TASK_IDS=$(FM_HOME="$HERDR_LABEL_HOME" fm_backend_herdr_create_task "$CONTAINER" "$W" "$PROJ_ABS" "$HERDR_SEEDED_DEFAULT_TAB_ID") || exit 1
       read -r HERDR_TAB_ID HERDR_PANE_ID <<EOF
 $HERDR_TASK_IDS
@@ -1798,9 +1845,11 @@ EOF
       exit 1
     fi
     T="$HERDR_SES:$HERDR_PANE_ID"
+    spawn_treehouse_endpoint_creation_complete
     ;;
   zellij)
     ZELLIJ_SES=$(fm_backend_zellij_container_ensure) || exit 1
+    spawn_treehouse_endpoint_creation_begin
     ZELLIJ_TASK_IDS=$(fm_backend_zellij_create_task "$ZELLIJ_SES" "$W" "$PROJ_ABS") || exit 1
     read -r ZELLIJ_TAB_ID ZELLIJ_PANE_ID <<EOF
 $ZELLIJ_TASK_IDS
@@ -1810,9 +1859,11 @@ EOF
       exit 1
     fi
     T="$ZELLIJ_SES:$ZELLIJ_PANE_ID"
+    spawn_treehouse_endpoint_creation_complete
     ;;
   cmux)
     fm_backend_cmux_container_ensure || exit 1
+    spawn_treehouse_endpoint_creation_begin
     CMUX_TASK_IDS=$(fm_backend_cmux_create_task "$W" "$PROJ_ABS") || exit 1
     read -r CMUX_WORKSPACE_ID CMUX_SURFACE_ID <<EOF
 $CMUX_TASK_IDS
@@ -1822,6 +1873,7 @@ EOF
       exit 1
     fi
     T="$CMUX_WORKSPACE_ID:$CMUX_SURFACE_ID"
+    spawn_treehouse_endpoint_creation_complete
     ;;
   orca)
     set +e
@@ -2365,12 +2417,17 @@ SPAWN_META_TMP="$STATE/.$ID.meta.$$"
 mv -f -- "$SPAWN_META_TMP" "$STATE/$ID.meta"
 SPAWN_META_TMP=
 [ "$BACKEND" = orca ] && ORCA_ABORT_CLEANUP=0
+TREEHOUSE_ENDPOINT_CREATION_ATTEMPTED=0
+TREEHOUSE_ENDPOINT_ABORT_CLEANUP=0
 if [ "$TREEHOUSE_LEASE_ROLLBACK" = 1 ]; then
   # The exact lease identity and endpoint are now durably published together.
   # Later failures preserve that record for ordinary recovery/teardown instead
   # of returning a copy whose task is already discoverable.
   TREEHOUSE_LEASE_ROLLBACK=0
+fi
+if [ "$TREEHOUSE_LEASE_RECEIPT_RETIRE" = 1 ]; then
   rm -f -- "$TREEHOUSE_LEASE_RECEIPT" || true
+  TREEHOUSE_LEASE_RECEIPT_RETIRE=0
 fi
 
 sq_brief=$(shell_quote "$BRIEF")
