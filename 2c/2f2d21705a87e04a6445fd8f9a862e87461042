@@ -1,0 +1,31 @@
+docs/verification/runtime-backends.md
+  s_df6e8431fec1a7::t_1d374037c7e60d 236
+  s_df6e8431fec1a7::t_bab1baaa1a0ac8 217,241
+bin/fm-teardown.sh
+  s_df6e8431fec1a7::t_c93ffa0f951af1 1190-1220
+  s_df6e8431fec1a7::t_c2d1ff5ecc6db6 2597,2647-2650,2694
+tests/fm-treehouse-task-lease.test.sh
+  s_df6e8431fec1a7::t_aba02ec37555f6 880-885,888-889,910-929
+  s_df6e8431fec1a7::t_dbd3c4572dc089 468-473,886-887,890-909
+  s_df6e8431fec1a7::t_a69b51da523bb0 157-166
+  s_df6e8431fec1a7::t_bab1baaa1a0ac8 474,1071-1082,1095-1105,1114
+  s_df6e8431fec1a7::t_80dafae4f1f29c 930
+bin/fm-spawn.sh
+  s_df6e8431fec1a7::t_c93ffa0f951af1 757,763-790,799
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "2c2f2d21705a87e04a6445fd8f9a862e87461042",
+  "prompts": {},
+  "sessions": {
+    "s_df6e8431fec1a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd542-71fd-7b63-9b59-c792a85ce480",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
