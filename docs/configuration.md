@@ -83,7 +83,7 @@ Otherwise an exact task id matching `state/<id>.meta` wins before the legacy `fm
 A metadata-routed selector returns the recorded backend target (`terminal=` for Orca, otherwise `window=`), and matching explicit targets can still recover the recorded backend when metadata contains the same endpoint.
 Only metadata-routed task selectors carry secondmate-marker and Codex-harness context; explicit endpoint escape hatches do not.
 These five sentences are the single owner of the task-selector vocabulary; backend guides and other documents point here instead of restating the resolution order.
-`fm-teardown.sh <id>` takes a task id directly and validates the complete metadata-only endpoint identity before any runtime dispatch or cleanup mutation.
+`fm-teardown.sh <id>` takes a task id directly, structurally validates its complete endpoint metadata before any backend call, and then read-only correlates restart-scoped tmux and cmux identity before any mutating runtime dispatch or cleanup mutation.
 For an ordinary Treehouse-backed task it also verifies the recorded lease triple against supported JSON status before any process, copy, endpoint, or task-record cleanup, and every return retry carries both lease-id and holder conditions.
 Missing, empty, duplicate, malformed, backend-inconsistent, task-mismatched, legacy, or currently mismatched endpoint or lease records are preserved and refused.
 An in-flight task created before lease identity was recorded has no safe automatic upgrade because Treehouse cannot target an existing copy for acquisition; reconcile the preserved copy with `treehouse status --json` and never guess, edit Treehouse state, or release it by path.

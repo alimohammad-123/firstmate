@@ -158,10 +158,10 @@ SUB_HOME_PARENT_MARKER=".fm-secondmate-parent"
 . "$SCRIPT_DIR/fm-secondmate-registry-lib.sh"
 # shellcheck source=bin/fm-secondmate-parent-lib.sh
 . "$SCRIPT_DIR/fm-secondmate-parent-lib.sh"
-# shellcheck source=bin/fm-secondmate-lifecycle-lib.sh
-. "$SCRIPT_DIR/fm-secondmate-lifecycle-lib.sh"
 # shellcheck source=bin/fm-wake-lib.sh
 . "$SCRIPT_DIR/fm-wake-lib.sh"
+# shellcheck source=bin/fm-secondmate-lifecycle-lib.sh
+. "$SCRIPT_DIR/fm-secondmate-lifecycle-lib.sh"
 # shellcheck source=bin/fm-nm-run-lib.sh
 . "$SCRIPT_DIR/fm-nm-run-lib.sh"
 # shellcheck source=bin/fm-treehouse-lease-lib.sh
@@ -425,9 +425,11 @@ else
 fi
 [ "$remote_teardown_rc" -eq 3 ] || exit "$remote_teardown_rc"
 
-# This is the first cleanup authorization check. It is metadata-only and must
-# complete before fm-guard, a backend command, file removal, branch deletion,
-# worktree return, registry change, or process termination can run.
+# This is the first cleanup authorization check. It structurally validates
+# metadata before any backend call, then read-only correlates restart-scoped
+# live identity; both stages must complete before fm-guard, mutating backend
+# commands, file removal, branch deletion, worktree return, registry change,
+# or process termination can run.
 fm_backend_validate_task_endpoint "$META" "$ID" || exit 1
 BACKEND=$FM_BACKEND_VALIDATED_BACKEND
 T=$FM_BACKEND_VALIDATED_TARGET
