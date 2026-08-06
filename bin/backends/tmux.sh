@@ -80,8 +80,8 @@ fm_backend_tmux_container_ensure() {
 #   - PIN the window name by disabling automatic-rename and allow-rename on the
 #     new window: the captain's tmux may rename the window away from fm-<id> once
 #     treehouse cd's into the worktree, which would break name-based targeting.
-# The returned window id lets callers target the window even if its name is ever
-# lost, so worktree discovery cannot fall back to the active client's window.
+# The returned window id lets callers target the window while exact leased-path
+# verification is in progress without falling back to the active client's window.
 fm_backend_tmux_create_task() {  # <session> <window-name> <proj-abs> -> prints window id
   local ses=$1 wname=$2 proj_abs=$3 wid
   if tmux list-windows -t "$ses" -F '#{window_name}' | grep -qx "$wname"; then
@@ -92,6 +92,50 @@ fm_backend_tmux_create_task() {  # <session> <window-name> <proj-abs> -> prints 
   tmux set-window-option -t "$wid" automatic-rename off 2>/dev/null || true
   tmux set-window-option -t "$wid" allow-rename off 2>/dev/null || true
   printf '%s\n' "$wid"
+}
+
+fm_backend_tmux_correlate_task_window() {  # <session> <window-name> <recorded-window-id>
+  local session=$1 name=$2 recorded_id=$3 format rows row_id row_session row_name extra
+  local recorded_count=0 recorded_match=0 named_count=0 named_id=
+  FM_BACKEND_TMUX_CORRELATION_ERROR=unreadable
+  FM_BACKEND_TMUX_CORRELATED_TARGET=
+  format="#{window_id}$(printf '\t')#{session_name}$(printf '\t')#{window_name}"
+  rows=$(LC_ALL=C tmux list-windows -a -F "$format" 2>/dev/null) || return 1
+  while IFS=$'\t' read -r row_id row_session row_name extra; do
+    [ -n "$row_id$row_session$row_name$extra" ] || continue
+    case "$row_id" in @*) fm_backend_endpoint_atom_valid "$row_id" || return 1 ;; *) return 1 ;; esac
+    [ -n "$row_session" ] && [ -n "$row_name" ] && [ -z "$extra" ] || return 1
+    if [ "$row_id" = "$recorded_id" ]; then
+      recorded_count=$((recorded_count + 1))
+      if [ "$row_session" = "$session" ] && [ "$row_name" = "$name" ]; then
+        recorded_match=$((recorded_match + 1))
+      fi
+    fi
+    if [ "$row_session" = "$session" ] && [ "$row_name" = "$name" ]; then
+      named_count=$((named_count + 1))
+      named_id=$row_id
+    fi
+  done <<FMEOF
+$rows
+FMEOF
+  if [ "$recorded_count" -gt 1 ] || [ "$named_count" -gt 1 ]; then
+    FM_BACKEND_TMUX_CORRELATION_ERROR=ambiguous
+    return 1
+  fi
+  if [ "$recorded_count" -eq 1 ]; then
+    if [ "$recorded_match" -eq 1 ] && [ "$named_count" -eq 1 ]; then
+      FM_BACKEND_TMUX_CORRELATED_TARGET=$recorded_id
+      return 0
+    fi
+    FM_BACKEND_TMUX_CORRELATION_ERROR=rebound
+    return 1
+  fi
+  if [ "$named_count" -eq 1 ]; then
+    FM_BACKEND_TMUX_CORRELATED_TARGET=$named_id
+    return 0
+  fi
+  FM_BACKEND_TMUX_CORRELATION_ERROR=absent
+  return 1
 }
 
 # fm_backend_tmux_current_path: the live pane's current working directory, or

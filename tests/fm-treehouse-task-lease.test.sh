@@ -149,7 +149,7 @@ case "$*" in
       target=
       prev=
       for arg in "$@"; do [ "$prev" != -t ] || target=$arg; prev=$arg; done
-      awk -F '\t' -v target="$target" 'BEGIN {OFS="\t"} {if ($1 == target) $2="renamed-after-create"; print}' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
+      awk -F '\t' -v target="$target" 'BEGIN {OFS="\t"} {if ($1 == target) $3="renamed-after-create"; print}' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
       mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
     fi
     [ "${FM_FAKE_CURRENT_PATH_FAIL:-0}" != 1 ] && printf '%s\n' "${FM_FAKE_PANE_PATH:-}"
@@ -163,8 +163,9 @@ case "${1:-}" in
   display-message) printf 'firstmate\n'; exit 0 ;;
   list-windows)
     case "$*" in
+      *'#{session_name}'*) cat "$TMUX_WINDOWS" ;;
       *'#{window_id}'*) cut -f1 "$TMUX_WINDOWS" ;;
-      *) cut -f2 "$TMUX_WINDOWS" ;;
+      *) cut -f3 "$TMUX_WINDOWS" ;;
     esac
     exit 0
     ;;
@@ -174,7 +175,7 @@ case "${1:-}" in
     target=${3:-}
     case "$target" in
       @*) awk -F '\t' -v id="$target" '$1 != id' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp" ;;
-      *) window=${target##*:=}; awk -F '\t' -v name="$window" '$2 != name' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp" ;;
+      *) window=${target##*:=}; awk -F '\t' -v name="$window" '$3 != name' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp" ;;
     esac
     mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
     exit 0
@@ -190,7 +191,7 @@ case "${1:-}" in
     counter=$((counter + 1))
     printf '%s\n' "$counter" > "$TMUX_COUNTER"
     wid="@lease-window-$counter"
-    [ -z "$name" ] || printf '%s\t%s\n' "$wid" "$name" >> "$TMUX_WINDOWS"
+    [ -z "$name" ] || printf '%s\tfirstmate\t%s\n' "$wid" "$name" >> "$TMUX_WINDOWS"
     printf '%s\n' "$wid"
     exit 0
     ;;
@@ -493,7 +494,7 @@ projects=test
 EOF
   printf -- '- %s - test secondmate (home: %s; scope: lease lifecycle; projects: test; added 2026-08-06)\n' \
     "$parent_id" "$home" >> "$HOME_A/data/secondmates.md"
-  printf '@parent-%s\tfm-%s\n' "$parent_id" "$parent_id" >> "$TMUX_WINDOWS"
+  printf '@parent-%s\tfirstmate\tfm-%s\n' "$parent_id" "$parent_id" >> "$TMUX_WINDOWS"
 }
 
 hold_task_lifecycle_lock() {  # <lock> <ready> <release>
@@ -585,7 +586,7 @@ assert_grep "cd -- '$WT1'" "$TMUX_LOG" 'endpoint did not explicitly enter the re
 pass 'spawn acquires and records one home-scoped durable Treehouse lease before launch'
 
 get_count_before=$(grep -c '^get ' "$TREEHOUSE_LOG")
-awk -F '\t' '$2 != "fm-alpha"' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
+awk -F '\t' '$3 != "fm-alpha"' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
 mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
 run_spawn "$HOME_A" alpha "$WT1" >/dev/null || fail 'same-task endpoint restart failed'
 get_count_after=$(grep -c '^get ' "$TREEHOUSE_LOG")
@@ -603,7 +604,7 @@ assert_grep "worktree=$WT2" "$HOME_A/state/beta.meta" \
 pass 'a later allocation cannot select a worktree held by an earlier task lease'
 
 make_brief "$HOME_B" alpha
-awk -F '\t' '$2 != "fm-alpha"' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
+awk -F '\t' '$3 != "fm-alpha"' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
 mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
 run_spawn "$HOME_B" alpha "$WT3" >/dev/null || fail 'same-id other-home spawn failed'
 assert_grep "treehouse_lease_holder=firstmate-task:$HOME_B_REAL:alpha" "$HOME_B/state/alpha.meta" \
@@ -640,6 +641,76 @@ assert_grep "return-cwd $RECORDED_PROJECT" "$TREEHOUSE_LOG" \
   'conditional return did not execute in the owning project repository'
 pass 'correct path, identity, and holder conditionally return the exact task lease'
 
+make_brief "$HOME_A" tmux-restart-recover
+run_spawn "$HOME_A" tmux-restart-recover "$WT1" >/dev/null \
+  || fail 'tmux restart recovery fixture could not publish'
+TMUX_RESTART_META="$HOME_A/state/tmux-restart-recover.meta"
+tmux_restart_old=$(sed -n 's/^tmux_window_id=//p' "$TMUX_RESTART_META")
+tmux_restart_new=@restart-recovered
+awk -F '\t' -v old="$tmux_restart_old" -v new="$tmux_restart_new" \
+  'BEGIN {OFS="\t"} {$1 = ($1 == old ? new : $1); print}' \
+  "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
+mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
+run_teardown_force "$HOME_A" tmux-restart-recover >/dev/null \
+  || fail 'tmux teardown did not recover one unique exact task name after server restart'
+if backend_endpoint_is_live tmux "$tmux_restart_new"; then
+  fail 'tmux restart recovery did not retire the uniquely correlated live window'
+fi
+pass 'tmux teardown recovers one unique exact task window after restart'
+
+make_brief "$HOME_A" tmux-rebound
+run_spawn "$HOME_A" tmux-rebound "$WT1" >/dev/null \
+  || fail 'tmux rebound fixture could not publish'
+TMUX_REBOUND_META="$HOME_A/state/tmux-rebound.meta"
+tmux_rebound_old=$(sed -n 's/^tmux_window_id=//p' "$TMUX_REBOUND_META")
+tmux_rebound_new=@rebound-replacement
+awk -F '\t' -v old="$tmux_rebound_old" \
+  'BEGIN {OFS="\t"} {if ($1 == old) $3="foreign-window"; print}' \
+  "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
+mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
+printf '%s\tfirstmate\tfm-tmux-rebound\n' "$tmux_rebound_new" >> "$TMUX_WINDOWS"
+return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+if run_teardown_force "$HOME_A" tmux-rebound >/dev/null 2>&1; then
+  fail 'tmux teardown accepted a recorded id rebound to another window'
+fi
+return_count_after=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+[ "$return_count_after" -eq "$return_count_before" ] \
+  || fail 'tmux rebound identity reached Treehouse return'
+backend_endpoint_is_live tmux "$tmux_rebound_old" \
+  || fail 'tmux rebound refusal killed the unrelated recorded-id window'
+backend_endpoint_is_live tmux "$tmux_rebound_new" \
+  || fail 'tmux rebound refusal killed the exact-name replacement window'
+backend_endpoint_remove tmux "$tmux_rebound_old"
+run_teardown_force "$HOME_A" tmux-rebound >/dev/null \
+  || fail 'tmux rebound fixture could not recover after the foreign id disappeared'
+pass 'tmux teardown refuses rebound ids before lease return'
+
+make_brief "$HOME_A" tmux-absent
+run_spawn "$HOME_A" tmux-absent "$WT1" >/dev/null \
+  || fail 'tmux absent fixture could not publish'
+TMUX_ABSENT_META="$HOME_A/state/tmux-absent.meta"
+tmux_absent_old=$(sed -n 's/^tmux_window_id=//p' "$TMUX_ABSENT_META")
+backend_endpoint_remove tmux "$tmux_absent_old"
+return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+if run_teardown_force "$HOME_A" tmux-absent >/dev/null 2>&1; then
+  fail 'tmux teardown accepted an absent recorded id with no exact-name recovery'
+fi
+return_count_after=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+[ "$return_count_after" -eq "$return_count_before" ] \
+  || fail 'tmux absent identity reached Treehouse return'
+printf '@absent-recovery\tfirstmate\tfm-tmux-absent\n' >> "$TMUX_WINDOWS"
+printf '@absent-ambiguous\tfirstmate\tfm-tmux-absent\n' >> "$TMUX_WINDOWS"
+if run_teardown_force "$HOME_A" tmux-absent >/dev/null 2>&1; then
+  fail 'tmux teardown accepted ambiguous exact-name recovery'
+fi
+return_count_after=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+[ "$return_count_after" -eq "$return_count_before" ] \
+  || fail 'tmux ambiguous identity reached Treehouse return'
+backend_endpoint_remove tmux @absent-ambiguous
+run_teardown_force "$HOME_A" tmux-absent >/dev/null \
+  || fail 'tmux absent fixture could not clean up after exact-name recovery appeared'
+pass 'tmux teardown refuses absent endpoint identity before lease return'
+
 make_brief "$HOME_A" legacy
 fm_write_meta "$HOME_A/state/legacy.meta" \
   "window=firstmate:fm-legacy" "endpoint_task_id=legacy" \
@@ -668,16 +739,16 @@ grep -Fq "$WT2"$'\tlease-2\t' "$TREEHOUSE_STATE" \
   || fail 'spawn failure rolled back another task lease'
 grep -Fq "$WT3"$'\tlease-3\t' "$TREEHOUSE_STATE" \
   || fail 'spawn failure rolled back another home lease'
-assert_grep "return --force $WT1 --if-lease-id lease-4 --if-lease-holder firstmate-task:$HOME_A_REAL:rollback" \
+assert_grep "return --force $WT1 --if-lease-id lease-7 --if-lease-holder firstmate-task:$HOME_A_REAL:rollback" \
   "$TREEHOUSE_LOG" 'spawn failure did not roll back only the exact acquired lease'
 kill_line=$(grep -n '^tmux kill-window ' "$EVENT_LOG" | tail -1 | cut -d: -f1)
-return_line=$(grep -n "^treehouse return --force $WT1 --if-lease-id lease-4 " "$EVENT_LOG" | cut -d: -f1)
+return_line=$(grep -n "^treehouse return --force $WT1 --if-lease-id lease-7 " "$EVENT_LOG" | cut -d: -f1)
 [ -n "$kill_line" ] && [ -n "$return_line" ] || fail 'late rollback did not record endpoint and lease cleanup'
 [ "$kill_line" -lt "$return_line" ] || fail 'late rollback returned its lease before endpoint removal'
 pass 'late pre-publication failure confirms its exact endpoint gone before returning its lease'
 
 make_brief "$HOME_A" rollback-held
-if FM_FAKE_CURRENT_PATH_FAIL=1 FM_FAKE_RETURN_FAIL_ID=lease-5 \
+if FM_FAKE_CURRENT_PATH_FAIL=1 FM_FAKE_RETURN_FAIL_ID=lease-8 \
   run_spawn "$HOME_A" rollback-held "$WT1" >/dev/null 2>&1; then
   fail 'spawn unexpectedly succeeded when exact rollback was configured to fail'
 fi
@@ -685,10 +756,10 @@ HELD_META="$HOME_A/state/rollback-held.meta"
 HELD_RECEIPT="$HOME_A/state/.rollback-held.treehouse-lease-acquire.json"
 assert_present "$HELD_META" 'failed rollback did not preserve recoverable lease metadata'
 assert_present "$HELD_RECEIPT" 'failed rollback did not preserve the exact acquisition receipt'
-assert_grep 'treehouse_lease_id=lease-5' "$HELD_META" 'failed rollback metadata lost the lease id'
+assert_grep 'treehouse_lease_id=lease-8' "$HELD_META" 'failed rollback metadata lost the lease id'
 assert_grep 'treehouse_lease_recovery=spawn-rollback-failed' "$HELD_META" \
   'failed rollback metadata did not identify the recovery condition'
-grep -Fq "$WT1"$'\tlease-5\t' "$TREEHOUSE_STATE" \
+grep -Fq "$WT1"$'\tlease-8\t' "$TREEHOUSE_STATE" \
   || fail 'failed rollback hid the still-held Treehouse lease'
 pass 'failed exact rollback preserves both lease identity and raw acquisition evidence'
 
@@ -762,6 +833,12 @@ for backend in tmux herdr zellij cmux; do
   assert_present "$receipt" "$backend ambiguous cleanup did not preserve acquisition evidence"
   grep -Fq "$WT1"$'\t' "$TREEHOUSE_STATE" \
     || fail "$backend ambiguous cleanup returned the still-entered lease"
+  if [ "$backend" = tmux ]; then
+    awk -F '\t' -v identity="$identity" -v name="fm-$id" \
+      'BEGIN {OFS="\t"} {if ($1 == identity) $3=name; print}' \
+      "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
+    mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
+  fi
   run_teardown_force "$HOME_A" "$id" >/dev/null \
     || fail "$backend teardown could not recover an ambiguity-preserved endpoint"
 done
@@ -787,6 +864,12 @@ for backend in tmux herdr zellij cmux; do
     || fail "$backend replacement recovery changed the durable lease identity"
   backend_endpoint_is_live "$backend" "$new_identity" \
     || fail "$backend replacement recovery metadata does not bind the surviving endpoint"
+  if [ "$backend" = tmux ]; then
+    awk -F '\t' -v identity="$new_identity" -v name="fm-$id" \
+      'BEGIN {OFS="\t"} {if ($1 == identity) $3=name; print}' \
+      "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
+    mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
+  fi
   run_teardown_force "$HOME_A" "$id" >/dev/null \
     || fail "$backend replacement recovery could not be torn down exactly"
 done
@@ -935,6 +1018,7 @@ fi
 retire_ambiguous_gets_after=$(grep -c '^get ' "$TREEHOUSE_LOG")
 [ "$retire_ambiguous_gets_after" -eq "$retire_ambiguous_gets_before" ] \
   || fail 'retirement barrier allowed a new Treehouse acquisition after ambiguous progress'
+printf '@ambiguous-child-recovery\tfirstmate\tfm-ambiguous-child\n' >> "$TMUX_WINDOWS"
 run_teardown_force "$HOME_A" retire-ambiguous \
   >"$WORLD/retire-ambiguous-retry.out" 2>"$WORLD/retire-ambiguous-retry.err" \
   || fail "ambiguous retirement retry failed\n$(cat "$WORLD/retire-ambiguous-retry.err")"
@@ -955,7 +1039,6 @@ mkdir -p "$RETIRE_RECYCLE_TEMPLATE/data/removal-waiter" \
   "$RETIRE_RECYCLE_TEMPLATE/data/removal-fresh" \
   "$RETIRE_RECYCLE_TEMPLATE/state" "$RETIRE_RECYCLE_TEMPLATE/config" \
   "$RETIRE_RECYCLE_TEMPLATE/projects"
-printf '%s\n' retire-removal > "$RETIRE_RECYCLE_TEMPLATE/.fm-secondmate-home"
 printf 'off\n' > "$RETIRE_RECYCLE_TEMPLATE/config/herdr-presentation-spaces"
 printf 'lease test for removal-waiter\nDelivery contract: mode=no-mistakes\n' \
   > "$RETIRE_RECYCLE_TEMPLATE/data/removal-waiter/brief.md"
@@ -1013,13 +1096,12 @@ run_spawn "$RETIRE_REMOVAL_HOME" removal-fresh "$retire_removal_waiter_path" --b
   >"$WORLD/removal-fresh.out" 2>"$WORLD/removal-fresh.err" &
 retire_removal_fresh_pid=$!
 "$FM_REAL_SLEEP" 0.2
-kill -0 "$retire_removal_fresh_pid" 2>/dev/null \
-  || fail 'recycled-home launch escaped the admission barrier during removal'
+if wait "$retire_removal_fresh_pid"; then
+  fail 'recycled-home launch escaped the admission barrier during removal'
+fi
 retire_removal_gets_fresh=$(grep -c '^get ' "$TREEHOUSE_LOG")
 [ "$retire_removal_gets_fresh" -eq "$retire_removal_gets_before" ] \
   || fail 'recycled-home launch acquired a lease while removal retained admission'
-kill -TERM "$retire_removal_fresh_pid"
-wait "$retire_removal_fresh_pid" 2>/dev/null || true
 : > "$RETIRE_REMOVE_RELEASE"
 wait "$retire_removal_pid" \
   || fail "secondmate removal race teardown failed\n$(cat "$WORLD/retire-removal.err")"
@@ -1028,6 +1110,50 @@ retire_removal_gets_after=$(grep -c '^get ' "$TREEHOUSE_LOG")
   || fail 'pre-removal child launch acquired a lease from the recycled home'
 "$FM_REAL_RM" -rf -- "$RETIRE_REMOVAL_HOME"
 pass 'secondmate admission barrier survives removal and rejects stale waiters'
+
+RETIRE_MISSING_HOME="$WORLD/retiring-missing-state-secondmate"
+RETIRE_MISSING_TEMPLATE="$WORLD/retiring-missing-state-recycled"
+make_secondmate_retirement_fixture "$RETIRE_MISSING_HOME" retire-missing-state
+RETIRE_MISSING_HOME_CANON=$(cd "$RETIRE_MISSING_HOME" && pwd -P) \
+  || fail 'missing-state fixture home could not be canonicalized'
+"$FM_REAL_RM" -rf -- "$RETIRE_MISSING_HOME/state"
+mkdir -p "$RETIRE_MISSING_TEMPLATE/data/missing-state-fresh" \
+  "$RETIRE_MISSING_TEMPLATE/config" "$RETIRE_MISSING_TEMPLATE/projects"
+printf 'off\n' > "$RETIRE_MISSING_TEMPLATE/config/herdr-presentation-spaces"
+printf 'lease test for missing-state-fresh\nDelivery contract: mode=no-mistakes\n' \
+  > "$RETIRE_MISSING_TEMPLATE/data/missing-state-fresh/brief.md"
+RETIRE_MISSING_READY="$WORLD/retire-missing.ready"
+RETIRE_MISSING_RELEASE="$WORLD/retire-missing.release"
+FM_FAKE_REMOVE_HOME="$RETIRE_MISSING_HOME_CANON" \
+  FM_FAKE_RECYCLE_TEMPLATE="$RETIRE_MISSING_TEMPLATE" \
+  FM_FAKE_REMOVE_READY="$RETIRE_MISSING_READY" \
+  FM_FAKE_REMOVE_RELEASE="$RETIRE_MISSING_RELEASE" \
+  run_teardown_force "$HOME_A" retire-missing-state \
+    >"$WORLD/retire-missing.out" 2>"$WORLD/retire-missing.err" &
+retire_missing_pid=$!
+i=0
+while [ ! -f "$RETIRE_MISSING_READY" ] && [ "$i" -lt 100 ]; do
+  sleep 0.05
+  i=$((i + 1))
+done
+[ -f "$RETIRE_MISSING_READY" ] \
+  || fail 'missing-state retirement did not reach its recycled-home boundary'
+retire_missing_gets_before=$(grep -c '^get ' "$TREEHOUSE_LOG")
+run_spawn "$RETIRE_MISSING_HOME" missing-state-fresh "$WT1" --backend tmux \
+  >"$WORLD/missing-state-fresh.out" 2>"$WORLD/missing-state-fresh.err" &
+retire_missing_fresh_pid=$!
+"$FM_REAL_SLEEP" 0.2
+if wait "$retire_missing_fresh_pid"; then
+  fail 'missing state or home marker bypassed external retirement admission'
+fi
+retire_missing_gets_after=$(grep -c '^get ' "$TREEHOUSE_LOG")
+[ "$retire_missing_gets_after" -eq "$retire_missing_gets_before" ] \
+  || fail 'missing state or home marker allowed Treehouse acquisition during removal'
+: > "$RETIRE_MISSING_RELEASE"
+wait "$retire_missing_pid" \
+  || fail "missing-state retirement failed\n$(cat "$WORLD/retire-missing.err")"
+"$FM_REAL_RM" -rf -- "$RETIRE_MISSING_HOME"
+pass 'missing state and marker cannot bypass external retirement admission'
 
 RETIRE_REPLACEMENT_HOME="$WORLD/retiring-replacement-secondmate"
 make_secondmate_retirement_fixture "$RETIRE_REPLACEMENT_HOME" retire-replacement

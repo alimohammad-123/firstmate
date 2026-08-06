@@ -383,7 +383,7 @@ fm_backend_endpoint_atom_valid() {  # <value>
 fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
   local meta=$1 id=$2 backend_count backend window worktree project binding_count binding
   local session pane recorded_session workspace tab terminal worktree_id surface
-  local tmux_window_id tmux_window_id_count
+  local tmux_window_id tmux_window_id_count tmux_resolved tmux_reason
   FM_BACKEND_VALIDATED_BACKEND=
   FM_BACKEND_VALIDATED_TARGET=
   [ -f "$meta" ] && [ ! -L "$meta" ] || {
@@ -461,7 +461,22 @@ fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
             echo "REFUSED: tmux endpoint '$window' has a malformed stable window identity; preserving task state." >&2
             return 1
           }
-          window=$tmux_window_id
+          fm_backend_source tmux || {
+            echo "REFUSED: tmux endpoint '$window' cannot load its runtime identity verifier; preserving task state." >&2
+            return 1
+          }
+          FM_BACKEND_TMUX_CORRELATION_ERROR=unreadable
+          fm_backend_tmux_correlate_task_window "$session" "$pane" "$tmux_window_id" || {
+            tmux_reason=${FM_BACKEND_TMUX_CORRELATION_ERROR:-unreadable}
+            echo "REFUSED: tmux endpoint '$window' has $tmux_reason live window identity for recorded id $tmux_window_id; preserving task state." >&2
+            return 1
+          }
+          tmux_resolved=${FM_BACKEND_TMUX_CORRELATED_TARGET:-}
+          [ -n "$tmux_resolved" ] || {
+            echo "REFUSED: tmux endpoint '$window' has unreadable live window identity; preserving task state." >&2
+            return 1
+          }
+          window=$tmux_resolved
           ;;
         *)
           echo "REFUSED: tmux endpoint '$window' has an ambiguous stable window identity; preserving task state." >&2

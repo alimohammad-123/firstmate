@@ -2094,9 +2094,9 @@ if [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ]; then
   # Target the stable window id, not the name: if the name is ever lost (e.g. an
   # automatic-rename slips through), display-message -t <bad-name> falls back to the
   # active client's window, which would misread firstmate's OWN pane path as the
-  # worktree and tangle a hook into the primary checkout. The window id never lies.
+  # leased path and tangle a hook into the primary checkout.
   # Compare against the physically resolved lease path. A single read is not
-  # proof the pane settled there: on some tmux/WSL setups a brand-new window's
+  # confirmation the pane entered it: on some tmux/WSL setups a brand-new window's
   # pane_current_path transiently reports an unrelated stale checkout before the
   # shell catches up with cd. Require two consecutive exact reads of the acquired
   # path; any other directory, including another valid worktree, remains untrusted.

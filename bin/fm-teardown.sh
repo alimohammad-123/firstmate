@@ -182,6 +182,7 @@ TEARDOWN_TASK_LOCK_HELD=0
 TEARDOWN_HERDR_LOCK_RECORDS=
 TEARDOWN_CHILD_TASK_LOCKS=
 TEARDOWN_HOME_ADMISSION_LOCKS=
+TEARDOWN_RETIREMENT_HOMES=
 TEARDOWN_RETIREMENT_STATES=
 TEARDOWN_RETIREMENT_MARKERS_CREATED=
 TEARDOWN_RETIREMENT_PROGRESS=0
@@ -2026,7 +2027,16 @@ FMEOF
 }
 
 teardown_secondmate_retirement_commit() {
-  local state
+  local home state
+  while IFS= read -r home; do
+    [ -n "$home" ] || continue
+    if ! fm_secondmate_retirement_epoch_advance_locked "$home" "$TEARDOWN_RETIREMENT_OWNER"; then
+      echo "REFUSED: secondmate retirement epoch is unsafe for $home; preserving the home and every child" >&2
+      return 1
+    fi
+  done <<FMEOF
+$TEARDOWN_RETIREMENT_HOMES
+FMEOF
   while IFS= read -r state; do
     [ -n "$state" ] || continue
     if ! fm_secondmate_retirement_mark_locked "$state" "$TEARDOWN_RETIREMENT_OWNER"; then
@@ -2049,7 +2059,6 @@ FMEOF
 teardown_secondmate_home_retirement_begin() {  # <home>
   local home=$1 state admission meta lock receipt base id ids='' task_lock
   state="$home/state"
-  [ -d "$state" ] || return 0
   admission=$(fm_secondmate_retirement_lock_path "$home") || return 1
   if ! teardown_secondmate_admission_lock_held "$admission"; then
     fm_lock_acquire_wait "$admission" || return 1
@@ -2060,6 +2069,22 @@ $admission"
       TEARDOWN_HOME_ADMISSION_LOCKS=$admission
     fi
   fi
+  case "
+$TEARDOWN_RETIREMENT_HOMES
+" in
+    *"
+$home
+"*) ;;
+    *)
+      if [ -n "$TEARDOWN_RETIREMENT_HOMES" ]; then
+        TEARDOWN_RETIREMENT_HOMES="$TEARDOWN_RETIREMENT_HOMES
+$home"
+      else
+        TEARDOWN_RETIREMENT_HOMES=$home
+      fi
+      ;;
+  esac
+  [ -d "$state" ] || return 0
   case "
 $TEARDOWN_RETIREMENT_STATES
 " in

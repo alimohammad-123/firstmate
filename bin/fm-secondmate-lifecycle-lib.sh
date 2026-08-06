@@ -5,12 +5,14 @@
 # fm_lock_try_acquire and fm_lock_release.
 # The admission lock lives beside the canonical home rather than inside it and
 # is keyed by the canonical home path, so teardown can retain it while the home
-# itself is returned or removed.
+# itself is returned or removed. A sibling epoch survives removal and changes
+# at retirement commit so a waiter from an earlier home generation cannot enter
+# a recycled path.
 # Spawn acquires the home admission lock before its per-task lifecycle lock;
 # teardown acquires the same home lock before retaining child lifecycle locks.
 # fm_secondmate_spawn_task_lock_acquire returns 0 with the task lock held, 1
 # when the task lock is contended or identity cannot be resolved, and 2 when
-# retirement or a changed home generation requires the launch to refuse.
+# retirement or a changed home epoch requires the launch to refuse.
 # A retirement marker is created only while admission is held, records its
 # exact creating owner, is removed only by that owner before destructive
 # progress, and is retained after ambiguous destructive progress.
@@ -22,21 +24,7 @@ fm_secondmate_canonical_home() {  # <home>
   printf '%s\n' "$canonical"
 }
 
-fm_secondmate_home_generation() {  # <home>
-  local home=$1 canonical marker file_id
-  canonical=$(fm_secondmate_canonical_home "$home") || return 1
-  marker="$canonical/.fm-secondmate-home"
-  [ -f "$marker" ] && [ ! -L "$marker" ] || return 1
-  if [ "$(uname)" = Darwin ]; then
-    file_id=$(stat -f '%d:%i' "$marker" 2>/dev/null) || return 1
-  else
-    file_id=$(stat -c '%d:%i' "$marker" 2>/dev/null) || return 1
-  fi
-  case "$file_id" in ''|*[!0-9:]*) return 1 ;; esac
-  printf '%s\t%s\n' "$canonical" "$file_id"
-}
-
-fm_secondmate_retirement_lock_path() {  # <home>
+fm_secondmate_retirement_external_path() {  # <home> <suffix>
   local canonical parent digest
   canonical=$(fm_secondmate_canonical_home "$1") || return 1
   parent=${canonical%/*}
@@ -49,36 +37,92 @@ fm_secondmate_retirement_lock_path() {  # <home>
     return 1
   fi
   case "$digest" in ''|*[!A-Fa-f0-9]*) return 1 ;; esac
-  printf '%s/.fm-secondmate-retirement-%s.lock\n' "$parent" "$digest"
+  printf '%s/.fm-secondmate-retirement-%s.%s\n' "$parent" "$digest" "$2"
+}
+
+fm_secondmate_retirement_lock_path() { fm_secondmate_retirement_external_path "$1" lock; }
+
+fm_secondmate_retirement_epoch_path() { fm_secondmate_retirement_external_path "$1" epoch; }
+
+fm_secondmate_retirement_epoch_field() {  # <home> <epoch|owner>
+  local path content version epoch owner
+  path=$(fm_secondmate_retirement_epoch_path "$1") || return 1
+  if [ ! -e "$path" ] && [ ! -L "$path" ]; then
+    printf 'none\n'
+    return 0
+  fi
+  [ -f "$path" ] && [ ! -L "$path" ] || return 1
+  content=$(cat "$path") || return 1
+  version=$(printf '%s\n' "$content" | sed -n 's/^version=//p')
+  epoch=$(printf '%s\n' "$content" | sed -n 's/^epoch=//p')
+  owner=$(printf '%s\n' "$content" | sed -n 's/^owner=//p')
+  [ "$(printf '%s\n' "$content" | grep -c '^version=')" -eq 1 ] \
+    && [ "$(printf '%s\n' "$content" | grep -c '^epoch=')" -eq 1 ] \
+    && [ "$(printf '%s\n' "$content" | grep -c '^owner=')" -eq 1 ] \
+    && [ "$version" = 1 ] && [ -n "$owner" ] || return 1
+  [ "${#epoch}" -eq 32 ] || return 1
+  case "$epoch" in *[!A-Fa-f0-9]*) return 1 ;; esac
+  case "$2" in
+    epoch) printf '%s\n' "$epoch" ;;
+    owner) printf '%s\n' "$owner" ;;
+    *) return 1 ;;
+  esac
+}
+
+fm_secondmate_retirement_epoch_read() { fm_secondmate_retirement_epoch_field "$1" epoch; }
+
+fm_secondmate_retirement_epoch_owner() { fm_secondmate_retirement_epoch_field "$1" owner; }
+
+fm_secondmate_retirement_epoch_advance_locked() {  # <home> <owner>
+  local home=$1 owner=$2 path tmp epoch
+  path=$(fm_secondmate_retirement_epoch_path "$home") || return 1
+  epoch=$(od -An -N16 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n') || return 1
+  [ "${#epoch}" -eq 32 ] || return 1
+  case "$epoch" in *[!a-f0-9]*) return 1 ;; esac
+  tmp="$path.tmp.${BASHPID:-$$}"
+  printf 'version=1\nepoch=%s\nowner=%s\n' "$epoch" "$owner" > "$tmp" || return 1
+  mv -f -- "$tmp" "$path" || {
+    rm -f -- "$tmp"
+    return 1
+  }
 }
 
 fm_secondmate_retirement_marker_path() { printf '%s/.secondmate-retiring\n' "$1"; }
 
 fm_secondmate_spawn_task_lock_acquire() {  # <home> <state> <task-lock>
-  local home=$1 state=$2 task_lock=$3 admission marker generation current_generation rc
-  if [ ! -e "$home/.fm-secondmate-home" ] && [ ! -L "$home/.fm-secondmate-home" ]; then
-    fm_lock_try_acquire "$task_lock"
-    return $?
-  fi
-  generation=$(fm_secondmate_home_generation "$home") || return 2
+  local home=$1 state=$2 task_lock=$3 admission marker epoch current_epoch epoch_owner held_pid home_marker rc
   admission=$(fm_secondmate_retirement_lock_path "$home") || return 1
-  marker=$(fm_secondmate_retirement_marker_path "$state") || return 1
+  epoch=$(fm_secondmate_retirement_epoch_read "$home") || return 2
   while ! fm_lock_try_acquire "$admission"; do
-    if [ -e "$marker" ] || [ -L "$marker" ] || [ ! -d "$state" ]; then
-      return 2
-    fi
-    current_generation=$(fm_secondmate_home_generation "$home") || return 2
-    [ "$current_generation" = "$generation" ] || return 2
+    held_pid=${FM_LOCK_HELD_PID:-}
+    epoch_owner=$(fm_secondmate_retirement_epoch_owner "$home") || return 2
+    case "$epoch_owner" in
+      "$held_pid".*) [ -n "$held_pid" ] && return 2 ;;
+    esac
     sleep 0.1
   done
-  current_generation=$(fm_secondmate_home_generation "$home") || {
+  current_epoch=$(fm_secondmate_retirement_epoch_read "$home") || {
     fm_lock_release "$admission" || true
     return 2
   }
-  if [ "$current_generation" != "$generation" ] \
-    || [ -e "$marker" ] || [ -L "$marker" ]; then
+  if [ "$current_epoch" != "$epoch" ]; then
     fm_lock_release "$admission" || true
     return 2
+  fi
+  home_marker="$home/.fm-secondmate-home"
+  if [ -e "$home_marker" ] || [ -L "$home_marker" ]; then
+    if [ ! -f "$home_marker" ] || [ -L "$home_marker" ] || [ ! -d "$state" ]; then
+      fm_lock_release "$admission" || true
+      return 2
+    fi
+    marker=$(fm_secondmate_retirement_marker_path "$state") || {
+      fm_lock_release "$admission" || true
+      return 1
+    }
+    if [ -e "$marker" ] || [ -L "$marker" ]; then
+      fm_lock_release "$admission" || true
+      return 2
+    fi
   fi
   rc=0
   fm_lock_try_acquire "$task_lock" || rc=$?
