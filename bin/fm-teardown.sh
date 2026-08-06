@@ -2643,6 +2643,8 @@ cleanup_firstmate_home_children() {
           echo "error: $child_backend endpoint $child_t for child $child_id is not confirmed gone; retaining that child's durable identity records and stopping forced cleanup" >&2
           return 1
         fi
+      elif [ "$child_backend" = orca ]; then
+        fm_backend_kill "$child_backend" "$child_t" "" "fm-$child_id" >/dev/null 2>&1 || true
       else
         if [ "$child_backend" = tmux ]; then
           case "$child_t" in

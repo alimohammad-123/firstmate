@@ -874,6 +874,14 @@ test_teardown_passes_recorded_tab_id_to_zellij_kill() {
     "decision_keys="
   printf '[]\n' > "$dir/responses/1.out"
   printf '[{"tab_id":3,"name":"fm-zghost"}]\n' > "$dir/responses/2.out"
+  printf '[]\n' > "$dir/responses/4.out"
+  printf '[]\n' > "$dir/responses/5.out"
+  printf '[]\n' > "$dir/responses/6.out"
+  printf '[]\n' > "$dir/responses/7.out"
+  printf '[]\n' > "$dir/responses/8.out"
+  printf '[]\n' > "$dir/responses/9.out"
+  printf '[]\n' > "$dir/responses/10.out"
+  printf '[]\n' > "$dir/responses/11.out"
   fb=$(make_zellij_fakebin "$dir")
   cat > "$fb/treehouse" <<SH
 #!/usr/bin/env bash
@@ -936,6 +944,12 @@ test_forced_secondmate_teardown_kills_zellij_children_with_child_home_tag() {
   zellij_pane_response "$dir" 1 7 4
   zellij_tab_response "$dir" 2 4 "$child_title"
   printf '[]\n' > "$dir/responses/3.out"
+  printf '[]\n' > "$dir/responses/4.out"
+  printf '[]\n' > "$dir/responses/5.out"
+  printf '[]\n' > "$dir/responses/6.out"
+  printf '[]\n' > "$dir/responses/7.out"
+  printf '[]\n' > "$dir/responses/8.out"
+  printf '[]\n' > "$dir/responses/9.out"
   fb=$(make_zellij_fakebin "$dir")
   cat > "$fb/treehouse" <<SH
 #!/usr/bin/env bash

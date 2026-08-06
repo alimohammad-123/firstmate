@@ -89,7 +89,12 @@ exit 0
 SH
   cat > "$fakebin/tmux" <<'SH'
 #!/usr/bin/env bash
-# tmux kill-window etc.: succeed silently.
+# Model one exact task window until guarded teardown closes it.
+if [ "${1:-}" = list-windows ] && [ ! -e "$FM_FAKE_TREEHOUSE_CASE/state/.tmux-window-killed" ]; then
+  printf '@task-x1\tfirstmate\tfm-task-x1\n'
+elif [ "${1:-}" = kill-window ]; then
+  : > "$FM_FAKE_TREEHOUSE_CASE/state/.tmux-window-killed"
+fi
 exit 0
 SH
   # Default gh-axi mock: no PR is associated with the branch, and viewing any PR
@@ -214,6 +219,7 @@ write_meta() {
   else
     fm_write_meta "$case_dir/state/task-x1.meta" \
       "window=firstmate:fm-task-x1" \
+      "tmux_window_id=@task-x1" \
       "endpoint_task_id=task-x1" \
       "worktree=$case_dir/wt" \
       "project=$case_dir/project" \
@@ -1723,8 +1729,8 @@ test_forced_secondmate_herdr_child_retains_records_when_close_unconfirmed() {
   [ -e "$home/state/child-herdr.status" ] || fail "herdr-child-unconfirmed-close: ambiguous close erased child status"
   [ -e "$case_dir/state/task-x1.meta" ] || fail "herdr-child-unconfirmed-close: failed child cleanup erased parent metadata"
   [ -d "$home" ] || fail "herdr-child-unconfirmed-close: failed child cleanup removed the secondmate home"
-  assert_grep "retaining that child's durable identity records" "$case_dir/stderr" \
-    "herdr-child-unconfirmed-close: refusal did not explain child record retention"
+  assert_grep "preserving its lease and records" "$case_dir/stderr" \
+    "herdr-child-unconfirmed-close: refusal did not explain child lease and record retention"
   pass "forced secondmate teardown retains Herdr child identity until exact pane disappearance"
 }
 
@@ -1922,7 +1928,7 @@ test_herdr_projection_teardown_retains_journal_when_close_unconfirmed() {
     || fail "unconfirmed task-pane close incorrectly retired the presentation journal"
   [ -e "$case_dir/state/task-x1.meta" ] \
     || fail "unconfirmed task-pane close erased the durable endpoint metadata"
-  assert_grep "close could not be confirmed" "$case_dir/stderr" \
+  assert_grep "preserving its lease and records" "$case_dir/stderr" \
     "unconfirmed projected close did not explain why the journal was retained"
   assert_grep "not confirmed gone" "$case_dir/stderr" \
     "unconfirmed projected close did not explain why the records were retained"
@@ -2226,6 +2232,10 @@ test_lsof_absent_reaps_tmux_process_group() {
 #!/usr/bin/env bash
 if [ "\${1:-}" = display-message ] && [ "\${*: -1}" = '#{pane_pid}' ]; then
   printf '%s\n' '$pid'
+elif [ "\${1:-}" = list-windows ] && [ ! -e "$case_dir/state/.tmux-window-killed" ]; then
+  printf '@task-x1\tfirstmate\tfm-task-x1\n'
+elif [ "\${1:-}" = kill-window ]; then
+  : > "$case_dir/state/.tmux-window-killed"
 fi
 exit 0
 EOF

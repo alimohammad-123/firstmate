@@ -136,15 +136,13 @@ resolve_permissive_tmux_kill_ref() {
 # that resolution shell/platform-dependent. FM_ROOT_OVERRIDE pointed at this dir's
 # root makes "$FM_ROOT/bin/fm-project-mode.sh" (etc.) resolve correctly.
 # fm-backend.sh (and its bin/backends/ adapters) is the dispatcher every one
-# of the five REFACTORED scripts sources; it must be a real, reachable file in
-# the old bin/ too or `. "$SCRIPT_DIR/fm-backend.sh"` aborts under set -eu -
-# hence the dispatcher is a copied sibling, while the tmux adapter is extracted
-# from BASE_REF so conformance tests retain the exact historical behavior even
-# when this branch changes tmux dispatch semantics.
-OLD_BIN_UNCHANGED_SIBLINGS="fm-gate-refuse-lib.sh fm-guard.sh fm-lock-lib.sh fm-tasks-axi-lib.sh fm-pr-lib.sh fm-tangle-lib.sh fm-tmux-lib.sh fm-composer-lib.sh fm-wake-lib.sh fm-classify-lib.sh fm-supervision-lib.sh fm-ff-lib.sh fm-config-inherit-lib.sh fm-project-mode.sh fm-harness.sh fm-crew-state.sh fm-nm-run-lib.sh fm-decision-hold.sh fm-backend.sh fm-operational-input.sh fm-public-followup-lib.sh fm-secondmate-registry-lib.sh fm-secondmate-parent-lib.sh fm-x-lib.sh"
+# of the five REFACTORED scripts sources. Extract it from BASE_REF with those
+# entrypoints so the compatibility sandbox never mixes a current dispatcher
+# with historical adapters that do not implement its helper contract.
+OLD_BIN_UNCHANGED_SIBLINGS="fm-gate-refuse-lib.sh fm-guard.sh fm-lock-lib.sh fm-tasks-axi-lib.sh fm-pr-lib.sh fm-tangle-lib.sh fm-tmux-lib.sh fm-composer-lib.sh fm-wake-lib.sh fm-classify-lib.sh fm-supervision-lib.sh fm-ff-lib.sh fm-config-inherit-lib.sh fm-project-mode.sh fm-harness.sh fm-crew-state.sh fm-nm-run-lib.sh fm-decision-hold.sh fm-operational-input.sh fm-public-followup-lib.sh fm-secondmate-registry-lib.sh fm-secondmate-parent-lib.sh fm-secondmate-lifecycle-lib.sh fm-treehouse-lease-lib.sh fm-x-lib.sh"
 # A pull-request merge may add a new main-only dependency that the branch's older baseline does not have yet.
 OLD_BIN_OPTIONAL_SIBLINGS="fm-pending-reply-lib.sh"
-OLD_BIN_REFACTORED="fm-send.sh fm-peek.sh fm-watch.sh fm-spawn.sh fm-teardown.sh fm-marker-lib.sh"
+OLD_BIN_REFACTORED="fm-send.sh fm-peek.sh fm-watch.sh fm-spawn.sh fm-teardown.sh fm-marker-lib.sh fm-backend.sh"
 
 build_old_bin() {  # <name> -> echoes root dir (root/bin/<script> is the entry point)
   local name=$1 root bin f
@@ -931,6 +929,11 @@ make_teardown_fakebin() {  # <dir> -> echoes fakebin dir; logs tmux+treehouse ca
 #!/usr/bin/env bash
 set -u
 { printf 'tmux'; for a in "$@"; do printf '\x1f%s' "$a"; done; printf '\n'; } >> "${FM_TMUX_LOG:?}"
+if [ "${1:-}" = list-windows ] && [ ! -e "$FM_TMUX_LOG.killed" ]; then
+  printf '%s\t%s\t%s\n' "$FM_FAKE_TMUX_ID" "$FM_FAKE_TMUX_SESSION" "$FM_FAKE_TMUX_NAME"
+elif [ "${1:-}" = kill-window ]; then
+  : > "$FM_TMUX_LOG.killed"
+fi
 exit 0
 SH
   cat > "$fb/treehouse" <<'SH'
@@ -955,14 +958,17 @@ SH
 # worktree-tangle check runs identically (and silently) for both, regardless
 # of which fm-teardown.sh (old or new) is actually being invoked.
 run_teardown_case() {
-  local script=$1 fmroot=$2 fb=$3 log=$4 state=$5 data=$6 config=$7 id=$8 meta
+  local script=$1 fmroot=$2 fb=$3 log=$4 state=$5 data=$6 config=$7 id=$8 meta window
   meta="$state/$id.meta"
+  window=$(sed -n 's/^window=//p' "$meta")
   : > "$log"
   env PATH="$fb:$PATH" FM_ROOT_OVERRIDE="$fmroot" \
     FM_STATE_OVERRIDE="$state" FM_DATA_OVERRIDE="$data" FM_CONFIG_OVERRIDE="$config" \
     FM_FAKE_TREEHOUSE_PATH="$(sed -n 's/^worktree=//p' "$meta")" \
     FM_FAKE_TREEHOUSE_LEASE_ID="$(sed -n 's/^treehouse_lease_id=//p' "$meta")" \
     FM_FAKE_TREEHOUSE_LEASE_HOLDER="$(sed -n 's/^treehouse_lease_holder=//p' "$meta")" \
+    FM_FAKE_TMUX_ID="$(sed -n 's/^tmux_window_id=//p' "$meta")" \
+    FM_FAKE_TMUX_SESSION="${window%%:*}" FM_FAKE_TMUX_NAME="${window#*:}" \
     FM_TMUX_LOG="$log" \
     "$script" "$id"
 }
@@ -970,12 +976,10 @@ run_teardown_case() {
 test_teardown_conformance_old_vs_new() {
   local old_bin fb proj wt id old_tmux_ref saved_base_ref
   local state_old state_new config_old config_new data log_old log_new out_old out_new rc_old rc_new
-  # Force the post-squash topology inside this case: merge-base with main may
-  # equal HEAD on default-branch CI, and that must not make the legacy kill
-  # fixture self-referential. build_old_bin still uses BASE_REF for entrypoints;
-  # only the tmux kill adapter is pinned to the content-historical permissive ref.
+  # Keep the old entrypoints, dispatcher, and adapters on one coherent baseline;
+  # mixing a current dispatcher with a historical adapter invents a runtime that
+  # never shipped and can fail on helper functions the old adapter did not own.
   saved_base_ref=$BASE_REF
-  BASE_REF=$(git -C "$ROOT" rev-parse HEAD)
   old_tmux_ref=$(resolve_permissive_tmux_kill_ref) \
     || { BASE_REF=$saved_base_ref; fail "unable to locate a historical bin/backends/tmux.sh with permissive kill-window selectors"; }
   old_bin=$(build_old_bin teardown-old)
@@ -997,9 +1001,13 @@ test_teardown_conformance_old_vs_new() {
 
   fm_write_meta "$state_old/$id.meta" \
     "window=firstmate:fm-$id" "worktree=$wt" "project=$proj" "harness=claude" "kind=scout" "mode=no-mistakes" "yolo=off" \
+    "tmux_window_id=@teardown-conformance" \
+    "treehouse_lease_id=teardown-conformance-lease" \
+    "treehouse_lease_holder=firstmate-task:$(cd "$old_bin" && pwd -P):$id" \
     "decisions_reviewed=1" "decision_keys="
   fm_write_meta "$state_new/$id.meta" \
     "window=firstmate:fm-$id" "worktree=$wt" "project=$proj" "harness=claude" "kind=scout" "mode=no-mistakes" "yolo=off" \
+    "tmux_window_id=@teardown-conformance" \
     "treehouse_lease_id=teardown-conformance-lease" \
     "treehouse_lease_holder=firstmate-task:$(cd "$old_bin" && pwd -P):$id" \
     "decisions_reviewed=1" "decision_keys="
@@ -1015,19 +1023,14 @@ test_teardown_conformance_old_vs_new() {
   expect_code 0 "$rc_new" "new fm-teardown.sh (scout, report present) should succeed"$'\n'"$out_new"
   assert_contains "$(cat "$log_new")" "treehouse"$'\x1f''return'$'\x1f''--force'$'\x1f'"$wt" \
     "teardown did not call treehouse return --force <worktree>"
-  # The legacy fixture's adapter comes from BASE_REF, so its selector form is
-  # whatever the merge-base carried: permissive while the exact-selector change
-  # was still on a branch, exact for every branch cut after it landed on main.
-  # Pinning the old form here would make this case pass once and then fail
-  # forever, so the '=' exactness markers are normalized away and the legacy run
-  # is only required to have reached tmux window cleanup for this task. The
-  # exact-selector contract belongs to the current script, asserted below.
+  # The baseline adapter retains its historical name selector. Current teardown
+  # instead closes the correlated stable id it just proved belongs to this task.
   assert_contains "$(tr -d '=' < "$log_old")" "tmux"$'\x1f''kill-window'$'\x1f''-t'$'\x1f'"firstmate:fm-$id" \
     "legacy teardown fixture did not exercise tmux window cleanup for the task"
-  assert_contains "$(cat "$log_new")" "tmux"$'\x1f''kill-window'$'\x1f''-t'$'\x1f'"=firstmate:=fm-$id" \
-    "teardown did not call tmux kill-window with exact session and window selectors"
+  assert_contains "$(cat "$log_new")" "tmux"$'\x1f''kill-window'$'\x1f''-t'$'\x1f''@teardown-conformance' \
+    "teardown did not close the exact correlated tmux window id"
 
-  pass "fm-teardown.sh: treehouse return remains compatible while tmux cleanup uses exact selectors"
+  pass "fm-teardown.sh: treehouse return remains compatible while tmux cleanup uses the exact stable id"
 }
 
 # --- backend selection loudly refuses an unknown backend --------------------
