@@ -1,0 +1,32 @@
+docs/verification/runtime-backends.md
+  s_c931668be96934::t_22a4a48d1b6a5b 234,258-259
+docs/configuration.md
+  s_c931668be96934::t_159f4f58ec9dc9 19
+tests/secondmate-helpers.sh
+  s_c931668be96934::t_22a4a48d1b6a5b 27-38
+AGENTS.md
+  s_c931668be96934::t_22a4a48d1b6a5b 95
+bin/fm-spawn.sh
+  s_c931668be96934::t_22a4a48d1b6a5b 699-700,703,707,711,714,784,2524
+tests/fm-backend-herdr-workspace-per-home-e2e.test.sh
+  s_c931668be96934::t_22a4a48d1b6a5b 161-163
+tests/fm-secondmate-lifecycle-e2e.test.sh
+  s_c931668be96934::t_22a4a48d1b6a5b 122-125
+  s_c931668be96934::t_0d713ced9bc55f 213-214,222
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "8d19266eff02e3058badb675a7035b1bce7ed837",
+  "prompts": {},
+  "sessions": {
+    "s_c931668be96934": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd7bb-d9eb-7811-be58-67ed09c7a540",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
