@@ -1944,18 +1944,18 @@ preflight_firstmate_home_process_event_tree() {
 }
 
 validate_firstmate_home_children_removal() {
-  local home=$1 sub_state child_meta child_id child_wt child_proj child_kind child_home child_backend child_orca_worktree_id
+  local home=$1 sub_state child_meta child_id child_endpoint child_wt child_proj child_kind child_home child_backend child_orca_worktree_id
   sub_state="$home/state"
   [ -d "$sub_state" ] || return 0
   for child_meta in "$sub_state"/*.meta; do
     [ -e "$child_meta" ] || continue
     child_id=$(basename "$child_meta" .meta)
-    fm_backend_validate_task_endpoint "$child_meta" "$child_id" || return 1
+    child_endpoint=$(validate_firstmate_home_child_endpoint "$home" "$child_meta" "$child_id") || return 1
+    child_backend=${child_endpoint%%$'\t'*}
     validate_pr_poll_cleanup "$sub_state" "$child_id" || return 1
     child_wt=$(meta_value "$child_meta" worktree)
     child_kind=$(meta_value "$child_meta" kind)
     [ -n "$child_kind" ] || child_kind=ship
-    child_backend=$(fm_backend_of_meta "$child_meta")
     if [ "$child_kind" = secondmate ]; then
       child_home=$(meta_value "$child_meta" home)
       [ -n "$child_home" ] || child_home=$child_wt
@@ -2272,16 +2272,33 @@ $session	$lock_path"
   return 1
 }
 
+validate_firstmate_home_child_endpoint() {  # <home> <meta> <id>
+  local home=$1 meta=$2 id=$3 backend
+  backend=$(fm_backend_of_meta "$meta")
+  case "$backend" in
+    zellij|cmux)
+      ( unset FM_ROOT_OVERRIDE; FM_HOME=$home FM_ROOT=$home
+        fm_backend_validate_task_endpoint "$meta" "$id" || exit $?
+        printf '%s\t%s' "$FM_BACKEND_VALIDATED_BACKEND" "$FM_BACKEND_VALIDATED_TARGET"
+      )
+      ;;
+    *)
+      fm_backend_validate_task_endpoint "$meta" "$id" || return 1
+      printf '%s\t%s' "$FM_BACKEND_VALIDATED_BACKEND" "$FM_BACKEND_VALIDATED_TARGET"
+      ;;
+  esac
+}
+
 preflight_firstmate_home_herdr_children() {  # <home>
-  local home=$1 sub_state child_meta child_id child_backend child_target child_kind child_home child_wt
+  local home=$1 sub_state child_meta child_id child_endpoint child_backend child_target child_kind child_home child_wt
   sub_state="$home/state"
   [ -d "$sub_state" ] || return 0
   for child_meta in "$sub_state"/*.meta; do
     [ -e "$child_meta" ] || continue
     child_id=$(basename "$child_meta" .meta)
-    fm_backend_validate_task_endpoint "$child_meta" "$child_id" || return 1
-    child_backend=$FM_BACKEND_VALIDATED_BACKEND
-    child_target=$FM_BACKEND_VALIDATED_TARGET
+    child_endpoint=$(validate_firstmate_home_child_endpoint "$home" "$child_meta" "$child_id") || return 1
+    child_backend=${child_endpoint%%$'\t'*}
+    child_target=${child_endpoint#*$'\t'}
     if [ "$child_backend" = herdr ]; then
       teardown_herdr_preflight_target "$child_target" "$child_id" || return 1
     fi
@@ -2297,7 +2314,8 @@ preflight_firstmate_home_herdr_children() {  # <home>
 }
 
 cleanup_firstmate_home_children() {
-  local home=$1 sub_state child_meta child_id child_t child_wt child_proj child_kind child_home child_backend child_orca_worktree_id child_busy_gen
+  local home=$1 sub_state child_meta child_id child_endpoint child_t child_wt child_proj child_kind child_home child_backend child_orca_worktree_id child_busy_gen
+  local child_tab_id child_window child_session child_name
   local child_treehouse_lease_id child_treehouse_lease_holder
   sub_state="$home/state"
   [ -d "$sub_state" ] || return 0
@@ -2308,16 +2326,13 @@ cleanup_firstmate_home_children() {
       echo "REFUSED: child $child_id lifecycle lock is not held; preserving the child and secondmate home" >&2
       return 1
     fi
+    child_endpoint=$(validate_firstmate_home_child_endpoint "$home" "$child_meta" "$child_id") || return 1
+    child_backend=${child_endpoint%%$'\t'*}
+    child_t=${child_endpoint#*$'\t'}
     child_wt=$(meta_value "$child_meta" worktree)
     child_proj=$(meta_value "$child_meta" project)
     child_kind=$(meta_value "$child_meta" kind)
     [ -n "$child_kind" ] || child_kind=ship
-    child_backend=$(fm_backend_of_meta "$child_meta")
-    if [ "$child_backend" = orca ]; then
-      child_t=$(meta_value "$child_meta" terminal)
-    else
-      child_t=$(fm_backend_target_of_meta "$child_meta")
-    fi
     if [ "$child_backend" = orca ] && [ "$child_kind" != secondmate ]; then
       child_orca_worktree_id=$(require_orca_worktree_id "$child_meta") || return 1
       if [ -n "$child_wt" ] && [ -e "$child_wt" ]; then
@@ -2341,12 +2356,37 @@ cleanup_firstmate_home_children() {
           echo "error: herdr pane $child_t for child $child_id is not confirmed gone; retaining that child's durable identity records and stopping forced cleanup" >&2
           return 1
         fi
-      elif [ "$child_backend" = zellij ]; then
-        # Zellij titles are scoped by the owning home tag, so forced secondmate
-        # cleanup must verify child tabs as that child home, not the parent.
-        ( unset FM_ROOT_OVERRIDE; FM_HOME=$home FM_ROOT=$home fm_backend_kill "$child_backend" "$child_t" "$(meta_value "$child_meta" zellij_tab_id)" "fm-$child_id" ) 2>/dev/null || true
+      elif [ "$child_backend" = zellij ] || [ "$child_backend" = cmux ]; then
+        child_tab_id=
+        [ "$child_backend" != zellij ] || child_tab_id=$(meta_value "$child_meta" zellij_tab_id)
+        if ! ( unset FM_ROOT_OVERRIDE; FM_HOME=$home FM_ROOT=$home
+          fm_backend_kill "$child_backend" "$child_t" "$child_tab_id" "fm-$child_id" >/dev/null 2>&1 \
+            && fm_backend_endpoint_confirmed_gone "$child_backend" "$child_t" "$child_tab_id" "fm-$child_id" >/dev/null 2>&1
+        ); then
+          echo "error: $child_backend endpoint $child_t for child $child_id is not confirmed gone; retaining that child's durable identity records and stopping forced cleanup" >&2
+          return 1
+        fi
       else
-        fm_backend_kill "$child_backend" "$child_t" "$(meta_value "$child_meta" zellij_tab_id)" "fm-$child_id" 2>/dev/null || true
+        if [ "$child_backend" = tmux ]; then
+          case "$child_t" in
+            @*)
+              child_window=$(meta_value "$child_meta" window)
+              child_session=${child_window%%:*}
+              child_name=${child_window#*:}
+              if ! fm_backend_source tmux \
+                 || ! fm_backend_tmux_correlate_task_window "$child_session" "$child_name" "$child_t" \
+                 || [ "$FM_BACKEND_TMUX_CORRELATED_TARGET" != "$child_t" ]; then
+                echo "error: tmux endpoint $child_t for child $child_id has changed live identity; retaining that child's durable identity records and stopping forced cleanup" >&2
+                return 1
+              fi
+              ;;
+          esac
+        fi
+        if ! fm_backend_kill "$child_backend" "$child_t" "" "fm-$child_id" >/dev/null 2>&1 \
+           || ! fm_backend_endpoint_confirmed_gone "$child_backend" "$child_t" "" "fm-$child_id" >/dev/null 2>&1; then
+          echo "error: $child_backend endpoint $child_t for child $child_id is not confirmed gone; retaining that child's durable identity records and stopping forced cleanup" >&2
+          return 1
+        fi
       fi
     fi
     if [ "$child_kind" = secondmate ]; then

@@ -34,7 +34,7 @@
 #   herdr, zellij, orca, and cmux. For every ordinary tmux/herdr/zellij/cmux
 #   ship or scout, bin/fm-treehouse-lease-lib.sh acquires a process-independent
 #   Treehouse lease before endpoint creation, parses only path/lease_id/lease_holder
-#   from `treehouse get --lease --json`, and the endpoint explicitly cd's to
+#   from `treehouse get --lease --json --lease-holder <holder>`, and the endpoint explicitly cd's to
 #   that exact path. The holder includes this home's absolute identity, and
 #   metadata records the immutable lease id and holder beside worktree=.
 #   Relaunch verifies and reuses that exact lease instead of allocating again.
@@ -863,7 +863,17 @@ spawn_abort_cleanup() {
     endpoint_cleanup_failed=1
   elif [ "$TREEHOUSE_ENDPOINT_ABORT_CLEANUP" = 1 ]; then
     endpoint_identity_exact=1
-    if fm_backend_kill "$BACKEND" "$TREEHOUSE_ENDPOINT_ABORT_TARGET" "${ZELLIJ_TAB_ID:-}" "$W" >/dev/null 2>&1 \
+    endpoint_mutation_safe=1
+    if [ "$BACKEND" = tmux ]; then
+      endpoint_mutation_safe=0
+      if fm_backend_source tmux \
+         && fm_backend_tmux_correlate_task_window "$SES" "$W" "$TREEHOUSE_ENDPOINT_ABORT_TARGET" \
+         && [ "$FM_BACKEND_TMUX_CORRELATED_TARGET" = "$TREEHOUSE_ENDPOINT_ABORT_TARGET" ]; then
+        endpoint_mutation_safe=1
+      fi
+    fi
+    if [ "$endpoint_mutation_safe" = 1 ] \
+       && fm_backend_kill "$BACKEND" "$TREEHOUSE_ENDPOINT_ABORT_TARGET" "${ZELLIJ_TAB_ID:-}" "$W" >/dev/null 2>&1 \
        && fm_backend_endpoint_confirmed_gone "$BACKEND" "$TREEHOUSE_ENDPOINT_ABORT_TARGET" "${ZELLIJ_TAB_ID:-}" "$W" >/dev/null 2>&1; then
       TREEHOUSE_ENDPOINT_ABORT_CLEANUP=0
     else

@@ -686,16 +686,10 @@ fm_backend_cmux_correlate_task_workspace() {  # <recorded-workspace-id> <expecte
 # recovery/list_live ignore it) - cmux's own "closed the last tab" outcome.
 fm_backend_cmux_kill() {  # <target> [unused] [expected-label]
   local expected_label=${3:-} wsid wininfo win count
+  fm_backend_cmux_parse_target "$1" || return 1
   if [ -n "$expected_label" ]; then
-    if fm_backend_cmux_target_ready "$1" "$expected_label"; then
-      :
-    else
-      fm_backend_cmux_parse_target "$1" || return 0
-      fm_backend_cmux_correlate_task_workspace "$FM_BACKEND_CMUX_WORKSPACE" "$expected_label" || return 0
-      FM_BACKEND_CMUX_WORKSPACE=$FM_BACKEND_CMUX_CORRELATED_WORKSPACE
-    fi
-  else
-    fm_backend_cmux_parse_target "$1" || return 0
+    fm_backend_cmux_correlate_task_workspace "$FM_BACKEND_CMUX_WORKSPACE" "$expected_label" || return 1
+    FM_BACKEND_CMUX_WORKSPACE=$FM_BACKEND_CMUX_CORRELATED_WORKSPACE
   fi
   wsid=$FM_BACKEND_CMUX_WORKSPACE
   wininfo=$(fm_backend_cmux_window_of_workspace "$wsid")
