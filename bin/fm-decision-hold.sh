@@ -51,6 +51,18 @@ DATA="${FM_DATA_OVERRIDE:-$FM_HOME/data}"
 # shellcheck source=bin/fm-tasks-axi-lib.sh
 # shellcheck disable=SC1091
 . "$SCRIPT_DIR/fm-tasks-axi-lib.sh"
+# shellcheck source=bin/fm-wake-lib.sh
+# shellcheck disable=SC1091
+. "$SCRIPT_DIR/fm-wake-lib.sh"
+
+DECISION_META_LOCK=
+DECISION_META_TMP=
+decision_meta_cleanup() {
+  [ -z "$DECISION_META_TMP" ] || rm -f -- "$DECISION_META_TMP"
+  [ -z "$DECISION_META_LOCK" ] || fm_lock_release "$DECISION_META_LOCK" || true
+}
+trap decision_meta_cleanup EXIT
+trap 'exit 1' HUP INT TERM
 
 usage() {
   awk '
@@ -275,7 +287,7 @@ command_hold() {
 }
 
 command_complete() {
-  local origin=${1:-} meta previous='' supplied='' keys='' key status_file open raw_open key_seen=0 has_meta=0
+  local origin=${1:-} meta previous='' supplied='' keys='' key status_file open raw_open key_seen=0 has_meta=0 line
   [ "$#" -ge 2 ] || { usage >&2; exit 2; }
   validate_slug origin-id "$origin"
   shift
@@ -294,6 +306,9 @@ command_complete() {
     done
   fi
   if [ "$has_meta" = 1 ]; then
+    DECISION_META_LOCK=$(fm_meta_mutation_lock_path "$meta") || fail "cannot resolve task metadata lock for $origin"
+    fm_lock_acquire_wait "$DECISION_META_LOCK" || fail "cannot acquire task metadata lock for $origin"
+    [ -f "$meta" ] && [ ! -L "$meta" ] || fail "task metadata for $origin changed while acquiring its lock"
     previous=$(meta_value "$meta" decision_keys)
   fi
   keys=$(sorted_key_union "$previous" "$supplied")
@@ -319,7 +334,20 @@ EOF
 
   if [ "$has_meta" = 1 ]; then
     if [ "$(meta_value "$meta" decisions_reviewed)" != 1 ] || [ "$previous" != "$keys" ]; then
-      printf 'decisions_reviewed=1\ndecision_keys=%s\n' "$keys" >> "$meta"
+      DECISION_META_TMP=$(mktemp "$STATE/.$origin.meta.decision.XXXXXX") \
+        || fail "cannot create updated task metadata for $origin"
+      while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+          decisions_reviewed=*|decision_keys=*) ;;
+          *) printf '%s\n' "$line" >> "$DECISION_META_TMP" \
+            || fail "cannot preserve task metadata for $origin" ;;
+        esac
+      done < "$meta"
+      printf 'decisions_reviewed=1\ndecision_keys=%s\n' "$keys" >> "$DECISION_META_TMP" \
+        || fail "cannot update decision metadata for $origin"
+      mv -f -- "$DECISION_META_TMP" "$meta" \
+        || fail "cannot publish decision metadata for $origin"
+      DECISION_META_TMP=
     fi
 
     # Transfer any still-open status decision to its durable backlog owner so the
@@ -332,6 +360,10 @@ EOF
     done <<EOF
 $raw_open
 EOF
+  fi
+  if [ -n "$DECISION_META_LOCK" ]; then
+    fm_lock_release "$DECISION_META_LOCK" || fail "cannot release task metadata lock for $origin"
+    DECISION_META_LOCK=
   fi
   : "$key_seen"
   printf 'complete: %s decision inventory reviewed%s\n' "$origin" "${keys:+ ($keys)}"

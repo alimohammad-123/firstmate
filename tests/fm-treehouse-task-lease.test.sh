@@ -37,7 +37,9 @@ FM_REAL_MV=$(command -v mv)
 FM_REAL_RM=$(command -v rm)
 FM_REAL_CP=$(command -v cp)
 FM_REAL_SLEEP=$(command -v sleep)
-export TREEHOUSE_STATE TREEHOUSE_POOL TREEHOUSE_COUNTER TREEHOUSE_LOG TMUX_LOG TMUX_WINDOWS TMUX_COUNTER ENDPOINT_STATE ENDPOINT_COUNTER CMUX_FOCUS_MARKER XDG_STATE_HOME EVENT_LOG FM_REAL_MV FM_REAL_RM FM_REAL_CP FM_REAL_SLEEP
+FM_REAL_PS=$(command -v ps)
+FM_REAL_PYTHON3=$(command -v python3)
+export TREEHOUSE_STATE TREEHOUSE_POOL TREEHOUSE_COUNTER TREEHOUSE_LOG TMUX_LOG TMUX_WINDOWS TMUX_COUNTER ENDPOINT_STATE ENDPOINT_COUNTER CMUX_FOCUS_MARKER XDG_STATE_HOME EVENT_LOG FM_REAL_MV FM_REAL_RM FM_REAL_CP FM_REAL_SLEEP FM_REAL_PS FM_REAL_PYTHON3
 
 mkdir -p "$HOME_A/data" "$HOME_A/state" "$HOME_A/config" "$HOME_A/projects" \
   "$HOME_B/data" "$HOME_B/state" "$HOME_B/config" "$HOME_B/projects"
@@ -127,6 +129,16 @@ case "${1:-}" in
       shift
     done
     [ -n "$path" ] && [ -n "$expected_id" ] && [ -n "$expected_holder" ] || exit 2
+    if [ "${FM_FAKE_RETURN_INDEX_LOCK_ID:-}" = "$expected_id" ] \
+       && [ ! -e "$TREEHOUSE_STATE.return-lock-$expected_id" ]; then
+      : > "$TREEHOUSE_STATE.return-lock-$expected_id"
+      if [ -n "${FM_FAKE_RETURN_RESTART_TASK:-}" ]; then
+        printf '@return-restart-%s\tfirstmate\tfm-%s\n' \
+          "$FM_FAKE_RETURN_RESTART_TASK" "$FM_FAKE_RETURN_RESTART_TASK" >> "$TMUX_WINDOWS"
+      fi
+      echo "fatal: Unable to create '$path/.git/index.lock': File exists" >&2
+      exit 1
+    fi
     [ "${FM_FAKE_RETURN_FAIL_ID:-}" != "$expected_id" ] || {
       echo 'simulated conditional return failure' >&2
       exit 1
@@ -176,6 +188,26 @@ case "$*" in
     exit 0
     ;;
   *"#{pane_id}"*) printf '%%1\n'; exit 0 ;;
+  *"#{pane_pid}"*)
+    if [ -n "${FM_FAKE_TMUX_PROCESS_FILE:-}" ]; then
+      if [ ! -s "$FM_FAKE_TMUX_PROCESS_FILE" ]; then
+        "$FM_REAL_PYTHON3" - "$FM_FAKE_TMUX_PROCESS_FILE" "$FM_REAL_SLEEP" <<'PY' >/dev/null 2>&1 &
+import os, sys
+os.setsid()
+with open(sys.argv[1], "w", encoding="utf-8") as handle:
+    handle.write(str(os.getpid()))
+os.execv(sys.argv[2], [sys.argv[2], "30"])
+PY
+        i=0
+        while [ ! -s "$FM_FAKE_TMUX_PROCESS_FILE" ] && [ "$i" -lt 100 ]; do
+          "$FM_REAL_SLEEP" 0.01
+          i=$((i + 1))
+        done
+      fi
+      cat "$FM_FAKE_TMUX_PROCESS_FILE"
+    fi
+    exit 0
+    ;;
   *"#{pane_current_command}"*) printf 'zsh\n'; exit 0 ;;
   *"#{pane_tty}"*) printf '/dev/null\n'; exit 0 ;;
 esac
@@ -491,10 +523,33 @@ cat > "$FAKEBIN/lsof" <<'SH'
 #!/usr/bin/env bash
 set -u
 [ "${FM_FAKE_RECORD_REAP:-0}" != 1 ] || printf 'reap-scan %s\n' "$*" >> "$EVENT_LOG"
+[ "${FM_FAKE_LSOF_FAIL:-0}" != 1 ] || exit 1
+if [ "${FM_FAKE_LSOF_MALFORMED:-0}" = 1 ]; then
+  printf 'unparseable\n'
+  exit 0
+fi
+if [ -n "${FM_FAKE_RESTART_AFTER_REAP_TASK:-}" ] \
+   && [ ! -e "$TMUX_WINDOWS.reap-restarted-$FM_FAKE_RESTART_AFTER_REAP_TASK" ]; then
+  : > "$TMUX_WINDOWS.reap-restarted-$FM_FAKE_RESTART_AFTER_REAP_TASK"
+  printf '@reap-restart-%s\tfirstmate\tfm-%s\n' \
+    "$FM_FAKE_RESTART_AFTER_REAP_TASK" "$FM_FAKE_RESTART_AFTER_REAP_TASK" >> "$TMUX_WINDOWS"
+fi
 exit 0
 SH
 chmod +x "$FAKEBIN/lsof"
-fm_fake_exit0 "$FAKEBIN" gh gh-axi ps sleep
+cat > "$FAKEBIN/ps" <<'SH'
+#!/usr/bin/env bash
+[ "${FM_FAKE_REAL_PS:-0}" = 1 ] && exec "$FM_REAL_PS" "$@"
+exit 0
+SH
+chmod +x "$FAKEBIN/ps"
+cat > "$FAKEBIN/sleep" <<'SH'
+#!/usr/bin/env bash
+[ "${FM_FAKE_REAL_SLEEP:-0}" = 1 ] && exec "$FM_REAL_SLEEP" "$@"
+exit 0
+SH
+chmod +x "$FAKEBIN/sleep"
+fm_fake_exit0 "$FAKEBIN" gh gh-axi
 
 make_brief() {
   local home=$1 id=$2
@@ -527,7 +582,7 @@ run_teardown_force() {
   local home=$1 id=$2
   FM_ROOT_OVERRIDE="$ROOT" FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" \
     FM_DATA_OVERRIDE="$home/data" FM_CONFIG_OVERRIDE="$home/config" \
-    FM_TEARDOWN_GUARD_DONE=1 FM_TREEHOUSE_RETURN_LOCK_RETRIES=0 \
+    FM_TEARDOWN_GUARD_DONE=1 FM_TREEHOUSE_RETURN_LOCK_RETRIES="${FM_TEST_RETURN_RETRIES:-0}" \
     PATH="$FAKEBIN:$PATH" "$TEARDOWN" "$id" --force
 }
 
@@ -535,7 +590,7 @@ run_teardown() {
   local home=$1 id=$2
   FM_ROOT_OVERRIDE="$ROOT" FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" \
     FM_DATA_OVERRIDE="$home/data" FM_CONFIG_OVERRIDE="$home/config" \
-    FM_TEARDOWN_GUARD_DONE=1 FM_TREEHOUSE_RETURN_LOCK_RETRIES=0 \
+    FM_TEARDOWN_GUARD_DONE=1 FM_TREEHOUSE_RETURN_LOCK_RETRIES="${FM_TEST_RETURN_RETRIES:-0}" \
     PATH="$FAKEBIN:$PATH" "$TEARDOWN" "$id"
 }
 
@@ -938,6 +993,82 @@ for backend in tmux herdr zellij cmux; do
     || fail "$backend teardown did not retire endpoint before reap and return after reap"
 done
 pass 'all Treehouse backends retire endpoints before process reap and lease return'
+
+make_brief "$HOME_A" tmux-no-lsof
+run_spawn "$HOME_A" tmux-no-lsof "$WT1" >/dev/null \
+  || fail 'missing-lsof fallback fixture could not publish'
+TMUX_NO_LSOF_PROCESS="$WORLD/tmux-no-lsof.process"
+FM_LSOF_BIN="$WORLD/missing-lsof" FM_FAKE_REAL_PS=1 FM_FAKE_REAL_SLEEP=1 \
+  FM_FAKE_TMUX_PROCESS_FILE="$TMUX_NO_LSOF_PROCESS" \
+  run_teardown_force "$HOME_A" tmux-no-lsof >/dev/null \
+  || fail 'captured tmux process fallback did not permit exact teardown without lsof'
+tmux_no_lsof_pid=$(cat "$TMUX_NO_LSOF_PROCESS")
+if kill -0 "$tmux_no_lsof_pid" 2>/dev/null; then
+  fail 'missing-lsof fallback left the captured tmux process group alive'
+fi
+pass 'missing lsof uses a pre-retirement exact tmux process fallback'
+
+make_brief "$HOME_A" reap-ambiguous
+run_spawn "$HOME_A" reap-ambiguous "$WT1" >/dev/null \
+  || fail 'ambiguous reap fixture could not publish'
+REAP_AMBIGUOUS_META="$HOME_A/state/reap-ambiguous.meta"
+reap_ambiguous_lease=$(sed -n 's/^treehouse_lease_id=//p' "$REAP_AMBIGUOUS_META")
+return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+if FM_FAKE_LSOF_MALFORMED=1 run_teardown_force "$HOME_A" reap-ambiguous >/dev/null 2>&1; then
+  fail 'teardown accepted an ambiguous process scan'
+fi
+return_count_after=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+[ "$return_count_after" -eq "$return_count_before" ] \
+  || fail 'ambiguous process scan reached conditional lease return'
+assert_present "$REAP_AMBIGUOUS_META" 'ambiguous process scan erased task metadata'
+grep -Fq "$WT1"$'\t'"$reap_ambiguous_lease"$'\t' "$TREEHOUSE_STATE" \
+  || fail 'ambiguous process scan released the exact lease'
+run_teardown_force "$HOME_A" reap-ambiguous >/dev/null \
+  || fail 'ambiguous reap fixture did not recover on a readable retry'
+pass 'ambiguous process scans refuse before conditional lease return'
+
+make_brief "$HOME_A" endpoint-after-reap
+run_spawn "$HOME_A" endpoint-after-reap "$WT1" >/dev/null \
+  || fail 'post-reap endpoint restart fixture could not publish'
+ENDPOINT_AFTER_REAP_META="$HOME_A/state/endpoint-after-reap.meta"
+endpoint_after_reap_lease=$(sed -n 's/^treehouse_lease_id=//p' "$ENDPOINT_AFTER_REAP_META")
+return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+if FM_FAKE_RESTART_AFTER_REAP_TASK=endpoint-after-reap \
+  run_teardown_force "$HOME_A" endpoint-after-reap >/dev/null 2>&1; then
+  fail 'teardown returned a lease after the task endpoint restarted during reap'
+fi
+return_count_after=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+[ "$return_count_after" -eq "$return_count_before" ] \
+  || fail 'post-reap endpoint restart reached conditional lease return'
+assert_present "$ENDPOINT_AFTER_REAP_META" 'post-reap endpoint restart erased task metadata'
+grep -Fq "$WT1"$'\t'"$endpoint_after_reap_lease"$'\t' "$TREEHOUSE_STATE" \
+  || fail 'post-reap endpoint restart released the exact lease'
+backend_endpoint_remove tmux @reap-restart-endpoint-after-reap
+run_teardown_force "$HOME_A" endpoint-after-reap >/dev/null \
+  || fail 'post-reap endpoint restart fixture did not recover after exact removal'
+pass 'endpoint identity is freshly rechecked after process reap'
+
+make_brief "$HOME_A" endpoint-on-return-retry
+run_spawn "$HOME_A" endpoint-on-return-retry "$WT1" >/dev/null \
+  || fail 'return-retry endpoint fixture could not publish'
+ENDPOINT_RETRY_META="$HOME_A/state/endpoint-on-return-retry.meta"
+endpoint_retry_lease=$(sed -n 's/^treehouse_lease_id=//p' "$ENDPOINT_RETRY_META")
+return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+if FM_TEST_RETURN_RETRIES=1 FM_FAKE_RETURN_INDEX_LOCK_ID="$endpoint_retry_lease" \
+  FM_FAKE_RETURN_RESTART_TASK=endpoint-on-return-retry \
+  run_teardown_force "$HOME_A" endpoint-on-return-retry >/dev/null 2>&1; then
+  fail 'return retry skipped fresh endpoint identity correlation'
+fi
+return_count_after=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+[ "$return_count_after" -eq $((return_count_before + 1)) ] \
+  || fail 'return retry invoked Treehouse again after endpoint identity rebound'
+assert_present "$ENDPOINT_RETRY_META" 'return-retry rebound erased task metadata'
+grep -Fq "$WT1"$'\t'"$endpoint_retry_lease"$'\t' "$TREEHOUSE_STATE" \
+  || fail 'return-retry rebound released the exact lease'
+backend_endpoint_remove tmux @return-restart-endpoint-on-return-retry
+run_teardown_force "$HOME_A" endpoint-on-return-retry >/dev/null \
+  || fail 'return-retry endpoint fixture did not recover after exact removal'
+pass 'every conditional return retry freshly rechecks endpoint identity'
 
 make_brief "$HOME_A" tmux-final-rebound
 run_spawn "$HOME_A" tmux-final-rebound "$WT1" >/dev/null \

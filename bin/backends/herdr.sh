@@ -3047,6 +3047,30 @@ fm_backend_herdr_endpoint_confirmed_gone() {  # <target>
   [ "$presence" = dead ]
 }
 
+fm_backend_herdr_task_endpoint_absent() {  # <session> <recorded-pane> <task-label>
+  local session=$1 pane=$2 label=$3 workspace_list home_label workspaces workspace tabs matches=0 count
+  [ "$(fm_backend_herdr_pane_presence_state "$session" "$pane")" = dead ] || return 1
+  home_label=$(fm_backend_herdr_workspace_label) || return 1
+  workspace_list=$(fm_backend_herdr_cli "$session" workspace list 2>/dev/null) || return 1
+  workspaces=$(printf '%s' "$workspace_list" | jq -r --arg label "$home_label" '
+    select((.result.workspaces | type) == "array")
+    | .result.workspaces[] | select(.label == $label) | .workspace_id
+  ' 2>/dev/null) || return 1
+  while IFS= read -r workspace; do
+    [ -n "$workspace" ] || continue
+    tabs=$(fm_backend_herdr_cli "$session" tab list --workspace "$workspace" 2>/dev/null) || return 1
+    count=$(printf '%s' "$tabs" | jq -r --arg label "$label" '
+      select((.result.tabs | type) == "array")
+      | [.result.tabs[] | select(.label == $label)] | length
+    ' 2>/dev/null) || return 1
+    case "$count" in ''|*[!0-9]*) return 1 ;; esac
+    matches=$((matches + count))
+  done <<EOF
+$workspaces
+EOF
+  [ "$matches" -eq 0 ]
+}
+
 # fm_backend_herdr_classify_agent_status: map a raw `agent get` agent_status
 # value to the adapter's watcher busy|idle|unknown vocabulary. working ->
 # busy (actively generating); idle/done -> idle; blocked -> idle (a blocked

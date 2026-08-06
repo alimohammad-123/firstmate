@@ -251,6 +251,10 @@ ok - unconfirmed endpoint cleanup preserves the exact lease and acquisition evid
 ok - exact teardown retires its matched receipt and permits task-id reuse
 ok - ordinary primary spawn retains its home-local per-task lock path
 ok - all Treehouse backends retire endpoints before process reap and lease return
+ok - missing lsof uses a pre-retirement exact tmux process fallback
+ok - ambiguous process scans refuse before conditional lease return
+ok - endpoint identity is freshly rechecked after process reap
+ok - every conditional return retry freshly rechecks endpoint identity
 ok - tmux teardown revalidates live identity before endpoint retirement and lease return
 ok - cmux duplicate-title recovery refuses before endpoint or lease mutation
 ok - tmux rollback refuses a restart-reused id before endpoint or lease mutation

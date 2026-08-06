@@ -1022,6 +1022,8 @@ retry_wait_secs_is_valid() {
   [[ "$1" =~ ^([0-9]+([.][0-9]*)?|[.][0-9]+)$ ]]
 }
 
+TEARDOWN_LSOF_BIN=${FM_LSOF_BIN:-lsof}
+
 STALE_WORKTREE_LOCK_AGE_SECS=${FM_STALE_WORKTREE_LOCK_AGE_SECS:-30}
 # Bounded patience window for transient index.lock after killing a crew process.
 # New knobs are preferred; FM_STALE_WORKTREE_LOCK_RETRY_WAIT_SECS remains an alias
@@ -1114,10 +1116,15 @@ teardown_treehouse_return_once() {  # <dir> <cd-dir> [lease-id] [holder]
 teardown_treehouse_return() {
   local dir=$1 cd_dir=$2 label=$3 post_cleanup_check=${4:-}
   local lease_id=${5:-} lease_holder=${6:-}
+  local endpoint_meta=${7:-} endpoint_task_id=${8:-} endpoint_backend=${9:-}
+  local endpoint_home=${10:-}
   local out lock attempt=0 max_retries lock_desc
 
   # Capture stdout+stderr so non-lock failures stay visible and lock failures can
   # be matched by signature even when the lock file is already gone mid-check.
+  if [ -n "$lease_id" ]; then
+    teardown_treehouse_endpoint_absent_exact "$endpoint_meta" "$endpoint_task_id" "$endpoint_backend" "$endpoint_home" || return 1
+  fi
   if out=$(teardown_treehouse_return_once "$dir" "$cd_dir" "$lease_id" "$lease_holder" 2>&1); then
     [ -n "$out" ] && printf '%s\n' "$out"
     return 0
@@ -1143,6 +1150,9 @@ teardown_treehouse_return() {
     echo "teardown: $label return failed with transient git lock ($lock_desc); waiting ${TREEHOUSE_RETURN_LOCK_RETRY_WAIT_SECS}s and retrying ($attempt/${max_retries})" >&2
     sleep "$TREEHOUSE_RETURN_LOCK_RETRY_WAIT_SECS"
 
+    if [ -n "$lease_id" ]; then
+      teardown_treehouse_endpoint_absent_exact "$endpoint_meta" "$endpoint_task_id" "$endpoint_backend" "$endpoint_home" || return 1
+    fi
     if out=$(teardown_treehouse_return_once "$dir" "$cd_dir" "$lease_id" "$lease_holder" 2>&1); then
       [ -n "$out" ] && printf '%s\n' "$out"
       echo "teardown: $label return succeeded on retry; lock cleared on its own" >&2
@@ -1169,6 +1179,9 @@ teardown_treehouse_return() {
           echo "teardown: $label return aborted after stale-lock cleanup because safety checks failed" >&2
           return 1
         fi
+      fi
+      if [ -n "$lease_id" ]; then
+        teardown_treehouse_endpoint_absent_exact "$endpoint_meta" "$endpoint_task_id" "$endpoint_backend" "$endpoint_home" || return 1
       fi
       if out=$(teardown_treehouse_return_once "$dir" "$cd_dir" "$lease_id" "$lease_holder" 2>&1); then
         [ -n "$out" ] && printf '%s\n' "$out"
@@ -1285,6 +1298,65 @@ teardown_treehouse_endpoint_retire_exact() {  # <meta> <task-id> <backend>
   teardown_mark_treehouse_endpoint_retired "$meta" "$task_id" || return 1
   T=$target
   TEARDOWN_ENDPOINT_RETIRED=1
+}
+
+teardown_treehouse_endpoint_absent_exact() {  # <meta> <task-id> <backend> [home]
+  local meta=$1 task_id=$2 backend=$3 endpoint_home=${4:-} target tab_id window session name reason
+  local FM_HOME=${endpoint_home:-$FM_HOME} FM_ROOT=${endpoint_home:-$FM_ROOT}
+  [ -f "$meta" ] && [ ! -L "$meta" ] || return 1
+  target=$(fm_backend_meta_exact_value "$meta" window) || return 1
+  tab_id=
+  case "$backend" in
+    tmux)
+      window=$target
+      session=${window%%:*}
+      name=${window#*:}
+      target=$(fm_backend_meta_exact_value "$meta" tmux_window_id) || return 1
+      fm_backend_source tmux || return 1
+      FM_BACKEND_TMUX_CORRELATION_ERROR=unreadable
+      if fm_backend_tmux_correlate_task_window "$session" "$name" "$target"; then
+        echo "REFUSED: tmux endpoint for task $task_id became live before lease return; preserving its lease and records." >&2
+        return 1
+      fi
+      reason=${FM_BACKEND_TMUX_CORRELATION_ERROR:-unreadable}
+      [ "$reason" = absent ] || {
+        echo "REFUSED: tmux endpoint for task $task_id has $reason identity before lease return; preserving its lease and records." >&2
+        return 1
+      }
+      ;;
+    herdr)
+      target=$(fm_backend_meta_exact_value "$meta" herdr_pane_id) || return 1
+      session=$(fm_backend_meta_exact_value "$meta" herdr_session) || return 1
+      fm_backend_source herdr || return 1
+      fm_backend_herdr_task_endpoint_absent "$session" "$target" "fm-$task_id" || {
+        echo "REFUSED: Herdr endpoint identity for task $task_id is live or unreadable before lease return; preserving its lease and records." >&2
+        return 1
+      }
+      ;;
+    zellij)
+      target=$(fm_backend_meta_exact_value "$meta" window) || return 1
+      tab_id=$(fm_backend_meta_exact_value "$meta" zellij_tab_id) || return 1
+      fm_backend_endpoint_confirmed_gone zellij "$target" "$tab_id" "fm-$task_id" || {
+        echo "REFUSED: Zellij endpoint identity for task $task_id is live or unreadable before lease return; preserving its lease and records." >&2
+        return 1
+      }
+      ;;
+    cmux)
+      target=$(fm_backend_meta_exact_value "$meta" cmux_workspace_id) || return 1
+      fm_backend_source cmux || return 1
+      FM_BACKEND_CMUX_CORRELATION_ERROR=unreadable
+      if fm_backend_cmux_correlate_task_workspace "$target" "fm-$task_id"; then
+        echo "REFUSED: cmux endpoint for task $task_id became live before lease return; preserving its lease and records." >&2
+        return 1
+      fi
+      reason=${FM_BACKEND_CMUX_CORRELATION_ERROR:-unreadable}
+      [ "$reason" = absent ] || {
+        echo "REFUSED: cmux endpoint for task $task_id has $reason identity before lease return; preserving its lease and records." >&2
+        return 1
+      }
+      ;;
+    *) return 1 ;;
+  esac
 }
 
 validate_worktree_teardown_safety() {
@@ -1447,7 +1519,7 @@ pids_with_cwd_under() {  # <dir>
   local dir=$1 out pid path line
   [ -n "$dir" ] && [ -d "$dir" ] || return 0
   dir=$(cd "$dir" && pwd -P) || return 1
-  out=$(lsof -a -d cwd -Fpn 2>/dev/null) || return 1
+  out=$("$TEARDOWN_LSOF_BIN" -a -d cwd -Fpn 2>/dev/null) || return 1
   [ -n "$out" ] || return 0
   pid=
   while IFS= read -r line; do
@@ -1520,48 +1592,67 @@ $dir_pids"
   TASK_PIDS=$(printf '%s\n' "$pids" | grep -E '^[0-9]+$' | sort -un || true)
 }
 
-reap_task_backend_process_group() {  # <label>
-  local label=$1 leader leader_start pgid current_pgid own_pgid
-  if [ "$BACKEND" != tmux ]; then
-    echo "warning: lsof is unavailable; cannot resolve a process-group fallback for $BACKEND task $ID" >&2
-    return 0
-  fi
+capture_task_backend_process_group() {
+  local leader leader_start pgid current_pgid own_pgid
+  TEARDOWN_FALLBACK_LEADER=
+  TEARDOWN_FALLBACK_LEADER_IDENTITY=
+  TEARDOWN_FALLBACK_PGID=
+  [ "$BACKEND" = tmux ] || {
+    echo "REFUSED: lsof is unavailable and $BACKEND has no exact process fallback for task $ID; preserving its endpoint, lease, and records." >&2
+    return 1
+  }
   leader=$(tmux display-message -p -t "$T" '#{pane_pid}' 2>/dev/null) || leader=""
   case "$leader" in ''|*[!0-9]*)
-    echo "warning: lsof is unavailable; cannot resolve the tmux pane process group for $ID" >&2
-    return 0
+    echo "REFUSED: lsof is unavailable and the tmux pane process for $ID is unreadable; preserving its endpoint, lease, and records." >&2
+    return 1
     ;;
   esac
   leader_start=$(task_process_identity "$leader") || {
-    echo "warning: lsof is unavailable; cannot identify the tmux pane process group for $ID" >&2
-    return 0
+    echo "REFUSED: lsof is unavailable and the tmux pane process identity for $ID is unreadable; preserving its endpoint, lease, and records." >&2
+    return 1
   }
   pgid=$(ps -o pgid= -p "$leader" 2>/dev/null) || pgid=""
   pgid=$(printf '%s' "$pgid" | tr -d '[:space:]')
   case "$pgid" in ''|*[!0-9]*|0|1)
-    echo "warning: lsof is unavailable; cannot resolve the tmux pane process group for $ID" >&2
-    return 0
-    ;;
+    echo "REFUSED: lsof is unavailable and the tmux pane process group for $ID is unreadable; preserving its endpoint, lease, and records." >&2
+    return 1
   esac
   own_pgid=$(ps -o pgid= -p "$$" 2>/dev/null) || own_pgid=""
   own_pgid=$(printf '%s' "$own_pgid" | tr -d '[:space:]')
   if [ "$pgid" = "$own_pgid" ]; then
-    echo "warning: lsof is unavailable; refusing to signal teardown's own process group for $ID" >&2
-    return 0
+    echo "REFUSED: lsof is unavailable and tmux reports teardown's own process group for $ID; preserving its endpoint, lease, and records." >&2
+    return 1
   fi
-  task_process_identity_matches "$leader" "$leader_start" || return 0
+  task_process_identity_matches "$leader" "$leader_start" || return 1
   current_pgid=$(ps -o pgid= -p "$leader" 2>/dev/null) || current_pgid=""
   current_pgid=$(printf '%s' "$current_pgid" | tr -d '[:space:]')
-  [ "$current_pgid" = "$pgid" ] || return 0
+  [ "$current_pgid" = "$pgid" ] || return 1
+  TEARDOWN_FALLBACK_LEADER=$leader
+  TEARDOWN_FALLBACK_LEADER_IDENTITY=$leader_start
+  TEARDOWN_FALLBACK_PGID=$pgid
+}
+
+reap_task_backend_process_group() {  # <label>
+  local label=$1 leader=$TEARDOWN_FALLBACK_LEADER leader_start=$TEARDOWN_FALLBACK_LEADER_IDENTITY
+  local pgid=$TEARDOWN_FALLBACK_PGID current_pgid
+  [ -n "$leader" ] && [ -n "$leader_start" ] && [ -n "$pgid" ] || return 1
+  if ! kill -0 -- "-$pgid" 2>/dev/null; then
+    return 0
+  fi
+  if task_process_identity "$leader" >/dev/null 2>&1; then
+    task_process_identity_matches "$leader" "$leader_start" || return 1
+    current_pgid=$(ps -o pgid= -p "$leader" 2>/dev/null | tr -d '[:space:]')
+    [ "$current_pgid" = "$pgid" ] || return 1
+  fi
   echo "teardown: reaping leaked $label process group for $ID: $pgid" >&2
   kill -TERM -- "-$pgid" 2>/dev/null || true
   sleep 1
-  if task_process_identity_matches "$leader" "$leader_start" \
-     && [ "$(ps -o pgid= -p "$leader" 2>/dev/null | tr -d '[:space:]')" = "$pgid" ] \
-     && kill -0 -- "-$pgid" 2>/dev/null; then
+  if kill -0 -- "-$pgid" 2>/dev/null; then
     echo "teardown: force-killing leaked $label process group for $ID: $pgid" >&2
     kill -KILL -- "-$pgid" 2>/dev/null || true
+    sleep 1
   fi
+  ! kill -0 -- "-$pgid" 2>/dev/null
 }
 
 # Reap every process rooted (by cwd) under this task's own worktree or tasktmp
@@ -1574,9 +1665,9 @@ reap_task_worktree_processes() {  # <label> <dir>...
   local label=$1 pids pid identity current_pids i pass=1 max_passes=3
   local -a tracked_pids tracked_identities remaining_pids remaining_identities
   shift
-  if ! command -v lsof >/dev/null 2>&1; then
+  if ! command -v "$TEARDOWN_LSOF_BIN" >/dev/null 2>&1; then
     reap_task_backend_process_group "$label"
-    return 0
+    return $?
   fi
   while [ "$pass" -le "$max_passes" ]; do
     if ! task_pids_under_roots "$@"; then
@@ -2510,7 +2601,8 @@ cleanup_firstmate_home_children() {
         "$child_wt/.fm-grok-turnend" "$child_wt/.fm-kimi-turnend"
       if [ -n "$child_proj" ] && [ -d "$child_proj" ] && command -v treehouse >/dev/null 2>&1; then
         teardown_treehouse_return "$child_wt" "$child_proj" "child worktree" "" \
-          "$child_treehouse_lease_id" "$child_treehouse_lease_holder" || return $?
+          "$child_treehouse_lease_id" "$child_treehouse_lease_holder" \
+          "$child_meta" "$child_id" "$child_backend" "$home" || return $?
       else
         echo "REFUSED: exact Treehouse lease return prerequisites are unavailable for child $child_id; preserving the child and secondmate home" >&2
         return 1
@@ -2663,6 +2755,9 @@ fi
 TEARDOWN_HERDR_SESSION=
 TEARDOWN_HERDR_PANE=
 TEARDOWN_ENDPOINT_RETIRED=0
+TEARDOWN_FALLBACK_LEADER=
+TEARDOWN_FALLBACK_LEADER_IDENTITY=
+TEARDOWN_FALLBACK_PGID=
 if [ "$BACKEND" = herdr ]; then
   teardown_herdr_preflight_target "$T" "$ID" || exit 1
   fm_backend_herdr_parse_target "$T" || exit 1
@@ -2691,12 +2786,17 @@ if [ "$BACKEND" = herdr ] \
   fi
 fi
 
+if [ -d "$WT" ] && [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ] \
+   && ! command -v "$TEARDOWN_LSOF_BIN" >/dev/null 2>&1; then
+  capture_task_backend_process_group || exit 1
+fi
+
 if [ -d "$WT" ] && [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ]; then
   teardown_treehouse_endpoint_retire_exact "$META" "$ID" "$BACKEND" || exit 1
 fi
 
 if [ "$KIND" != secondmate ]; then
-  reap_task_worktree_processes worktree "$WT" "$TASK_TMP"
+  reap_task_worktree_processes worktree "$WT" "$TASK_TMP" || exit 1
 fi
 
 if [ "$KIND" = secondmate ] && [ "$FORCE" != "--force" ]; then
@@ -2742,7 +2842,7 @@ elif [ -d "$WT" ] && [ "$KIND" != secondmate ]; then
     post_lock_cleanup_check=validate_worktree_teardown_safety
   fi
   teardown_treehouse_return "$WT" "$PROJ" "worktree" "$post_lock_cleanup_check" \
-    "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" || {
+    "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" "$META" "$ID" "$BACKEND" || {
     echo "error: exact conditional Treehouse lease return failed for worktree $WT; teardown aborted with task identity preserved" >&2
     exit 1
   }

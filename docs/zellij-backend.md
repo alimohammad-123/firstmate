@@ -17,7 +17,7 @@ Prerequisites:
 
 Select it with local `config/backend` containing `zellij`, `FM_BACKEND=zellij` for one launch, or an explicit request to Firstmate.
 It is never auto-detected.
-A spawn stops before creating a session or acquiring a worktree when Zellij or `jq` is missing or Zellij is below 0.44.
+A spawn stops before creating a session or acquiring a worktree when `treehouse`, Zellij, or `jq` is missing or Zellij is below 0.44.
 
 Firstmate uses one shared session named `firstmate` by default.
 `FM_ZELLIJ_SESSION` can select another name for isolated verification.

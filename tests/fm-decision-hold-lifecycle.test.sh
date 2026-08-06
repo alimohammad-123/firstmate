@@ -323,6 +323,53 @@ test_origin_slug_validation_precedes_path_construction() {
   pass "completion and verification validate origins before constructing paths"
 }
 
+test_completion_serializes_with_other_metadata_owners() {
+  local home id lock ready release holder_pid complete_pid i
+  home=$(make_home decision-metadata-lock)
+  id=sample-concurrent-review
+  mkdir -p "$home/data/$id"
+  tasks_in "$home" add "$id" "Review concurrent metadata" --kind scout --repo sample --start >/dev/null \
+    || fail "could not create concurrent decision fixture"
+  write_origin_meta "$home" "$id"
+  printf 'done: report complete\n' > "$home/state/$id.status"
+  lock="$home/state/.spawn-$id.lock"
+  ready="$home/metadata-owner.ready"
+  release="$home/metadata-owner.release"
+  (
+    . "$ROOT/bin/fm-wake-lib.sh"
+    fm_lock_acquire_wait "$lock"
+    : > "$ready"
+    while [ ! -f "$release" ]; do sleep 0.05; done
+    printf 'traceparent=00-concurrent-owner-01\n' >> "$home/state/$id.meta"
+    fm_lock_release "$lock"
+  ) &
+  holder_pid=$!
+  i=0
+  while [ ! -f "$ready" ] && [ "$i" -lt 100 ]; do
+    sleep 0.05
+    i=$((i + 1))
+  done
+  assert_present "$ready" "competing metadata owner did not acquire the shared task lock"
+  run_decisions "$home" complete "$id" --none \
+    > "$home/concurrent-complete.out" 2> "$home/concurrent-complete.err" &
+  complete_pid=$!
+  sleep 0.2
+  if ! kill -0 "$complete_pid" 2>/dev/null; then
+    fail "decision completion did not wait for the shared metadata owner"
+  fi
+  : > "$release"
+  wait "$holder_pid" || fail "competing metadata owner failed"
+  wait "$complete_pid" \
+    || fail "decision completion failed after serialized metadata update: $(cat "$home/concurrent-complete.err")"
+  assert_grep 'traceparent=00-concurrent-owner-01' "$home/state/$id.meta" \
+    "decision completion lost a concurrent metadata owner's field"
+  [ "$(grep -c '^decisions_reviewed=' "$home/state/$id.meta")" -eq 1 ] \
+    || fail "decision completion did not atomically own decisions_reviewed"
+  [ "$(grep -c '^decision_keys=' "$home/state/$id.meta")" -eq 1 ] \
+    || fail "decision completion did not atomically own decision_keys"
+  pass "decision completion serializes with concurrent task metadata owners"
+}
+
 test_visual_review_uses_shared_completion_owner() {
   local home id hold json
   home=$(make_home visual-review)
@@ -555,6 +602,7 @@ test_uninventoried_report_decision_refuses_completion
 test_scout_teardown_always_requires_inventory_verification
 test_structured_holds_survive_teardown_and_route_resolution
 test_origin_slug_validation_precedes_path_construction
+test_completion_serializes_with_other_metadata_owners
 test_visual_review_uses_shared_completion_owner
 test_none_inventory_and_resolved_prose_do_not_create_holds
 test_terminal_single_owner_status_decision_does_not_block_empty_inventory
