@@ -376,6 +376,92 @@ fm_backend_meta_exact_value() {  # <meta-file> <key>
   printf '%s' "$value"
 }
 
+fm_backend_endpoint_metadata_write() {  # <backend> <task-id> <target> [<identity-a>] [<identity-b>]
+  local backend=$1 task_id=$2 target=$3 identity_a=${4:-} identity_b=${5:-}
+  local session pane workspace surface body
+  case "$task_id$target$identity_a$identity_b" in *$'\n'*|*$'\r'*|*$'\t'*) return 1 ;; esac
+  case "$task_id" in ''|*[!A-Za-z0-9._-]*) return 1 ;; esac
+  body=$(case "$backend" in
+    tmux)
+      [ -n "$target" ] || return 1
+      printf 'tmux_window_id=%s\n' "$target"
+      ;;
+    herdr)
+      session=${target%%:*}
+      pane=${target#*:}
+      [ -n "$session" ] && [ "$pane" != "$target" ] && [ -n "$pane" ] \
+        && [ -n "$identity_a" ] && [ -n "$identity_b" ] || return 1
+      printf 'herdr_session=%s\n' "$session"
+      printf 'herdr_workspace_id=%s\n' "$identity_a"
+      printf 'herdr_tab_id=%s\n' "$identity_b"
+      printf 'herdr_pane_id=%s\n' "$pane"
+      ;;
+    zellij)
+      session=${target%%:*}
+      pane=${target#*:}
+      [ -n "$session" ] && [ "$pane" != "$target" ] && [ -n "$pane" ] \
+        && [ -n "$identity_a" ] || return 1
+      printf 'zellij_session=%s\n' "$session"
+      printf 'zellij_tab_id=%s\n' "$identity_a"
+      printf 'zellij_pane_id=%s\n' "$pane"
+      ;;
+    orca)
+      [ -n "$target" ] && [ -n "$identity_a" ] || return 1
+      printf 'terminal=%s\n' "$target"
+      printf 'orca_worktree_id=%s\n' "$identity_a"
+      ;;
+    cmux)
+      workspace=${target%%:*}
+      surface=${target#*:}
+      [ -n "$workspace" ] && [ "$surface" != "$target" ] && [ -n "$surface" ] || return 1
+      printf 'cmux_workspace_id=%s\n' "$workspace"
+      printf 'cmux_surface_id=%s\n' "$surface"
+      ;;
+    *) return 1 ;;
+  esac) || return 1
+  fm_backend_endpoint_metadata_write_binding "$backend" "$task_id" || return 1
+  printf '%s\n' "$body"
+}
+
+fm_backend_endpoint_metadata_write_binding() {  # <backend> <task-id>
+  local backend=$1 task_id=$2
+  fm_backend_is_known "$backend" || return 1
+  case "$task_id" in ''|*[!A-Za-z0-9._-]*) return 1 ;; esac
+  printf 'endpoint_task_id=%s\n' "$task_id"
+  [ "$backend" = tmux ] || printf 'backend=%s\n' "$backend"
+}
+
+fm_backend_endpoint_metadata_matches() {  # <meta> <backend> <task-id> <target> [<identity-a>] [<identity-b>]
+  local meta=$1 backend=$2 task_id=$3 target=$4 identity_a=${5:-} identity_b=${6:-}
+  local expected actual
+  [ -f "$meta" ] && [ ! -L "$meta" ] || return 1
+  expected=$(fm_backend_endpoint_metadata_write \
+    "$backend" "$task_id" "$target" "$identity_a" "$identity_b") || return 1
+  while IFS='=' read -r key value; do
+    actual=$(fm_backend_meta_exact_value "$meta" "$key") || return 1
+    [ "$actual" = "$value" ] || return 1
+  done <<EOF
+$expected
+EOF
+  if [ "$backend" = tmux ]; then
+    [ "$(grep -c '^backend=' "$meta" 2>/dev/null || true)" -eq 0 ]
+  else
+    [ "$(grep -c '^backend=' "$meta" 2>/dev/null || true)" -eq 1 ]
+  fi
+}
+
+fm_backend_metadata_without_endpoint() {  # <meta>
+  awk -F= '
+    $1 == "window" || $1 == "endpoint_task_id" || $1 == "backend" ||
+    $1 == "tmux_window_id" ||
+    $1 == "herdr_session" || $1 == "herdr_workspace_id" || $1 == "herdr_tab_id" || $1 == "herdr_pane_id" ||
+    $1 == "zellij_session" || $1 == "zellij_tab_id" || $1 == "zellij_pane_id" ||
+    $1 == "orca_worktree_id" || $1 == "terminal" ||
+    $1 == "cmux_workspace_id" || $1 == "cmux_surface_id" { next }
+    { print }
+  ' "$1"
+}
+
 fm_backend_endpoint_atom_valid() {  # <value>
   case "$1" in
     ''|*[!A-Za-z0-9._@%+-]*) return 1 ;;

@@ -3047,30 +3047,19 @@ fm_backend_herdr_endpoint_confirmed_gone() {  # <target>
   [ "$presence" = dead ]
 }
 
-fm_backend_herdr_task_endpoint_absent() {  # <session> <recorded-pane> <task-label>
-  local session=$1 pane=$2 label=$3 workspace_list workspaces workspace tabs matches=0 count
+fm_backend_herdr_task_endpoint_absent() {  # <session> <recorded-pane> <journal> <task-id> <home>
+  local session=$1 pane=$2 journal=$3 task_id=$4 home=$5 recorded_home
   [ "$(fm_backend_herdr_pane_presence_state "$session" "$pane")" = dead ] || return 1
-  workspace_list=$(fm_backend_herdr_cli "$session" workspace list 2>/dev/null) || return 1
-  workspaces=$(printf '%s' "$workspace_list" | jq -r '
-    if ((.result.workspaces | type) != "array") then error("invalid workspaces") else
-      [.result.workspaces[].workspace_id]
-      | if (all(.[]; type == "string" and length > 0) and (length == (unique | length)))
-        then .[] else error("ambiguous workspaces") end
-    end
-  ' 2>/dev/null) || return 1
-  while IFS= read -r workspace; do
-    [ -n "$workspace" ] || continue
-    tabs=$(fm_backend_herdr_cli "$session" tab list --workspace "$workspace" 2>/dev/null) || return 1
-    count=$(printf '%s' "$tabs" | jq -r --arg label "$label" '
-      select((.result.tabs | type) == "array")
-      | [.result.tabs[] | select(.label == $label)] | length
-    ' 2>/dev/null) || return 1
-    case "$count" in ''|*[!0-9]*) return 1 ;; esac
-    matches=$((matches + count))
-  done <<EOF
-$workspaces
-EOF
-  [ "$matches" -eq 0 ]
+  if [ ! -e "$journal" ] && [ ! -L "$journal" ]; then
+    return 0
+  fi
+  fm_backend_herdr_projection_journal_snapshot "$journal" "$task_id" || return 1
+  [ "$FM_BACKEND_HERDR_JOURNAL_VERSION" = 2 ] || return 1
+  recorded_home=$(fm_backend_herdr_projection_home_identity "$home") || return 1
+  [ "$FM_BACKEND_HERDR_JOURNAL_HOME" = "$recorded_home" ] \
+    && [ "$FM_BACKEND_HERDR_JOURNAL_SESSION" = "$session" ] || return 1
+  [ "$(fm_backend_herdr_pane_presence_state \
+    "$FM_BACKEND_HERDR_JOURNAL_SESSION" "$FM_BACKEND_HERDR_JOURNAL_PANE_ID")" = dead ]
 }
 
 # fm_backend_herdr_classify_agent_status: map a raw `agent get` agent_status

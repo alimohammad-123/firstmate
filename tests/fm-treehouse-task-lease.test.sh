@@ -736,6 +736,35 @@ secondmate_backend_title() {  # <backend> <home> <task-id>
   )
 }
 
+BACKEND_OWNER_META="$WORLD/backend-owner.meta"
+BACKEND_OWNER_STRIPPED="$WORLD/backend-owner.stripped"
+(
+  # shellcheck source=bin/fm-backend.sh
+  . "$ROOT/bin/fm-backend.sh"
+  {
+    printf 'window=default:w-owner:p-owner\n'
+    printf 'worktree=%s\n' "$WT1"
+    fm_backend_endpoint_metadata_write \
+      herdr metadata-owner default:w-owner:p-owner w-owner t-owner
+    printf 'treehouse_lease_id=lease-owner\n'
+  } > "$BACKEND_OWNER_META"
+  fm_backend_endpoint_metadata_matches \
+    "$BACKEND_OWNER_META" herdr metadata-owner default:w-owner:p-owner w-owner t-owner \
+    || exit 1
+  if fm_backend_endpoint_metadata_matches \
+    "$BACKEND_OWNER_META" herdr metadata-owner default:w-other:p-other w-other t-other; then
+    exit 1
+  fi
+  fm_backend_metadata_without_endpoint "$BACKEND_OWNER_META" > "$BACKEND_OWNER_STRIPPED"
+) || fail 'backend metadata owner did not serialize, compare, and strip one exact endpoint'
+assert_grep "worktree=$WT1" "$BACKEND_OWNER_STRIPPED" 'endpoint stripping removed non-endpoint task metadata'
+assert_grep 'treehouse_lease_id=lease-owner' "$BACKEND_OWNER_STRIPPED" \
+  'endpoint stripping removed durable lease identity'
+if grep -Eq '^(window|endpoint_task_id|backend|herdr_[^=]+)=' "$BACKEND_OWNER_STRIPPED"; then
+  fail 'endpoint stripping retained backend-owned endpoint metadata'
+fi
+pass 'backend owner serializes, compares, and strips endpoint metadata'
+
 make_brief "$HOME_A" alpha
 run_spawn "$HOME_A" alpha "$WT1" >/dev/null || fail 'first task spawn failed'
 META_A="$HOME_A/state/alpha.meta"
@@ -1120,6 +1149,38 @@ run_teardown_force "$HOME_A" endpoint-before-reap >/dev/null \
   || fail 'pre-reap endpoint restoration fixture did not recover after exact removal'
 pass 'retired endpoint evidence is re-correlated before process reaping'
 
+make_brief "$HOME_A" shared-herdr-id
+shared_herdr_a_path=$(next_treehouse_path)
+run_spawn "$HOME_A" shared-herdr-id "$shared_herdr_a_path" --backend herdr >/dev/null \
+  || fail 'first home could not publish its same-id Herdr endpoint'
+shared_herdr_a_lease=$(sed -n 's/^treehouse_lease_id=//p' "$HOME_A/state/shared-herdr-id.meta")
+printf 'herdr\tt-shared-foreign\tw2:p-shared-foreign\tfm-shared-herdr-id\n' >> "$ENDPOINT_STATE"
+SHARED_HERDR_FOREIGN_JOURNAL="$HOME_B/state/shared-herdr-id.herdr-presentation"
+SHARED_HERDR_FOREIGN_TOKEN=zyxwvutsrqponmlkjihgfe
+printf 'version=1\ntask_id=shared-herdr-id\nprojection_id=%s\n' \
+  "$SHARED_HERDR_FOREIGN_TOKEN" > "$SHARED_HERDR_FOREIGN_JOURNAL"
+(
+  # shellcheck source=bin/fm-backend.sh
+  . "$ROOT/bin/fm-backend.sh"
+  fm_backend_source herdr
+  fm_backend_herdr_projection_journal_write_v2 \
+    "$SHARED_HERDR_FOREIGN_JOURNAL" shared-herdr-id "$SHARED_HERDR_FOREIGN_TOKEN" \
+    "$HOME_B_REAL" default w2 t-shared-foreign w2:p-shared-foreign \
+    w1 secondmate "└ shared-herdr-id · p:$SHARED_HERDR_FOREIGN_TOKEN" fm-shared-herdr-id
+) || fail "second home could not bind its same-id Herdr projection"
+run_teardown_force "$HOME_A" shared-herdr-id >/dev/null \
+  || fail "another home's same task label blocked exact Herdr lease return"
+assert_absent "$HOME_A/state/shared-herdr-id.meta" 'first home retained metadata after exact same-id teardown'
+assert_present "$SHARED_HERDR_FOREIGN_JOURNAL" 'first home teardown removed second home projection identity'
+backend_endpoint_is_live herdr w2:p-shared-foreign \
+  || fail "first home teardown removed another home's same-id Herdr endpoint"
+if grep -Fq "$shared_herdr_a_path"$'\t'"$shared_herdr_a_lease"$'\t' "$TREEHOUSE_STATE"; then
+  fail "another home's same task label kept the first home's lease held"
+fi
+backend_endpoint_remove herdr w2:p-shared-foreign
+rm -f -- "$SHARED_HERDR_FOREIGN_JOURNAL"
+pass 'Herdr absence proof scopes same task ids to one home'
+
 make_brief "$HOME_A" herdr-projection-rebound
 run_spawn "$HOME_A" herdr-projection-rebound "$WT1" --backend herdr >/dev/null \
   || fail 'Herdr projection rebound fixture could not publish'
@@ -1129,13 +1190,27 @@ if FM_FAKE_LSOF_MALFORMED=1 run_teardown_force "$HOME_A" herdr-projection-reboun
   fail 'Herdr projection rebound fixture did not preserve retirement evidence'
 fi
 printf 'herdr\tt-projection-restored\tw2:p-projection-restored\tfm-herdr-projection-rebound\n' >> "$ENDPOINT_STATE"
+HERDR_PROJECTION_JOURNAL="$HOME_A/state/herdr-projection-rebound.herdr-presentation"
+HERDR_PROJECTION_TOKEN=abcdefghijklmnopqrstuv
+printf 'version=1\ntask_id=herdr-projection-rebound\nprojection_id=%s\n' \
+  "$HERDR_PROJECTION_TOKEN" > "$HERDR_PROJECTION_JOURNAL"
+(
+  # shellcheck source=bin/fm-backend.sh
+  . "$ROOT/bin/fm-backend.sh"
+  fm_backend_source herdr
+  fm_backend_herdr_projection_journal_write_v2 \
+    "$HERDR_PROJECTION_JOURNAL" herdr-projection-rebound "$HERDR_PROJECTION_TOKEN" \
+    "$HOME_A_REAL" default w2 t-projection-restored w2:p-projection-restored \
+    w1 firstmate "└ herdr-projection-rebound · p:$HERDR_PROJECTION_TOKEN" \
+    fm-herdr-projection-rebound
+) || fail 'Herdr projection rebound fixture could not publish its exact home-bound identity'
 event_before=$(wc -l < "$EVENT_LOG" | tr -d ' ')
 if FM_FAKE_RECORD_REAP=1 run_teardown_force "$HOME_A" herdr-projection-rebound >/dev/null 2>&1; then
-  fail 'Herdr task-wide absence missed a restored presentation-workspace pane'
+  fail 'Herdr home-scoped absence missed a restored verified projection pane'
 fi
 tail -n "+$((event_before + 1))" "$EVENT_LOG" > "$WORLD/herdr-projection-rebound.events"
-grep -Fq 'tab list --workspace w2' "$WORLD/herdr-projection-rebound.events" \
-  || fail 'Herdr task-wide absence did not inspect the presentation workspace'
+grep -Fq 'pane get w2:p-projection-restored' "$WORLD/herdr-projection-rebound.events" \
+  || fail 'Herdr home-scoped absence did not inspect the verified projection pane'
 if grep -Fq 'reap-scan ' "$WORLD/herdr-projection-rebound.events"; then
   fail 'Herdr projection rebound reached process reaping before refusal'
 fi
@@ -1146,7 +1221,7 @@ grep -Fq "$WT1"$'\t'"$herdr_projection_lease"$'\t' "$TREEHOUSE_STATE" \
 backend_endpoint_remove herdr w2:p-projection-restored
 run_teardown_force "$HOME_A" herdr-projection-rebound >/dev/null \
   || fail 'Herdr projection rebound fixture did not recover after exact removal'
-pass 'Herdr task-wide absence scans every named-session workspace'
+pass 'Herdr absence proof includes verified home-bound projection identity'
 
 make_brief "$HOME_A" endpoint-after-reap
 run_spawn "$HOME_A" endpoint-after-reap "$WT1" >/dev/null \

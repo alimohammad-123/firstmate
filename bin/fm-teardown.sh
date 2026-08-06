@@ -1339,7 +1339,7 @@ teardown_treehouse_endpoint_retire_exact() {  # <meta> <task-id> <backend>
 }
 
 teardown_treehouse_endpoint_absent_exact() {  # <meta> <task-id> <backend> [home]
-  local meta=$1 task_id=$2 backend=$3 endpoint_home=${4:-} target tab_id window session name reason
+  local meta=$1 task_id=$2 backend=$3 endpoint_home=${4:-$FM_HOME} target tab_id window session name reason
   local FM_HOME=${endpoint_home:-$FM_HOME} FM_ROOT=${endpoint_home:-$FM_ROOT}
   [ -f "$meta" ] && [ ! -L "$meta" ] || return 1
   target=$(fm_backend_meta_exact_value "$meta" window) || return 1
@@ -1366,7 +1366,9 @@ teardown_treehouse_endpoint_absent_exact() {  # <meta> <task-id> <backend> [home
       target=$(fm_backend_meta_exact_value "$meta" herdr_pane_id) || return 1
       session=$(fm_backend_meta_exact_value "$meta" herdr_session) || return 1
       fm_backend_source herdr || return 1
-      fm_backend_herdr_task_endpoint_absent "$session" "$target" "fm-$task_id" || {
+      fm_backend_herdr_task_endpoint_absent \
+        "$session" "$target" "$endpoint_home/state/$task_id.herdr-presentation" \
+        "$task_id" "$endpoint_home" || {
         echo "REFUSED: Herdr endpoint identity for task $task_id is live or unreadable before lease return; preserving its lease and records." >&2
         return 1
       }

@@ -696,65 +696,50 @@ spawn_treehouse_endpoint_creation_complete() {  # <stable-endpoint-target>
   fi
 }
 
-spawn_meta_field_exact() {  # <meta> <key>
-  local meta=$1 key=$2 count
-  [ -f "$meta" ] && [ ! -L "$meta" ] || return 1
-  count=$(grep -c "^${key}=" "$meta" 2>/dev/null || true)
-  [ "$count" = 1 ] || return 1
-  grep "^${key}=" "$meta" 2>/dev/null | cut -d= -f2-
-}
-
 spawn_write_treehouse_endpoint_identity() {
   case "${BACKEND:-tmux}" in
-    tmux) [ -z "${TREEHOUSE_ENDPOINT_ABORT_TARGET:-}" ] || echo "tmux_window_id=$TREEHOUSE_ENDPOINT_ABORT_TARGET" ;;
+    tmux)
+      fm_backend_endpoint_metadata_write tmux "$ID" "$TREEHOUSE_ENDPOINT_ABORT_TARGET"
+      ;;
     herdr)
-      echo "herdr_session=$HERDR_SES"
-      echo "herdr_workspace_id=$HERDR_WORKSPACE_ID"
-      echo "herdr_tab_id=$HERDR_TAB_ID"
-      echo "herdr_pane_id=$HERDR_PANE_ID"
+      fm_backend_endpoint_metadata_write \
+        herdr "$ID" "$TREEHOUSE_ENDPOINT_ABORT_TARGET" "$HERDR_WORKSPACE_ID" "$HERDR_TAB_ID"
       ;;
     zellij)
-      echo "zellij_session=$ZELLIJ_SES"
-      echo "zellij_tab_id=$ZELLIJ_TAB_ID"
-      echo "zellij_pane_id=$ZELLIJ_PANE_ID"
+      fm_backend_endpoint_metadata_write \
+        zellij "$ID" "$TREEHOUSE_ENDPOINT_ABORT_TARGET" "$ZELLIJ_TAB_ID"
       ;;
     cmux)
-      echo "cmux_workspace_id=$CMUX_WORKSPACE_ID"
-      echo "cmux_surface_id=$CMUX_SURFACE_ID"
+      fm_backend_endpoint_metadata_write cmux "$ID" "$TREEHOUSE_ENDPOINT_ABORT_TARGET"
       ;;
   esac
 }
 
 spawn_treehouse_metadata_matches_current_endpoint() {
-  local meta="$STATE/$ID.meta" meta_backend
+  local meta="$STATE/$ID.meta"
   [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ] || return 1
   [ -n "${T:-}" ] && [ -n "${TREEHOUSE_ENDPOINT_ABORT_TARGET:-}" ] || return 1
-  [ "$(spawn_meta_field_exact "$meta" endpoint_task_id)" = "$ID" ] || return 1
-  [ "$(spawn_meta_field_exact "$meta" worktree)" = "$TREEHOUSE_LEASE_PATH" ] || return 1
-  [ "$(spawn_meta_field_exact "$meta" project)" = "$PROJ_ABS" ] || return 1
-  [ "$(spawn_meta_field_exact "$meta" window)" = "$T" ] || return 1
-  [ "$(spawn_meta_field_exact "$meta" treehouse_lease_id)" = "$TREEHOUSE_LEASE_ID" ] || return 1
-  [ "$(spawn_meta_field_exact "$meta" treehouse_lease_holder)" = "$TREEHOUSE_LEASE_HOLDER" ] || return 1
-  meta_backend=$(fm_backend_of_meta "$meta") || return 1
-  [ "$meta_backend" = "$BACKEND" ] || return 1
+  [ "$(fm_backend_meta_exact_value "$meta" worktree)" = "$TREEHOUSE_LEASE_PATH" ] || return 1
+  [ "$(fm_backend_meta_exact_value "$meta" project)" = "$PROJ_ABS" ] || return 1
+  [ "$(fm_backend_meta_exact_value "$meta" window)" = "$T" ] || return 1
+  [ "$(fm_backend_meta_exact_value "$meta" treehouse_lease_id)" = "$TREEHOUSE_LEASE_ID" ] || return 1
+  [ "$(fm_backend_meta_exact_value "$meta" treehouse_lease_holder)" = "$TREEHOUSE_LEASE_HOLDER" ] || return 1
   case "$BACKEND" in
     tmux)
-      [ "$(spawn_meta_field_exact "$meta" tmux_window_id)" = "$TREEHOUSE_ENDPOINT_ABORT_TARGET" ]
+      fm_backend_endpoint_metadata_matches \
+        "$meta" tmux "$ID" "$TREEHOUSE_ENDPOINT_ABORT_TARGET"
       ;;
     herdr)
-      [ "$(spawn_meta_field_exact "$meta" herdr_session)" = "$HERDR_SES" ] \
-        && [ "$(spawn_meta_field_exact "$meta" herdr_workspace_id)" = "$HERDR_WORKSPACE_ID" ] \
-        && [ "$(spawn_meta_field_exact "$meta" herdr_tab_id)" = "$HERDR_TAB_ID" ] \
-        && [ "$(spawn_meta_field_exact "$meta" herdr_pane_id)" = "$HERDR_PANE_ID" ]
+      fm_backend_endpoint_metadata_matches \
+        "$meta" herdr "$ID" "$TREEHOUSE_ENDPOINT_ABORT_TARGET" "$HERDR_WORKSPACE_ID" "$HERDR_TAB_ID"
       ;;
     zellij)
-      [ "$(spawn_meta_field_exact "$meta" zellij_session)" = "$ZELLIJ_SES" ] \
-        && [ "$(spawn_meta_field_exact "$meta" zellij_tab_id)" = "$ZELLIJ_TAB_ID" ] \
-        && [ "$(spawn_meta_field_exact "$meta" zellij_pane_id)" = "$ZELLIJ_PANE_ID" ]
+      fm_backend_endpoint_metadata_matches \
+        "$meta" zellij "$ID" "$TREEHOUSE_ENDPOINT_ABORT_TARGET" "$ZELLIJ_TAB_ID"
       ;;
     cmux)
-      [ "$(spawn_meta_field_exact "$meta" cmux_workspace_id)" = "$CMUX_WORKSPACE_ID" ] \
-        && [ "$(spawn_meta_field_exact "$meta" cmux_surface_id)" = "$CMUX_SURFACE_ID" ]
+      fm_backend_endpoint_metadata_matches \
+        "$meta" cmux "$ID" "$TREEHOUSE_ENDPOINT_ABORT_TARGET"
       ;;
     *) return 1 ;;
   esac
@@ -770,21 +755,16 @@ spawn_preserve_treehouse_lease_evidence() {
   TREEHOUSE_LEASE_RECOVERY_EVIDENCE=$recovery_tmp
   existing_meta="$STATE/$ID.meta"
   if [ -f "$existing_meta" ] && [ ! -L "$existing_meta" ]; then
-    [ "$(spawn_meta_field_exact "$existing_meta" endpoint_task_id)" = "$ID" ] || return 1
-    [ "$(spawn_meta_field_exact "$existing_meta" worktree)" = "$TREEHOUSE_LEASE_PATH" ] || return 1
-    [ "$(spawn_meta_field_exact "$existing_meta" project)" = "$PROJ_ABS" ] || return 1
-    [ "$(spawn_meta_field_exact "$existing_meta" treehouse_lease_id)" = "$TREEHOUSE_LEASE_ID" ] || return 1
-    [ "$(spawn_meta_field_exact "$existing_meta" treehouse_lease_holder)" = "$TREEHOUSE_LEASE_HOLDER" ] || return 1
-    awk -F= '
-      $1 == "window" || $1 == "endpoint_task_id" || $1 == "backend" ||
-      $1 == "tmux_window_id" ||
-      $1 == "herdr_session" || $1 == "herdr_workspace_id" || $1 == "herdr_tab_id" || $1 == "herdr_pane_id" ||
-      $1 == "zellij_session" || $1 == "zellij_tab_id" || $1 == "zellij_pane_id" ||
-      $1 == "cmux_workspace_id" || $1 == "cmux_surface_id" ||
+    [ "$(fm_backend_meta_exact_value "$existing_meta" endpoint_task_id)" = "$ID" ] || return 1
+    [ "$(fm_backend_meta_exact_value "$existing_meta" worktree)" = "$TREEHOUSE_LEASE_PATH" ] || return 1
+    [ "$(fm_backend_meta_exact_value "$existing_meta" project)" = "$PROJ_ABS" ] || return 1
+    [ "$(fm_backend_meta_exact_value "$existing_meta" treehouse_lease_id)" = "$TREEHOUSE_LEASE_ID" ] || return 1
+    [ "$(fm_backend_meta_exact_value "$existing_meta" treehouse_lease_holder)" = "$TREEHOUSE_LEASE_HOLDER" ] || return 1
+    fm_backend_metadata_without_endpoint "$existing_meta" | awk -F= '
       $1 == "treehouse_lease_id" || $1 == "treehouse_lease_holder" ||
       $1 == "treehouse_lease_recovery" || $1 == "treehouse_endpoint_retired" { next }
       { print }
-    ' "$existing_meta" > "$recovery_tmp" 2>/dev/null || return 1
+    ' > "$recovery_tmp" 2>/dev/null || return 1
   else
     {
       echo "worktree=$TREEHOUSE_LEASE_PATH"
@@ -799,9 +779,11 @@ spawn_preserve_treehouse_lease_evidence() {
   fi
   {
     echo "window=${T:-}"
-    echo "endpoint_task_id=$ID"
-    [ "${BACKEND:-tmux}" = tmux ] || echo "backend=$BACKEND"
-    [ -z "${TREEHOUSE_ENDPOINT_ABORT_TARGET:-}" ] || spawn_write_treehouse_endpoint_identity
+    if [ -n "${TREEHOUSE_ENDPOINT_ABORT_TARGET:-}" ]; then
+      spawn_write_treehouse_endpoint_identity
+    else
+      fm_backend_endpoint_metadata_write_binding "${BACKEND:-tmux}" "$ID"
+    fi
     echo "treehouse_lease_id=$TREEHOUSE_LEASE_ID"
     echo "treehouse_lease_holder=$TREEHOUSE_LEASE_HOLDER"
     echo "treehouse_lease_recovery=spawn-rollback-failed"
@@ -1767,19 +1749,19 @@ herdr_projection_existing_meta_allows_flat() {  # <meta>
     }
     target_session=$FM_BACKEND_HERDR_SESSION
     target_pane=$FM_BACKEND_HERDR_PANE
-    old_session=$(spawn_meta_field_exact "$meta" herdr_session) || {
+    old_session=$(fm_backend_meta_exact_value "$meta" herdr_session) || {
       echo "error: existing herdr metadata for $ID has an ambiguous session; refusing duplicate launch" >&2
       return 1
     }
-    HERDR_RECOVERY_WORKSPACE_ID=$(spawn_meta_field_exact "$meta" herdr_workspace_id) || {
+    HERDR_RECOVERY_WORKSPACE_ID=$(fm_backend_meta_exact_value "$meta" herdr_workspace_id) || {
       echo "error: existing herdr metadata for $ID has an ambiguous workspace; refusing duplicate launch" >&2
       return 1
     }
-    HERDR_RECOVERY_TAB_ID=$(spawn_meta_field_exact "$meta" herdr_tab_id) || {
+    HERDR_RECOVERY_TAB_ID=$(fm_backend_meta_exact_value "$meta" herdr_tab_id) || {
       echo "error: existing herdr metadata for $ID has an ambiguous tab; refusing duplicate launch" >&2
       return 1
     }
-    old_pane=$(spawn_meta_field_exact "$meta" herdr_pane_id) || {
+    old_pane=$(fm_backend_meta_exact_value "$meta" herdr_pane_id) || {
       echo "error: existing herdr metadata for $ID has an ambiguous pane; refusing duplicate launch" >&2
       return 1
     }
@@ -2524,7 +2506,6 @@ fi
 SPAWN_META_TMP="$STATE/.$ID.meta.$$"
 {
   echo "window=$META_WINDOW"
-  echo "endpoint_task_id=$ID"
   echo "worktree=$WT"
   echo "project=$PROJ_ABS"
   echo "harness=$HARNESS"
@@ -2538,13 +2519,11 @@ SPAWN_META_TMP="$STATE/.$ID.meta.$$"
   # Default-off writes no traceparent= line (meta stays byte-identical).
   # backend= is written only for a non-default (non-tmux) backend, so the
   # default path omits that field (absent backend= means tmux).
-  [ "$BACKEND" = tmux ] || echo "backend=$BACKEND"
   if [ "$BACKEND" != orca ]; then
     spawn_write_treehouse_endpoint_identity
   fi
   if [ "$BACKEND" = orca ]; then
-    echo "orca_worktree_id=$ORCA_WORKTREE_ID"
-    echo "terminal=$ORCA_TERMINAL"
+    fm_backend_endpoint_metadata_write orca "$ID" "$ORCA_TERMINAL" "$ORCA_WORKTREE_ID"
   fi
   if [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ]; then
     echo "treehouse_lease_id=$TREEHOUSE_LEASE_ID"
