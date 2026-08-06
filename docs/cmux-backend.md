@@ -119,7 +119,7 @@ Real tests share the captain's running app rather than creating an isolated cmux
 - There is no native busy or push-event signal.
 - A target can disappear after structural readiness and before the operation.
 - The only-workspace cleanup path leaves a fresh default workspace and cannot close the window.
-- Label lookup and recovery are currently scoped to the current cmux window, so a task moved to a non-current window is a known recovery blind spot.
+- Routine send and capture label recovery remains scoped to the current cmux window, while exact rollback, teardown cleanup, and orphan discovery use structured all-window inventory.
 - Workspace ids do not survive app relaunch and are never recovery authority.
 
 ## Regression entry points

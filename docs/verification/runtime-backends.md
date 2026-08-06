@@ -230,7 +230,7 @@ wrong_identity_refused=true
 exact_identity_returned=true
 ```
 
-The stateful fake proved one home-scoped immutable lease per allocation, same-task reuse after a simulated endpoint or owner restart, exclusion from later allocation, cross-home separation for the same task id, refusal before return on wrong identity, exact conditional return on correct identity, confirmed endpoint retirement before a late pre-publication lease return, exact receipt retirement through recovery and reuse, retained metadata plus raw acquisition evidence when endpoint cleanup or lease return failed, and raw-only preservation when acquisition identity was ambiguous.
+The stateful fake proved one home-scoped immutable lease per allocation, same-task reuse after a simulated endpoint or owner restart, exclusion from later allocation, cross-home separation for the same task id, refusal before return on wrong identity, exact conditional return on correct identity, stable endpoint retirement before return across all four Treehouse-backed backends, replacement-endpoint recovery after ambiguous cleanup, atomic publication as the committed handoff boundary, exact receipt retirement through recovery and reuse, and raw-only preservation when acquisition identity was ambiguous.
 
 ```text
 ok - spawn acquires and records one home-scoped durable Treehouse lease before launch
@@ -245,7 +245,9 @@ ok - failed exact rollback preserves both lease identity and raw acquisition evi
 ok - matched recovery receipt retires through publication, teardown, and task-id reuse
 ok - unconfirmed endpoint cleanup preserves the exact lease and acquisition evidence
 ok - exact teardown retires its matched receipt and permits task-id reuse
-ok - Herdr, Zellij, and cmux share the durable pre-endpoint lease and exact rollback guarantee
+ok - tmux, Herdr, Zellij, and cmux retire exact late endpoints before return and preserve ambiguity
+ok - recovered leases preserve each backend replacement endpoint identity after ambiguous cleanup
+ok - exact atomic metadata publication is the committed rollback handoff boundary
 ok - ambiguous acquisition preserves raw evidence and never guesses a lease release
 ```
 

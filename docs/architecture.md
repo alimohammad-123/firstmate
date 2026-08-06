@@ -135,7 +135,7 @@ Codex App support is recorded in `docs/codex-app-backend.md`; it is not selectab
 ## Worktrees, not branches in your checkout
 
 Crewmates never intentionally touch your project clone; [treehouse](https://github.com/kunchenguid/treehouse) pools clean worktrees for tmux, herdr, zellij, and cmux tasks, while Orca creates its own worktrees for `backend=orca`.
-`bin/fm-treehouse-lease-lib.sh` is the shared ordinary-task lease owner: spawn acquires one immutable path/id/home-holder triple before endpoint creation, recovery proves and reuses it, and teardown proves then conditionally returns only that triple.
+`bin/fm-treehouse-lease-lib.sh` is the shared ordinary-task lease owner: spawn acquires one immutable path/id/home-holder triple before endpoint creation, rollback retires one stable invocation-created endpoint before returning that triple, exact atomic endpoint-plus-lease metadata publication commits the handoff, recovery proves and reuses it, and teardown proves then conditionally returns only that triple.
 Treehouse's own state and lock remain the allocator and serialization authority; Firstmate adds no parallel allocator or lease database.
 For ship and scout work, `fm-spawn.sh` refuses to launch unless the resolved task path is a real git worktree root that is distinct from the project primary checkout.
 

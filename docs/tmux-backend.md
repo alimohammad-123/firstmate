@@ -45,6 +45,7 @@ Verify setup by spawning a small task and confirming its `fm-<id>` window appear
 ## Current behavior and safety
 
 Ordinary tmux ship and scout copies use the shared durable Treehouse task-lease contract in [`configuration.md`](configuration.md#runtime-backend-configbackend--fm_backend), so a tmux server, window, shell, or machine restart does not release the copy.
+Spawn rollback and teardown use the created window's immutable tmux ID, so a rename cannot redirect or bypass exact cleanup; captain-facing selection continues to use the `fm-<id>` window name.
 
 ### Agent liveness probe
 

@@ -124,6 +124,7 @@ fm_backend_tmux_send_literal() {  # <target> <text>
 fm_backend_tmux_kill() {  # <target>
   local target=${1:-} session window
   case "$target" in
+    @*) tmux kill-window -t "$target" 2>/dev/null || true; return 0 ;;
     *:*)
       session=${target%%:*}
       window=${target#*:}
@@ -239,9 +240,9 @@ fm_backend_tmux_foreground_argv0s() {  # <target>
 # recorded target. See bin/fm-backend.sh's fm_backend_agent_state for the
 # shared state vocabulary and docs/tmux-backend.md "Agent liveness probe" for
 # the empirical basis. Tmux silently falls back to the active window when a
-# named target is absent, so the exact recorded window must appear in a
-# successful session inventory before its foreground command can be trusted.
-# An omitted window or a definitive missing-session/server response is
+# named target is absent, so the exact recorded window name or immutable window
+# id must appear in a successful inventory before its foreground command can be
+# trusted. An omitted window or a definitive missing-session/server response is
 # `missing`; any other inventory or pane read failure is `unreadable`, so a
 # transient tmux problem never licenses a duplicate.
 #
@@ -255,17 +256,25 @@ fm_backend_tmux_agent_state() {  # <target>
   local target=$1 comm session window windows inventory_status
   local foreground argv0s name fg_seen=0 fg_shell=0 fg_other=0
   case "$target" in
+    @*)
+      if windows=$(LC_ALL=C tmux list-windows -a -F '#{window_id}' 2>&1); then
+        inventory_status=0
+      else
+        inventory_status=$?
+      fi
+      ;;
     *:*:*|'':*|*:'') printf 'unreadable'; return 0 ;;
-    *:*) ;;
+    *:*)
+      session=${target%%:*}
+      window=${target#*:}
+      if windows=$(LC_ALL=C tmux list-windows -t "$session" -F '#{window_name}' 2>&1); then
+        inventory_status=0
+      else
+        inventory_status=$?
+      fi
+      ;;
     *) printf 'unreadable'; return 0 ;;
   esac
-  session=${target%%:*}
-  window=${target#*:}
-  if windows=$(LC_ALL=C tmux list-windows -t "$session" -F '#{window_name}' 2>&1); then
-    inventory_status=0
-  else
-    inventory_status=$?
-  fi
   if [ "$inventory_status" -ne 0 ]; then
     case "$windows" in
       *"can't find session:"*|*"no server running on "*|*"error connecting to "*" (No such file or directory)"|*"error connecting to "*" (Connection refused)")
@@ -277,7 +286,7 @@ fm_backend_tmux_agent_state() {  # <target>
     esac
     return 0
   fi
-  if ! printf '%s\n' "$windows" | grep -Fqx "$window"; then
+  if ! printf '%s\n' "$windows" | grep -Fqx "${window:-$target}"; then
     printf 'missing'
     return 0
   fi

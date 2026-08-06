@@ -591,6 +591,28 @@ fm_backend_cmux_send_text_submit() {  # <target> <text> <retries> <enter-sleep> 
   done
 }
 
+fm_backend_cmux_all_window_workspaces() {
+  local wins wid wss
+  wins=$(fm_backend_cmux_cli list-windows --json --id-format uuids 2>/dev/null) || return 1
+  printf '%s' "$wins" | jq -e '
+    type == "array"
+    and all(.[]; (.id | type) == "string" and (.id | length) > 0)
+  ' >/dev/null 2>&1 || return 1
+  while IFS= read -r wid; do
+    [ -n "$wid" ] || continue
+    wss=$(fm_backend_cmux_cli workspace list --json --id-format uuids --window "$wid" 2>/dev/null) || return 1
+    printf '%s' "$wss" | jq -e '
+      (.workspaces | type) == "array"
+      and all(.workspaces[]; (.id | type) == "string" and (.id | length) > 0 and (.title | type) == "string")
+    ' >/dev/null 2>&1 || return 1
+    printf '%s' "$wss" | jq -c --arg window "$wid" '
+      (.workspaces | length) as $count
+      | .workspaces[]?
+      | . + {window_id:$window, window_workspace_count:$count}
+    ' 2>/dev/null || return 1
+  done < <(printf '%s' "$wins" | jq -r '.[]? | .id' 2>/dev/null)
+}
+
 # fm_backend_cmux_window_of_workspace: echo "<window_id> <workspace_count>" for
 # the window that contains <workspace_id>, or nothing if it is not found live.
 # `workspace list --json` with no `--window` is scoped to the CURRENT window
@@ -598,19 +620,11 @@ fm_backend_cmux_send_text_submit() {  # <target> <text> <retries> <enter-sleep> 
 # window from `list-windows --json` and asking each for its own scoped list.
 # The count comes from the same scoped workspace list that confirms membership.
 fm_backend_cmux_window_of_workspace() {  # <workspace_id> -> "<window_id> <count>"
-  local wsid=$1 wins wid wss count
-  wins=$(fm_backend_cmux_cli list-windows --json --id-format uuids 2>/dev/null) || return 0
-  while IFS= read -r wid; do
-    [ -n "$wid" ] || continue
-    wss=$(fm_backend_cmux_cli workspace list --json --id-format uuids --window "$wid" 2>/dev/null) || continue
-    count=$(printf '%s' "$wss" | jq -er --arg id "$wsid" '
-      (.workspaces // []) as $workspaces
-      | select(any($workspaces[]?; .id == $id))
-      | ($workspaces | length)
-    ' 2>/dev/null) || continue
-    printf '%s %s' "$wid" "$count"
-    return 0
-  done < <(printf '%s' "$wins" | jq -r '.[]? | .id' 2>/dev/null)
+  local wsid=$1 inventory
+  inventory=$(fm_backend_cmux_all_window_workspaces) || return 0
+  printf '%s\n' "$inventory" | jq -sr --arg id "$wsid" '
+    first(.[] | select(.id == $id) | "\(.window_id) \(.window_workspace_count)") // empty
+  ' 2>/dev/null
 }
 
 # fm_backend_cmux_kill: remove the task's whole workspace, best-effort (mirrors
@@ -630,9 +644,27 @@ fm_backend_cmux_window_of_workspace() {  # <workspace_id> -> "<window_id> <count
 # leaving that window a fresh default workspace (never an fm-<home>- title, so
 # recovery/list_live ignore it) - cmux's own "closed the last tab" outcome.
 fm_backend_cmux_kill() {  # <target> [unused] [expected-label]
-  local expected_label=${3:-} wsid wininfo win count
+  local expected_label=${3:-} expected_title inventory title wsid wininfo win count
   if [ -n "$expected_label" ]; then
-    fm_backend_cmux_target_ready "$1" "$expected_label" || return 0
+    if fm_backend_cmux_target_ready "$1" "$expected_label"; then
+      :
+    else
+      fm_backend_cmux_parse_target "$1" || return 0
+      expected_title=$(fm_backend_cmux_scoped_title "$expected_label")
+      inventory=$(fm_backend_cmux_all_window_workspaces) || return 0
+      title=$(printf '%s\n' "$inventory" | jq -sr --arg id "$FM_BACKEND_CMUX_WORKSPACE" \
+        'first(.[] | select(.id == $id) | .title) // empty' 2>/dev/null)
+      if [ "$title" = "$expected_title" ]; then
+        :
+      elif [ -n "$title" ]; then
+        return 0
+      else
+        wsid=$(printf '%s\n' "$inventory" | jq -sr --arg title "$expected_title" \
+          'first(.[] | select(.title == $title) | .id) // empty' 2>/dev/null)
+        [ -n "$wsid" ] || return 0
+        FM_BACKEND_CMUX_WORKSPACE=$wsid
+      fi
+    fi
   else
     fm_backend_cmux_parse_target "$1" || return 0
   fi
@@ -651,9 +683,9 @@ fm_backend_cmux_endpoint_confirmed_gone() {  # <target> [unused] [expected-label
   fm_backend_cmux_parse_target "$1" || return 1
   [ -n "$expected_label" ] || return 1
   expected_title=$(fm_backend_cmux_scoped_title "$expected_label")
-  workspaces=$(fm_backend_cmux_cli workspace list --json --id-format uuids 2>/dev/null) || return 1
-  printf '%s\n' "$workspaces" | jq -e --arg workspace "$FM_BACKEND_CMUX_WORKSPACE" --arg title "$expected_title" \
-    '(.workspaces | type) == "array" and ([.workspaces[]? | select(.id == $workspace or .title == $title)] | length) == 0' \
+  workspaces=$(fm_backend_cmux_all_window_workspaces) || return 1
+  printf '%s\n' "$workspaces" | jq -se --arg workspace "$FM_BACKEND_CMUX_WORKSPACE" --arg title "$expected_title" \
+    '([.[] | select(.id == $workspace or .title == $title)] | length) == 0' \
     >/dev/null 2>&1
 }
 
@@ -666,7 +698,7 @@ fm_backend_cmux_list_live() {
   local wss wsid title sfid home prefix plain
   home=$(fm_backend_cmux_home_label)
   prefix="fm-$home-"
-  wss=$(fm_backend_cmux_cli workspace list --json --id-format uuids 2>/dev/null) || return 0
+  wss=$(fm_backend_cmux_all_window_workspaces) || return 0
   while IFS=$'\t' read -r wsid title; do
     [ -n "$wsid" ] || continue
     plain=${title#"$prefix"}
@@ -674,5 +706,5 @@ fm_backend_cmux_list_live() {
     sfid=$(fm_backend_cmux_surface_id_for_workspace "$wsid")
     [ -n "$sfid" ] || continue
     printf '%s:%s\tfm-%s\n' "$wsid" "$sfid" "$plain"
-  done < <(printf '%s' "$wss" | jq -r --arg prefix "$prefix" '.workspaces[]? | select(.title | startswith($prefix)) | "\(.id)\t\(.title)"' 2>/dev/null)
+  done < <(printf '%s' "$wss" | jq -sr --arg prefix "$prefix" '.[] | select(.title | startswith($prefix)) | "\(.id)\t\(.title)"' 2>/dev/null)
 }

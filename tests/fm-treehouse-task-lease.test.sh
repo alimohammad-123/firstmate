@@ -26,11 +26,18 @@ TREEHOUSE_COUNTER="$WORLD/treehouse-counter"
 TREEHOUSE_LOG="$WORLD/treehouse.log"
 TMUX_LOG="$WORLD/tmux.log"
 TMUX_WINDOWS="$WORLD/tmux-windows"
+TMUX_COUNTER="$WORLD/tmux-counter"
+ENDPOINT_STATE="$WORLD/backend-endpoints.tsv"
+ENDPOINT_COUNTER="$WORLD/backend-endpoint-counter"
+CMUX_FOCUS_MARKER="$WORLD/cmux-focus-moved"
 EVENT_LOG="$WORLD/events.log"
-export TREEHOUSE_STATE TREEHOUSE_POOL TREEHOUSE_COUNTER TREEHOUSE_LOG TMUX_LOG TMUX_WINDOWS EVENT_LOG
+FM_REAL_MV=$(command -v mv)
+export TREEHOUSE_STATE TREEHOUSE_POOL TREEHOUSE_COUNTER TREEHOUSE_LOG TMUX_LOG TMUX_WINDOWS TMUX_COUNTER ENDPOINT_STATE ENDPOINT_COUNTER CMUX_FOCUS_MARKER EVENT_LOG FM_REAL_MV
 
 mkdir -p "$HOME_A/data" "$HOME_A/state" "$HOME_A/config" "$HOME_A/projects" \
   "$HOME_B/data" "$HOME_B/state" "$HOME_B/config" "$HOME_B/projects"
+printf 'off\n' > "$HOME_A/config/herdr-presentation-spaces"
+printf 'off\n' > "$HOME_B/config/herdr-presentation-spaces"
 HOME_A_REAL=$(cd "$HOME_A" && pwd -P)
 HOME_B_REAL=$(cd "$HOME_B" && pwd -P)
 fm_git_worktree "$PROJECT" "$WT1" lease-wt-1
@@ -42,8 +49,11 @@ printf '%s\n' "$WT1" "$WT2" "$WT3" "$WT4" > "$TREEHOUSE_POOL"
 : > "$TREEHOUSE_LOG"
 : > "$TMUX_LOG"
 : > "$TMUX_WINDOWS"
+: > "$ENDPOINT_STATE"
 : > "$EVENT_LOG"
 printf '0\n' > "$TREEHOUSE_COUNTER"
+printf '0\n' > "$TMUX_COUNTER"
+printf '0\n' > "$ENDPOINT_COUNTER"
 
 cat > "$FAKEBIN/treehouse" <<'SH'
 #!/usr/bin/env bash
@@ -131,20 +141,38 @@ set -u
 printf '%s\n' "$*" >> "$TMUX_LOG"
 printf 'tmux %s\n' "$*" >> "$EVENT_LOG"
 case "$*" in
-  *"#{pane_current_path}"*) [ "${FM_FAKE_CURRENT_PATH_FAIL:-0}" != 1 ] && printf '%s\n' "${FM_FAKE_PANE_PATH:-}"; exit 0 ;;
+  *"#{pane_current_path}"*)
+    if [ "${FM_FAKE_TMUX_RENAME_BEFORE_FAILURE:-0}" = 1 ]; then
+      target=
+      prev=
+      for arg in "$@"; do [ "$prev" != -t ] || target=$arg; prev=$arg; done
+      awk -F '\t' -v target="$target" 'BEGIN {OFS="\t"} {if ($1 == target) $2="renamed-after-create"; print}' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
+      mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
+    fi
+    [ "${FM_FAKE_CURRENT_PATH_FAIL:-0}" != 1 ] && printf '%s\n' "${FM_FAKE_PANE_PATH:-}"
+    exit 0
+    ;;
   *"#{pane_id}"*) printf '%%1\n'; exit 0 ;;
   *"#{pane_current_command}"*) printf 'zsh\n'; exit 0 ;;
   *"#{pane_tty}"*) printf '/dev/null\n'; exit 0 ;;
 esac
 case "${1:-}" in
   display-message) printf 'firstmate\n'; exit 0 ;;
-  list-windows) cat "$TMUX_WINDOWS"; exit 0 ;;
+  list-windows)
+    case "$*" in
+      *'#{window_id}'*) cut -f1 "$TMUX_WINDOWS" ;;
+      *) cut -f2 "$TMUX_WINDOWS" ;;
+    esac
+    exit 0
+    ;;
   has-session|new-session|set-window-option|send-keys) exit 0 ;;
   kill-window)
     [ "${FM_FAKE_TMUX_KILL_FAIL:-0}" != 1 ] || exit 0
     target=${3:-}
-    window=${target##*:=}
-    grep -Fvx "$window" "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp" || true
+    case "$target" in
+      @*) awk -F '\t' -v id="$target" '$1 != id' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp" ;;
+      *) window=${target##*:=}; awk -F '\t' -v name="$window" '$2 != name' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp" ;;
+    esac
     mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
     exit 0
     ;;
@@ -155,14 +183,220 @@ case "${1:-}" in
       [ "$1" != -n ] || { shift; name=${1:-}; }
       shift
     done
-    [ -z "$name" ] || printf '%s\n' "$name" >> "$TMUX_WINDOWS"
-    printf '@lease-window\n'
+    counter=$(cat "$TMUX_COUNTER")
+    counter=$((counter + 1))
+    printf '%s\n' "$counter" > "$TMUX_COUNTER"
+    wid="@lease-window-$counter"
+    [ -z "$name" ] || printf '%s\t%s\n' "$wid" "$name" >> "$TMUX_WINDOWS"
+    printf '%s\n' "$wid"
     exit 0
     ;;
 esac
 exit 0
 SH
 chmod +x "$FAKEBIN/tmux"
+
+cat > "$FAKEBIN/herdr" <<'SH'
+#!/usr/bin/env bash
+set -u
+printf 'herdr %s\n' "$*" >> "$EVENT_LOG"
+case "$*" in
+  'status --json'*) printf '{"client":{"protocol":14,"version":"0.7.5"},"server":{"running":true}}\n'; exit 0 ;;
+  *'status --json'*) printf '{"server":{"running":true}}\n'; exit 0 ;;
+  *'session list --json'*)
+    jq -n --arg socket "${ENDPOINT_STATE%/*}/herdr.sock" '{sessions:[{name:"default",running:true,socket_path:$socket}]}'
+    exit 0
+    ;;
+  *'workspace list'*) printf '{"result":{"workspaces":[{"workspace_id":"w1","label":"firstmate"}]}}\n'; exit 0 ;;
+  *'tab list'*)
+    jq -Rn '
+      [inputs | select(length > 0) | split("\t") | select(.[0] == "herdr")
+        | {tab_id:.[1],label:.[3]}] | {result:{tabs:.}}
+    ' < "$ENDPOINT_STATE" 2>/dev/null || printf '{"result":{"tabs":[]}}\n'
+    exit 0
+    ;;
+  *'tab create'*)
+    counter=$(cat "$ENDPOINT_COUNTER"); counter=$((counter + 1)); printf '%s\n' "$counter" > "$ENDPOINT_COUNTER"
+    tab="t$counter"; pane="w1:p$counter"; label=
+    prev=
+    for arg in "$@"; do [ "$prev" != --label ] || label=$arg; prev=$arg; done
+    printf 'herdr\t%s\t%s\t%s\n' "$tab" "$pane" "$label" >> "$ENDPOINT_STATE"
+    jq -n --arg tab "$tab" --arg pane "$pane" '{result:{tab:{tab_id:$tab},root_pane:{pane_id:$pane}}}'
+    exit 0
+    ;;
+  *'pane get'*)
+    pane=
+    prev=
+    for arg in "$@"; do [ "$prev" != get ] || pane=$arg; prev=$arg; done
+    row=$(awk -F '\t' -v pane="$pane" '$1 == "herdr" && $3 == pane {print; exit}' "$ENDPOINT_STATE")
+    if [ -z "$row" ]; then
+      printf '{"error":{"code":"pane_not_found"}}\n'
+    else
+      tab=$(printf '%s' "$row" | cut -f2)
+      cwd=${FM_FAKE_PANE_PATH:-}
+      [ "${FM_FAKE_CURRENT_PATH_FAIL:-0}" != 1 ] || cwd=
+      jq -n --arg pane "$pane" --arg tab "$tab" --arg cwd "$cwd" \
+        '{result:{pane:{pane_id:$pane,tab_id:$tab,workspace_id:"w1",foreground_cwd:$cwd,shell_pid:99999}}}'
+    fi
+    exit 0
+    ;;
+  *'pane close'*)
+    pane=
+    prev=
+    for arg in "$@"; do [ "$prev" != close ] || pane=$arg; prev=$arg; done
+    if [ "${FM_FAKE_HERDR_KILL_AMBIGUOUS:-0}" != 1 ]; then
+      awk -F '\t' -v pane="$pane" '!($1 == "herdr" && $3 == pane)' "$ENDPOINT_STATE" > "$ENDPOINT_STATE.tmp"
+      mv "$ENDPOINT_STATE.tmp" "$ENDPOINT_STATE"
+    fi
+    printf '{"result":{}}\n'
+    exit 0
+    ;;
+  *'pane run'*|*'pane send-text'*|*'pane send-keys'*) printf '{"result":{}}\n'; exit 0 ;;
+esac
+printf '{"result":{}}\n'
+SH
+chmod +x "$FAKEBIN/herdr"
+
+cat > "$FAKEBIN/zellij" <<'SH'
+#!/usr/bin/env bash
+set -u
+printf 'zellij %s\n' "$*" >> "$EVENT_LOG"
+case "${1:-}" in
+  --version) printf 'zellij 0.44.0\n'; exit 0 ;;
+  list-sessions) printf 'firstmate\n'; exit 0 ;;
+esac
+case "$*" in
+  *'action list-tabs --json'*)
+    awk -F '\t' '$1 == "zellij" {print $2 "\t" $4}' "$ENDPOINT_STATE" \
+      | jq -Rn '[inputs | split("\t") | {tab_id:(.[0] | tonumber),name:.[1],active:false}]'
+    exit 0
+    ;;
+  *'action list-panes --json'*)
+    awk -F '\t' '$1 == "zellij" {print $2 "\t" $3}' "$ENDPOINT_STATE" \
+      | jq -Rn '[inputs | split("\t") | {tab_id:(.[0] | tonumber),id:(.[1] | tonumber),is_plugin:false}]'
+    exit 0
+    ;;
+  *'action new-tab '*)
+    counter=$(cat "$ENDPOINT_COUNTER"); counter=$((counter + 1)); printf '%s\n' "$counter" > "$ENDPOINT_COUNTER"
+    tab=$((counter + 100)); pane=$((counter + 200)); name=
+    prev=
+    for arg in "$@"; do [ "$prev" != --name ] || name=$arg; prev=$arg; done
+    printf 'zellij\t%s\t%s\t%s\n' "$tab" "$pane" "$name" >> "$ENDPOINT_STATE"
+    printf '%s\n' "$tab"
+    exit 0
+    ;;
+  *'action dump-screen'*)
+    if [ "${FM_FAKE_CURRENT_PATH_FAIL:-0}" != 1 ]; then
+      printf '__FM_ZELLIJ_CWD_BEGIN__\n%s\n__FM_ZELLIJ_CWD_END__\n' "${FM_FAKE_PANE_PATH:-}"
+    fi
+    exit 0
+    ;;
+  *'action close-tab-by-id '*)
+    tab=
+    prev=
+    for arg in "$@"; do [ "$prev" != close-tab-by-id ] || tab=$arg; prev=$arg; done
+    if [ "${FM_FAKE_ZELLIJ_KILL_AMBIGUOUS:-0}" != 1 ]; then
+      awk -F '\t' -v tab="$tab" '!($1 == "zellij" && $2 == tab)' "$ENDPOINT_STATE" > "$ENDPOINT_STATE.tmp"
+      mv "$ENDPOINT_STATE.tmp" "$ENDPOINT_STATE"
+    fi
+    exit 0
+    ;;
+  *'action paste '*|*'action send-keys '*) exit 0 ;;
+esac
+exit 0
+SH
+chmod +x "$FAKEBIN/zellij"
+
+cat > "$FAKEBIN/cmux" <<'SH'
+#!/usr/bin/env bash
+set -u
+printf 'cmux %s\n' "$*" >> "$EVENT_LOG"
+case "${1:-}" in
+  version) printf 'cmux 0.64.17 (97) [abcdef1]\n'; exit 0 ;;
+  ping) printf 'PONG\n'; exit 0 ;;
+  list-windows)
+    printf '[{"id":"window-1","workspace_count":0},{"id":"window-2","workspace_count":1}]\n'
+    exit 0
+    ;;
+  workspace)
+    if [ "${2:-}" = list ]; then
+      window=
+      prev=
+      for arg in "$@"; do [ "$prev" != --window ] || window=$arg; prev=$arg; done
+      if [ -z "$window" ] && [ "${FM_FAKE_CMUX_CURRENT_WINDOW_EMPTY:-0}" = 1 ] && [ -f "$CMUX_FOCUS_MARKER" ]; then
+        printf '{"workspaces":[]}\n'
+      else
+        awk -F '\t' -v window="$window" '$1 == "cmux" && (window == "" || $5 == window) {print $2 "\t" $4}' "$ENDPOINT_STATE" \
+          | jq -Rn '{workspaces:[inputs | split("\t") | {id:.[0],title:.[1]}]}'
+      fi
+      exit 0
+    fi
+    ;;
+  new-workspace)
+    counter=$(cat "$ENDPOINT_COUNTER"); counter=$((counter + 1)); printf '%s\n' "$counter" > "$ENDPOINT_COUNTER"
+    ws=$(printf '00000000-0000-0000-0000-%012d' "$counter")
+    sf=$(printf '11111111-1111-1111-1111-%012d' "$counter")
+    name=default; window=window-2; prev=
+    for arg in "$@"; do
+      [ "$prev" != --name ] || name=$arg
+      [ "$prev" != --window ] || window=$arg
+      prev=$arg
+    done
+    printf 'cmux\t%s\t%s\t%s\t%s\n' "$ws" "$sf" "$name" "$window" >> "$ENDPOINT_STATE"
+    printf '%s\n' "$ws"
+    exit 0
+    ;;
+  list-panes)
+    ws=
+    prev=
+    for arg in "$@"; do [ "$prev" != --workspace ] || ws=$arg; prev=$arg; done
+    sf=$(awk -F '\t' -v ws="$ws" '$1 == "cmux" && $2 == ws {print $3; exit}' "$ENDPOINT_STATE")
+    if [ -n "$sf" ]; then
+      jq -n --arg sf "$sf" '{panes:[{selected_surface_id:$sf,surface_ids:[$sf]}]}'
+    else
+      printf '{"panes":[]}\n'
+    fi
+    exit 0
+    ;;
+  read-screen)
+    if [ "${FM_FAKE_CURRENT_PATH_FAIL:-0}" = 1 ]; then
+      : > "$CMUX_FOCUS_MARKER"
+      printf '{"text":""}\n'
+    else
+      jq -n --arg path "${FM_FAKE_PANE_PATH:-}" '{text:("__FM_CMUX_CWD_BEGIN__\n" + $path + "\n__FM_CMUX_CWD_END__")}'
+    fi
+    exit 0
+    ;;
+  close-workspace)
+    ws=
+    prev=
+    for arg in "$@"; do [ "$prev" != --workspace ] || ws=$arg; prev=$arg; done
+    if [ "${FM_FAKE_CMUX_KILL_AMBIGUOUS:-0}" != 1 ]; then
+      awk -F '\t' -v ws="$ws" '!($1 == "cmux" && $2 == ws)' "$ENDPOINT_STATE" > "$ENDPOINT_STATE.tmp"
+      mv "$ENDPOINT_STATE.tmp" "$ENDPOINT_STATE"
+    fi
+    exit 0
+    ;;
+  send|send-key) exit 0 ;;
+esac
+exit 0
+SH
+chmod +x "$FAKEBIN/cmux"
+
+cat > "$FAKEBIN/mv" <<'SH'
+#!/usr/bin/env bash
+set -u
+dest=${!#}
+"$FM_REAL_MV" "$@"
+status=$?
+if [ "$status" -eq 0 ] \
+   && [ "${FM_FAKE_TERM_AFTER_META_PUBLISH:-0}" = 1 ] \
+   && [ "$dest" = "${FM_STATE_OVERRIDE:-}/$FM_FAKE_PUBLISH_ID.meta" ]; then
+  kill -TERM "$PPID"
+fi
+exit "$status"
+SH
+chmod +x "$FAKEBIN/mv"
 fm_fake_exit0 "$FAKEBIN" no-mistakes gh gh-axi lsof ps sleep
 
 make_brief() {
@@ -177,6 +411,7 @@ run_spawn() {
   FM_ROOT_OVERRIDE='' FM_HOME="$home" FM_STATE_OVERRIDE="$home/state" \
     FM_DATA_OVERRIDE="$home/data" FM_PROJECTS_OVERRIDE="$home/projects" \
     FM_CONFIG_OVERRIDE="$home/config" FM_SPAWN_NO_GUARD=1 TMUX='fake,1,0' \
+    HERDR_ENV='' HERDR_PANE_ID='' HERDR_SOCKET_PATH='' HERDR_TAB_ID='' HERDR_WORKSPACE_ID='' \
     FM_FAKE_PANE_PATH="$expected_path" PATH="$FAKEBIN:$PATH" \
     "$SPAWN" "$id" "$PROJECT" "sh -c 'true'" --mode no-mistakes --yolo off "$@"
 }
@@ -187,6 +422,66 @@ run_teardown_force() {
     FM_DATA_OVERRIDE="$home/data" FM_CONFIG_OVERRIDE="$home/config" \
     FM_TEARDOWN_GUARD_DONE=1 FM_TREEHOUSE_RETURN_LOCK_RETRIES=0 \
     PATH="$FAKEBIN:$PATH" "$TEARDOWN" "$id" --force
+}
+
+run_backend_late_failure() {  # <backend> <home> <id> <expected-path> <ambiguous>
+  local backend=$1 home=$2 id=$3 expected_path=$4 ambiguous=$5
+  [ "$backend" != cmux ] || rm -f -- "$CMUX_FOCUS_MARKER"
+  case "$backend:$ambiguous" in
+    tmux:0) FM_FAKE_CURRENT_PATH_FAIL=1 FM_FAKE_TMUX_RENAME_BEFORE_FAILURE=1 run_spawn "$home" "$id" "$expected_path" --backend tmux ;;
+    tmux:1) FM_FAKE_CURRENT_PATH_FAIL=1 FM_FAKE_TMUX_RENAME_BEFORE_FAILURE=1 FM_FAKE_TMUX_KILL_FAIL=1 run_spawn "$home" "$id" "$expected_path" --backend tmux ;;
+    herdr:0) FM_FAKE_CURRENT_PATH_FAIL=1 run_spawn "$home" "$id" "$expected_path" --backend herdr ;;
+    herdr:1) FM_FAKE_CURRENT_PATH_FAIL=1 FM_FAKE_HERDR_KILL_AMBIGUOUS=1 run_spawn "$home" "$id" "$expected_path" --backend herdr ;;
+    zellij:0) FM_FAKE_CURRENT_PATH_FAIL=1 run_spawn "$home" "$id" "$expected_path" --backend zellij ;;
+    zellij:1) FM_FAKE_CURRENT_PATH_FAIL=1 FM_FAKE_ZELLIJ_KILL_AMBIGUOUS=1 run_spawn "$home" "$id" "$expected_path" --backend zellij ;;
+    cmux:0) FM_FAKE_CURRENT_PATH_FAIL=1 FM_FAKE_CMUX_CURRENT_WINDOW_EMPTY=1 run_spawn "$home" "$id" "$expected_path" --backend cmux ;;
+    cmux:1) FM_FAKE_CURRENT_PATH_FAIL=1 FM_FAKE_CMUX_CURRENT_WINDOW_EMPTY=1 FM_FAKE_CMUX_KILL_AMBIGUOUS=1 run_spawn "$home" "$id" "$expected_path" --backend cmux ;;
+  esac
+}
+
+backend_endpoint_meta_field() {  # <backend>
+  case "$1" in
+    tmux) printf 'tmux_window_id' ;;
+    herdr) printf 'herdr_pane_id' ;;
+    zellij) printf 'zellij_pane_id' ;;
+    cmux) printf 'cmux_workspace_id' ;;
+  esac
+}
+
+backend_endpoint_remove() {  # <backend> <identity>
+  local backend=$1 identity=$2
+  case "$backend" in
+    tmux)
+      awk -F '\t' -v identity="$identity" '$1 != identity' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
+      mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
+      ;;
+    herdr|zellij)
+      awk -F '\t' -v backend="$backend" -v identity="$identity" '!($1 == backend && $3 == identity)' "$ENDPOINT_STATE" > "$ENDPOINT_STATE.tmp"
+      mv "$ENDPOINT_STATE.tmp" "$ENDPOINT_STATE"
+      ;;
+    cmux)
+      awk -F '\t' -v identity="$identity" '!($1 == "cmux" && $2 == identity)' "$ENDPOINT_STATE" > "$ENDPOINT_STATE.tmp"
+      mv "$ENDPOINT_STATE.tmp" "$ENDPOINT_STATE"
+      ;;
+  esac
+}
+
+backend_endpoint_is_live() {  # <backend> <identity>
+  local backend=$1 identity=$2
+  case "$backend" in
+    tmux) awk -F '\t' -v identity="$identity" '$1 == identity {found=1} END {exit !found}' "$TMUX_WINDOWS" ;;
+    herdr|zellij) awk -F '\t' -v backend="$backend" -v identity="$identity" '$1 == backend && $3 == identity {found=1} END {exit !found}' "$ENDPOINT_STATE" ;;
+    cmux) awk -F '\t' -v identity="$identity" '$1 == "cmux" && $2 == identity {found=1} END {exit !found}' "$ENDPOINT_STATE" ;;
+  esac
+}
+
+backend_kill_event_pattern() {  # <backend>
+  case "$1" in
+    tmux) printf 'tmux kill-window -t @' ;;
+    herdr) printf 'herdr pane close ' ;;
+    zellij) printf 'zellij --session firstmate action close-tab-by-id ' ;;
+    cmux) printf 'cmux close-workspace --workspace ' ;;
+  esac
 }
 
 make_brief "$HOME_A" alpha
@@ -203,7 +498,7 @@ assert_grep "cd -- '$WT1'" "$TMUX_LOG" 'endpoint did not explicitly enter the re
 pass 'spawn acquires and records one home-scoped durable Treehouse lease before launch'
 
 get_count_before=$(grep -c '^get ' "$TREEHOUSE_LOG")
-grep -Fvx 'fm-alpha' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp" || true
+awk -F '\t' '$2 != "fm-alpha"' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
 mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
 run_spawn "$HOME_A" alpha "$WT1" >/dev/null || fail 'same-task endpoint restart failed'
 get_count_after=$(grep -c '^get ' "$TREEHOUSE_LOG")
@@ -221,7 +516,7 @@ assert_grep "worktree=$WT2" "$HOME_A/state/beta.meta" \
 pass 'a later allocation cannot select a worktree held by an earlier task lease'
 
 make_brief "$HOME_B" alpha
-grep -Fvx 'fm-alpha' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp" || true
+awk -F '\t' '$2 != "fm-alpha"' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
 mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
 run_spawn "$HOME_B" alpha "$WT3" >/dev/null || fail 'same-id other-home spawn failed'
 assert_grep "treehouse_lease_holder=firstmate-task:$HOME_B_REAL:alpha" "$HOME_B/state/alpha.meta" \
@@ -344,34 +639,91 @@ run_teardown_force "$HOME_A" endpoint-held >/dev/null \
   || fail 'receipt-bearing teardown reuse cleanup failed'
 pass 'exact teardown retires its matched receipt and permits task-id reuse'
 
-# The shared lease seam runs before every Treehouse-backed endpoint adapter.
-# Fail each non-tmux adapter at its first fake CLI call and prove its freshly
-# acquired lease is still exact and conditionally rolled back. These are fake
-# command surfaces only; no live backend process or Treehouse state is touched.
-for backend in herdr zellij cmux; do
-  cat > "$FAKEBIN/$backend" <<'SH'
-#!/usr/bin/env bash
-exit 1
-SH
-  chmod +x "$FAKEBIN/$backend"
-  id="lease-$backend"
+for backend in tmux herdr zellij cmux; do
+  id="late-$backend"
   make_brief "$HOME_A" "$id"
-  get_count_before=$(grep -c '^get ' "$TREEHOUSE_LOG")
-  return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
-  if run_spawn "$HOME_A" "$id" "$WT4" --backend "$backend" >/dev/null 2>&1; then
-    fail "$backend spawn unexpectedly succeeded with a failing fake endpoint adapter"
+  event_before=$(wc -l < "$EVENT_LOG" | tr -d ' ')
+  if run_backend_late_failure "$backend" "$HOME_A" "$id" "$WT1" 0 >/dev/null 2>&1; then
+    fail "$backend spawn unexpectedly succeeded after post-creation failure"
   fi
-  get_count_after=$(grep -c '^get ' "$TREEHOUSE_LOG")
-  return_count_after=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
-  [ "$get_count_after" -eq $((get_count_before + 1)) ] \
-    || fail "$backend did not acquire through the shared durable lease seam"
-  [ "$return_count_after" -eq $((return_count_before + 1)) ] \
-    || fail "$backend pre-publication failure did not conditionally roll back its lease"
-  if grep -Fq "$WT4"$'\t' "$TREEHOUSE_STATE"; then
-    fail "$backend endpoint failure left its freshly acquired lease reusable only by accident"
+  event_slice="$WORLD/$id.events"
+  tail -n "+$((event_before + 1))" "$EVENT_LOG" > "$event_slice"
+  kill_line=$(grep -nF "$(backend_kill_event_pattern "$backend")" "$event_slice" | head -1 | cut -d: -f1)
+  return_line=$(grep -nF 'treehouse return --force ' "$event_slice" | head -1 | cut -d: -f1)
+  [ -n "$kill_line" ] && [ -n "$return_line" ] \
+    || fail "$backend late rollback did not exercise endpoint removal and conditional return"
+  [ "$kill_line" -lt "$return_line" ] \
+    || fail "$backend returned its lease before retiring its exact endpoint"
+  assert_absent "$HOME_A/state/$id.meta" "$backend successful rollback published recovery metadata"
+  assert_absent "$HOME_A/state/.$id.treehouse-lease-acquire.json" "$backend successful rollback retained acquisition evidence"
+  if grep -Fq "$WT1"$'\t' "$TREEHOUSE_STATE"; then
+    fail "$backend successful endpoint rollback retained its Treehouse lease"
   fi
+
+  id="late-ambiguous-$backend"
+  make_brief "$HOME_A" "$id"
+  if run_backend_late_failure "$backend" "$HOME_A" "$id" "$WT1" 1 >/dev/null 2>&1; then
+    fail "$backend spawn unexpectedly succeeded with ambiguous endpoint cleanup"
+  fi
+  meta="$HOME_A/state/$id.meta"
+  receipt="$HOME_A/state/.$id.treehouse-lease-acquire.json"
+  field=$(backend_endpoint_meta_field "$backend")
+  identity=$(sed -n "s/^$field=//p" "$meta")
+  [ -n "$identity" ] || fail "$backend ambiguous cleanup did not preserve its stable endpoint identity"
+  backend_endpoint_is_live "$backend" "$identity" \
+    || fail "$backend ambiguous cleanup metadata does not bind the surviving endpoint"
+  assert_present "$receipt" "$backend ambiguous cleanup did not preserve acquisition evidence"
+  grep -Fq "$WT1"$'\t' "$TREEHOUSE_STATE" \
+    || fail "$backend ambiguous cleanup returned the still-entered lease"
+  run_teardown_force "$HOME_A" "$id" >/dev/null \
+    || fail "$backend teardown could not recover an ambiguity-preserved endpoint"
 done
-pass 'Herdr, Zellij, and cmux share the durable pre-endpoint lease and exact rollback guarantee'
+pass 'tmux, Herdr, Zellij, and cmux retire exact late endpoints before return and preserve ambiguity'
+
+for backend in tmux herdr zellij cmux; do
+  id="replacement-$backend"
+  make_brief "$HOME_A" "$id"
+  run_spawn "$HOME_A" "$id" "$WT1" --backend "$backend" >/dev/null \
+    || fail "$backend replacement fixture could not publish its first endpoint"
+  meta="$HOME_A/state/$id.meta"
+  field=$(backend_endpoint_meta_field "$backend")
+  old_identity=$(sed -n "s/^$field=//p" "$meta")
+  lease_identity=$(sed -n 's/^treehouse_lease_id=//p' "$meta")
+  backend_endpoint_remove "$backend" "$old_identity"
+  if run_backend_late_failure "$backend" "$HOME_A" "$id" "$WT1" 1 >/dev/null 2>&1; then
+    fail "$backend recovered-lease relaunch unexpectedly survived its late failure"
+  fi
+  new_identity=$(sed -n "s/^$field=//p" "$meta")
+  [ -n "$new_identity" ] && [ "$new_identity" != "$old_identity" ] \
+    || fail "$backend recovery metadata retained the dead endpoint instead of its replacement"
+  [ "$(sed -n 's/^treehouse_lease_id=//p' "$meta")" = "$lease_identity" ] \
+    || fail "$backend replacement recovery changed the durable lease identity"
+  backend_endpoint_is_live "$backend" "$new_identity" \
+    || fail "$backend replacement recovery metadata does not bind the surviving endpoint"
+  run_teardown_force "$HOME_A" "$id" >/dev/null \
+    || fail "$backend replacement recovery could not be torn down exactly"
+done
+pass 'recovered leases preserve each backend replacement endpoint identity after ambiguous cleanup'
+
+make_brief "$HOME_A" publication-handoff
+return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+if FM_FAKE_TERM_AFTER_META_PUBLISH=1 FM_FAKE_PUBLISH_ID=publication-handoff \
+  run_spawn "$HOME_A" publication-handoff "$WT1" --backend tmux >/dev/null 2>&1; then
+  fail 'spawn unexpectedly completed after publication-boundary termination'
+fi
+PUBLISHED_META="$HOME_A/state/publication-handoff.meta"
+assert_present "$PUBLISHED_META" 'publication-boundary termination removed committed metadata'
+published_identity=$(sed -n 's/^tmux_window_id=//p' "$PUBLISHED_META")
+backend_endpoint_is_live tmux "$published_identity" \
+  || fail 'publication-boundary termination retired the committed endpoint'
+grep -Fq "$WT1"$'\t' "$TREEHOUSE_STATE" \
+  || fail 'publication-boundary termination returned the committed lease'
+return_count_after=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+[ "$return_count_after" -eq "$return_count_before" ] \
+  || fail 'publication-boundary termination issued a conditional return after atomic publication'
+run_teardown_force "$HOME_A" publication-handoff >/dev/null \
+  || fail 'publication-boundary committed task could not be torn down normally'
+pass 'exact atomic metadata publication is the committed rollback handoff boundary'
 
 make_brief "$HOME_A" ambiguous-acquire
 return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)

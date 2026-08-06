@@ -1010,11 +1010,25 @@ test_endpoint_confirmation_requires_structured_workspace_absence() {
   local dir fb status target
   target="aaaaaaaa-0000-0000-0000-000000000000:bbbbbbbb-1111-1111-1111-111111111111"
   dir="$TMP_ROOT/endpoint-confirmed-gone"; mkdir -p "$dir/responses"
-  cmux_workspace_list_response "$dir" 1
+  cmux_windows_response "$dir" 1 "e1111111-0000-0000-0000-000000000000" 0
+  cmux_workspace_list_response "$dir" 2
   fb=$(make_cmux_fakebin "$dir")
   PATH="$fb:$PATH" FM_CMUX_LOG="$dir/log" FM_CMUX_RESPONSES="$dir/responses" \
     fm_backend_endpoint_confirmed_gone cmux "$target" "" fm-task
   expect_code 0 $? "structured absence of the exact cmux workspace should confirm endpoint removal"
+
+  dir="$TMP_ROOT/endpoint-present-other-window"; mkdir -p "$dir/responses"
+  cmux_windows_response "$dir" 1 \
+    "e1111111-0000-0000-0000-000000000000" 0 \
+    "e2222222-0000-0000-0000-000000000000" 1
+  cmux_workspace_list_response "$dir" 2
+  cmux_workspace_list_response "$dir" 3 \
+    "aaaaaaaa-0000-0000-0000-000000000000" "$(cmux_expected_scoped_title fm-task)"
+  fb=$(make_cmux_fakebin "$dir")
+  PATH="$fb:$PATH" FM_CMUX_LOG="$dir/log" FM_CMUX_RESPONSES="$dir/responses" \
+    fm_backend_endpoint_confirmed_gone cmux "$target" "" fm-task >/dev/null 2>&1
+  status=$?
+  [ "$status" -ne 0 ] || fail "cmux workspace in a non-current window must not confirm endpoint removal"
 
   dir="$TMP_ROOT/endpoint-confirmation-unreadable"; mkdir -p "$dir/responses"
   printf 'not-json\n' > "$dir/responses/1.out"
@@ -1034,13 +1048,13 @@ test_list_live_filters_by_title_prefix() {
   other_root="$dir/other-root"; mkdir -p "$other_root"
   title=$(cmux_expected_scoped_title fm-task1)
   other_title=$(cmux_expected_scoped_title fm-task2 "$ROOT" "$other_root")
-  # 1: workspace list --json --id-format uuids -> one in-home task, two unrelated
-  cmux_workspace_list_response "$dir" 1 \
+  # 1: list-windows, 2: its workspace inventory, 3: panes for the in-home task.
+  cmux_windows_response "$dir" 1 "e1111111-0000-0000-0000-000000000000" 3
+  cmux_workspace_list_response "$dir" 2 \
     "aaaaaaaa-0000-0000-0000-000000000000" "$title" \
     "dddddddd-8888-8888-8888-888888888888" "$other_title" \
     "cccccccc-9999-9999-9999-999999999999" "zsh"
-  # 2: list-panes for this home's task1 workspace
-  cmux_panes_response "$dir" 2 "bbbbbbbb-1111-1111-1111-111111111111"
+  cmux_panes_response "$dir" 3 "bbbbbbbb-1111-1111-1111-111111111111"
   fb=$(make_cmux_fakebin "$dir")
   out=$( PATH="$fb:$PATH" FM_CMUX_LOG="$dir/log" FM_CMUX_RESPONSES="$dir/responses" \
     bash -c '. "$0/bin/backends/cmux.sh"; fm_backend_cmux_list_live' "$ROOT" )

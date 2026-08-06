@@ -384,6 +384,7 @@ fm_backend_endpoint_atom_valid() {  # <value>
 fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
   local meta=$1 id=$2 backend_count backend window worktree project binding_count binding
   local session pane recorded_session workspace tab terminal worktree_id surface
+  local tmux_window_id tmux_window_id_count
   FM_BACKEND_VALIDATED_BACKEND=
   FM_BACKEND_VALIDATED_TARGET=
   [ -f "$meta" ] && [ ! -L "$meta" ] || {
@@ -448,6 +449,26 @@ fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
         echo "REFUSED: tmux endpoint '$window' is malformed or does not belong to task $id; preserving task state." >&2
         return 1
       fi
+      tmux_window_id_count=$(grep -c '^tmux_window_id=' "$meta" 2>/dev/null || true)
+      case "$tmux_window_id_count" in
+        0) ;;
+        1)
+          tmux_window_id=$(fm_backend_meta_exact_value "$meta" tmux_window_id) || tmux_window_id=
+          case "$tmux_window_id" in
+            @*) fm_backend_endpoint_atom_valid "$tmux_window_id" || tmux_window_id= ;;
+            *) tmux_window_id= ;;
+          esac
+          [ -n "$tmux_window_id" ] || {
+            echo "REFUSED: tmux endpoint '$window' has a malformed stable window identity; preserving task state." >&2
+            return 1
+          }
+          window=$tmux_window_id
+          ;;
+        *)
+          echo "REFUSED: tmux endpoint '$window' has an ambiguous stable window identity; preserving task state." >&2
+          return 1
+          ;;
+      esac
       ;;
     herdr)
       [ "$binding" = "$id" ] || {
