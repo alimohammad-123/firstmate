@@ -21,7 +21,10 @@
 # Orca owns its own worktree identity and never calls these functions.
 #
 # Functions publish results through FM_TREEHOUSE_LEASE_PATH,
-# FM_TREEHOUSE_LEASE_ID, and FM_TREEHOUSE_LEASE_HOLDER.
+# FM_TREEHOUSE_LEASE_ID, and FM_TREEHOUSE_LEASE_HOLDER. Acquisition also sets
+# FM_TREEHOUSE_LEASE_ACQUISITION_ARMED=1 after creating this invocation's
+# receipt and before invoking Treehouse; callers retain that state until exact
+# rollback or complete metadata publication.
 
 fm_treehouse_lease_value_line_safe() {  # <value>
   local value=${1:-}
@@ -82,6 +85,7 @@ fm_treehouse_lease_acquire() {  # <project-dir> <holder> <receipt-json>
     printf 'error: cannot create Treehouse lease acquisition receipt %s\n' "$receipt" >&2
     return 1
   fi
+  FM_TREEHOUSE_LEASE_ACQUISITION_ARMED=1
   if ! (CDPATH='' cd -- "$project" && treehouse get --lease --json --lease-holder "$holder") > "$receipt"; then
     # A caller can still roll back safely when Treehouse reported a complete
     # identity before a later command failure. Partial or malformed output stays

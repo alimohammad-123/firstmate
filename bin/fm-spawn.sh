@@ -33,7 +33,7 @@
 #   Spawn-capable backends are the reference tmux adapter and experimental
 #   herdr, zellij, orca, and cmux. For every ordinary tmux/herdr/zellij/cmux
 #   ship or scout, bin/fm-treehouse-lease-lib.sh acquires a process-independent
-#   Treehouse lease before endpoint creation, parses only path/lease_id/holder
+#   Treehouse lease before endpoint creation, parses only path/lease_id/lease_holder
 #   from `treehouse get --lease --json`, and the endpoint explicitly cd's to
 #   that exact path. The holder includes this home's absolute identity, and
 #   metadata records the immutable lease id and holder beside worktree=.
@@ -648,6 +648,7 @@ TREEHOUSE_LEASE_HOLDER=
 TREEHOUSE_LEASE_RECEIPT=
 TREEHOUSE_LEASE_RECEIPT_RETIRE=0
 TREEHOUSE_LEASE_ROLLBACK=0
+FM_TREEHOUSE_LEASE_ACQUISITION_ARMED=0
 TREEHOUSE_ENDPOINT_CREATION_ATTEMPTED=0
 TREEHOUSE_ENDPOINT_ABORT_CLEANUP=0
 TREEHOUSE_ENDPOINT_ABORT_TARGET=
@@ -785,6 +786,26 @@ spawn_preserve_treehouse_lease_evidence() {
   mv -f -- "$recovery_tmp" "$STATE/$ID.meta" 2>/dev/null || true
 }
 
+spawn_treehouse_lease_rollback_is_armed() {
+  [ "$TREEHOUSE_LEASE_ROLLBACK" = 1 ] \
+    || [ "${FM_TREEHOUSE_LEASE_ACQUISITION_ARMED:-0}" = 1 ]
+}
+
+spawn_treehouse_lease_rollback_disarm() {
+  TREEHOUSE_LEASE_ROLLBACK=0
+  FM_TREEHOUSE_LEASE_ACQUISITION_ARMED=0
+}
+
+spawn_treehouse_lease_rollback_receipt_read_exact() {
+  local expected_holder=${TREEHOUSE_LEASE_HOLDER:-}
+  [ -n "${TREEHOUSE_LEASE_RECEIPT:-}" ] || return 1
+  fm_treehouse_lease_value_line_safe "$expected_holder" || return 1
+  fm_treehouse_lease_parse_receipt "$TREEHOUSE_LEASE_RECEIPT" "$expected_holder" || return 1
+  TREEHOUSE_LEASE_PATH=$FM_TREEHOUSE_LEASE_PATH
+  TREEHOUSE_LEASE_ID=$FM_TREEHOUSE_LEASE_ID
+  TREEHOUSE_LEASE_HOLDER=$FM_TREEHOUSE_LEASE_HOLDER
+}
+
 spawn_abort_cleanup() {
   local status=$? endpoint_cleanup_failed=0 endpoint_identity_exact=0
   if [ "$HERDR_PROJECTION_ABORT_CLEANUP" = 1 ] \
@@ -833,11 +854,11 @@ spawn_abort_cleanup() {
       fi
     fi
   fi
-  if { [ "$TREEHOUSE_ENDPOINT_ABORT_CLEANUP" = 1 ] || [ "$TREEHOUSE_LEASE_ROLLBACK" = 1 ]; } \
+  if { [ "$TREEHOUSE_ENDPOINT_ABORT_CLEANUP" = 1 ] || spawn_treehouse_lease_rollback_is_armed; } \
      && spawn_treehouse_metadata_matches_current_endpoint; then
     TREEHOUSE_ENDPOINT_CREATION_ATTEMPTED=0
     TREEHOUSE_ENDPOINT_ABORT_CLEANUP=0
-    TREEHOUSE_LEASE_ROLLBACK=0
+    spawn_treehouse_lease_rollback_disarm
   elif [ "$TREEHOUSE_ENDPOINT_CREATION_ATTEMPTED" = 1 ]; then
     endpoint_cleanup_failed=1
   elif [ "$TREEHOUSE_ENDPOINT_ABORT_CLEANUP" = 1 ]; then
@@ -850,14 +871,16 @@ spawn_abort_cleanup() {
     fi
   fi
   if [ "$endpoint_cleanup_failed" = 1 ]; then
-    if [ "$endpoint_identity_exact" = 1 ] || [ "$TREEHOUSE_LEASE_ROLLBACK" = 1 ]; then
+    if [ "$endpoint_identity_exact" = 1 ] || spawn_treehouse_lease_rollback_is_armed; then
       spawn_preserve_treehouse_lease_evidence
     fi
-    TREEHOUSE_LEASE_ROLLBACK=0
+    spawn_treehouse_lease_rollback_disarm
     echo "error: could not confirm removal of the exact invocation-created endpoint for $ID; preserved its current endpoint and Treehouse lease identity without returning the worktree" >&2
-  elif [ "$TREEHOUSE_LEASE_ROLLBACK" = 1 ]; then
-    TREEHOUSE_LEASE_ROLLBACK=0
-    if fm_treehouse_lease_return_exact \
+  elif spawn_treehouse_lease_rollback_is_armed; then
+    spawn_treehouse_lease_rollback_disarm
+    if ! spawn_treehouse_lease_rollback_receipt_read_exact; then
+      echo "error: Treehouse lease acquisition for $ID ended without a complete exact receipt; preserved the acquisition evidence at $TREEHOUSE_LEASE_RECEIPT and refused to guess a return" >&2
+    elif fm_treehouse_lease_return_exact \
       "$TREEHOUSE_LEASE_PATH" "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" "$PROJ_ABS" >/dev/null 2>&1; then
       [ -z "$TREEHOUSE_LEASE_RECEIPT" ] || rm -f -- "$TREEHOUSE_LEASE_RECEIPT"
     else
@@ -2491,11 +2514,11 @@ SPAWN_META_TMP=
 [ "$BACKEND" = orca ] && ORCA_ABORT_CLEANUP=0
 TREEHOUSE_ENDPOINT_CREATION_ATTEMPTED=0
 TREEHOUSE_ENDPOINT_ABORT_CLEANUP=0
-if [ "$TREEHOUSE_LEASE_ROLLBACK" = 1 ]; then
+if spawn_treehouse_lease_rollback_is_armed; then
   # The exact lease identity and endpoint are now durably published together.
   # Later failures preserve that record for ordinary recovery/teardown instead
   # of returning a copy whose task is already discoverable.
-  TREEHOUSE_LEASE_ROLLBACK=0
+  spawn_treehouse_lease_rollback_disarm
 fi
 if [ "$TREEHOUSE_LEASE_RECEIPT_RETIRE" = 1 ]; then
   rm -f -- "$TREEHOUSE_LEASE_RECEIPT" || true

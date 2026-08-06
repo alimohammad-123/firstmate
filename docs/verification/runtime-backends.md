@@ -231,7 +231,7 @@ exact_identity_returned=true
 ```
 
 The stateful fake proved one home-scoped immutable lease per allocation, same-task reuse after simulated endpoint or owner restart, exclusion from later allocation, cross-home separation for the same task id, refusal before return on wrong identity, and exact conditional return on correct identity.
-It also proved live tmux identity recovery and refusal across server generations, primary-home lock compatibility, duplicate-title cmux refusal before mutation, stable endpoint retirement before return across all four Treehouse-backed backends, replacement-endpoint recovery after ambiguous cleanup, atomic publication as the committed handoff boundary, serialized spawn and teardown, guarded secondmate retirement across refusal, ambiguity, removal, recycled paths, missing removable state, exact child cleanup, exact receipt retirement through recovery and reuse, and raw-only preservation when acquisition identity was ambiguous.
+It also proved exact receipt rollback after post-acquisition termination, raw-only preservation for partial or malformed acquisition output, live tmux identity recovery and refusal across server generations, primary-home lock compatibility, duplicate-title cmux refusal before mutation, stable endpoint retirement before return across all four Treehouse-backed backends, replacement-endpoint recovery after ambiguous cleanup, atomic publication as the committed handoff boundary, serialized spawn and teardown, guarded secondmate retirement across refusal, ambiguity, removal, recycled paths, missing removable state, exact child cleanup, and exact receipt retirement through recovery and reuse.
 
 ```text
 ok - spawn acquires and records one home-scoped durable Treehouse lease before launch
@@ -260,7 +260,8 @@ ok - ambiguous retirement preserves its barrier and exact child identity
 ok - secondmate admission barrier survives removal and rejects stale waiters
 ok - missing state and marker cannot bypass external retirement admission
 ok - forced secondmate cleanup retains child lifecycle ownership through exact return
-ok - ambiguous acquisition preserves raw evidence and never guesses a lease release
+ok - post-acquisition termination returns only its complete exact receipt identity
+ok - partial or malformed acquisition preserves raw evidence and never guesses a lease release
 ```
 
 Applicability was rechecked through the affected backend and lifecycle suites.

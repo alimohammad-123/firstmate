@@ -97,6 +97,9 @@ case "${1:-}" in
     fi
     jq -n --arg path "$selected" --arg lease_id "$lease_id" --arg lease_holder "$holder" \
       '{path:$path,lease_id:$lease_id,lease_holder:$lease_holder,leased_at:"2026-08-06T00:00:00Z"}'
+    if [ "${FM_FAKE_TERM_AFTER_GET:-0}" = 1 ]; then
+      kill -TERM "$PPID"
+    fi
     ;;
   status)
     [ "${2:-}" = --json ] || exit 2
@@ -1264,6 +1267,25 @@ retire_replacement_return_line=$(grep -n '^treehouse return --force ' "$EVENT_LO
 assert_absent "$RETIRE_REPLACEMENT_HOME" 'replacement cleanup retained the retired secondmate home'
 pass 'forced secondmate cleanup retains child lifecycle ownership through exact return'
 
+make_brief "$HOME_A" acquisition-handoff
+acquisition_handoff_counter_before=$(cat "$TREEHOUSE_COUNTER")
+if FM_FAKE_TERM_AFTER_GET=1 run_spawn "$HOME_A" acquisition-handoff "$WT4" >/dev/null 2>&1; then
+  fail 'spawn unexpectedly completed after post-acquisition termination'
+fi
+acquisition_handoff_lease="lease-$((acquisition_handoff_counter_before + 1))"
+if awk -F '\t' -v lease="$acquisition_handoff_lease" '$2 == lease {found=1} END {exit !found}' "$TREEHOUSE_STATE"; then
+  fail 'post-acquisition termination stranded its exact Treehouse lease'
+fi
+assert_grep "return --force " "$TREEHOUSE_LOG" \
+  'post-acquisition termination did not issue an exact conditional return'
+assert_grep "--if-lease-id $acquisition_handoff_lease --if-lease-holder firstmate-task:$HOME_A_REAL:acquisition-handoff" \
+  "$TREEHOUSE_LOG" 'post-acquisition termination returned a different lease identity'
+assert_absent "$HOME_A/state/.acquisition-handoff.treehouse-lease-acquire.json" \
+  'post-acquisition termination retained a successfully returned receipt'
+assert_absent "$HOME_A/state/acquisition-handoff.meta" \
+  'post-acquisition termination invented published task metadata'
+pass 'post-acquisition termination returns only its complete exact receipt identity'
+
 make_brief "$HOME_A" ambiguous-acquire
 return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
 held_count_before=$(wc -l < "$TREEHOUSE_STATE" | tr -d ' ')
@@ -1280,6 +1302,6 @@ return_count_after=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
 held_count_after=$(wc -l < "$TREEHOUSE_STATE" | tr -d ' ')
 [ "$held_count_after" -eq $((held_count_before + 1)) ] \
   || fail 'ambiguous acquisition hid or duplicated its fake Treehouse held-copy record'
-pass 'ambiguous acquisition preserves raw evidence and never guesses a lease release'
+pass 'partial or malformed acquisition preserves raw evidence and never guesses a lease release'
 
 echo '# all fm-treehouse-task-lease tests passed'
