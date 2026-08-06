@@ -1,0 +1,20 @@
+tests/fm-backend-herdr-launcher-workspace-e2e.test.sh
+  s_df6e8431fec1a7::t_335c668ab99349 154-162,310-311,439
+  s_df6e8431fec1a7::t_555bd17a4f3ef5 430
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "dfbd943aed2d73305b866270fc5cfcc1af7c690e",
+  "prompts": {},
+  "sessions": {
+    "s_df6e8431fec1a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd542-71fd-7b63-9b59-c792a85ce480",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
