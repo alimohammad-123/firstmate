@@ -1,0 +1,34 @@
+tests/fm-treehouse-task-lease.test.sh
+  s_df6e8431fec1a7::t_0cdfc7cc4166f4 1033-1075,1123-1136,1139-1149
+  s_df6e8431fec1a7::t_b67cf27e8928c5 136-143,280-285
+  s_df6e8431fec1a7::t_a4d1195f942272 42,1245-1249
+  s_df6e8431fec1a7::t_b55d3c00e59db5 1137-1138
+  s_df6e8431fec1a7::t_0f9152db873738 1239-1244,1250-1254
+  s_df6e8431fec1a7::t_7fe8188fa5b8c3 1150
+bin/backends/herdr.sh
+  s_df6e8431fec1a7::t_58f0498148281c 2840,2843-2848
+docs/verification/runtime-backends.md
+  s_df6e8431fec1a7::t_b55d3c00e59db5 217,238,241,245
+bin/fm-teardown.sh
+  s_df6e8431fec1a7::t_5baacd595560b5 1112-1114,1120-1121,1156,1191,1224
+  s_df6e8431fec1a7::t_1f0f76100b73a5 1115-1118,1123-1134,1593
+  s_df6e8431fec1a7::t_68df4191ab3bb1 1591-1592,1594-1595
+  s_df6e8431fec1a7::t_58f0498148281c 1168-1171
+  s_df6e8431fec1a7::t_5d5ad845208211 1119,2932
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "625c137c3d95a71f2c4f4f328361a89bad7b310f",
+  "prompts": {},
+  "sessions": {
+    "s_df6e8431fec1a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd542-71fd-7b63-9b59-c792a85ce480",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
