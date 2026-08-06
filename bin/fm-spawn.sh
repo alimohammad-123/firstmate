@@ -215,6 +215,8 @@ SUB_HOME_MARKER=".fm-secondmate-home"
 . "$SCRIPT_DIR/fm-wake-lib.sh"
 # shellcheck source=bin/fm-secondmate-nudge-lib.sh
 . "$SCRIPT_DIR/fm-secondmate-nudge-lib.sh"
+# shellcheck source=bin/fm-secondmate-lifecycle-lib.sh
+. "$SCRIPT_DIR/fm-secondmate-lifecycle-lib.sh"
 # shellcheck source=bin/fm-config-inherit-lib.sh
 . "$SCRIPT_DIR/fm-config-inherit-lib.sh"
 # shellcheck source=bin/fm-backend.sh
@@ -362,8 +364,15 @@ spawn_remote_secondmate() {
   fm_task_id_creation_valid "$id" || { echo "error: invalid task id" >&2; return 2; }
   mkdir -p "$STATE" || { echo "error: could not create parent state directory" >&2; return 1; }
   SPAWN_TASK_LOCK="$STATE/.spawn-$id.lock"
-  if ! fm_lock_try_acquire "$SPAWN_TASK_LOCK"; then
-    echo "error: another spawn is already creating task $id" >&2
+  if fm_secondmate_spawn_task_lock_acquire "$FM_HOME" "$STATE" "$SPAWN_TASK_LOCK"; then
+    :
+  else
+    rc=$?
+    if [ "$rc" -eq 2 ]; then
+      echo "error: Firstmate home $FM_HOME is retiring; child launch $id refused" >&2
+    else
+      echo "error: another spawn is already creating task $id" >&2
+    fi
     return 1
   fi
   registry_lock=$(secondmate_registry_lock_path "$STATE")
@@ -611,8 +620,7 @@ fi
 # default tmux (fm_backend_name). fm_backend_validate_spawn refuses unknown or
 # non-spawn-capable backends. The resolved value is
 # recorded in meta only when it is NOT tmux (fm-teardown.sh and fm-watch.sh's
-# window_backend/fm_backend_of_meta already treat an absent backend= as tmux),
-# so the default path's meta stays byte-identical.
+# window_backend/fm_backend_of_meta already treat an absent backend= as tmux).
 if [ "$BACKEND_SET" -eq 1 ]; then
   BACKEND=$BACKEND_ARG
 else
@@ -940,8 +948,15 @@ fi
 ID=${POS[0]}
 fm_task_id_creation_valid "$ID" || { echo "error: invalid task id" >&2; exit 2; }
 SPAWN_TASK_LOCK="$STATE/.spawn-$ID.lock"
-if ! fm_lock_try_acquire "$SPAWN_TASK_LOCK"; then
-  echo "error: another spawn is already creating task $ID" >&2
+if fm_secondmate_spawn_task_lock_acquire "$FM_HOME" "$STATE" "$SPAWN_TASK_LOCK"; then
+  :
+else
+  lock_rc=$?
+  if [ "$lock_rc" -eq 2 ]; then
+    echo "error: Firstmate home $FM_HOME is retiring; child launch $ID refused" >&2
+  else
+    echo "error: another spawn is already creating task $ID" >&2
+  fi
   exit 1
 fi
 SPAWN_TASK_LOCK_HELD=1
@@ -2453,8 +2468,7 @@ SPAWN_META_TMP="$STATE/.$ID.meta.$$"
   [ -z "${BUSY_GEN:-}" ] || echo "busy_gen=$BUSY_GEN"
   # Default-off writes no traceparent= line (meta stays byte-identical).
   # backend= is written only for a non-default (non-tmux) backend, so the
-  # default path's meta stays byte-identical (absent backend= means tmux;
-  # data/fm-backend-design-d7's P1 compatibility contract).
+  # default path omits that field (absent backend= means tmux).
   [ "$BACKEND" = tmux ] || echo "backend=$BACKEND"
   if [ "$BACKEND" != orca ]; then
     spawn_write_treehouse_endpoint_identity

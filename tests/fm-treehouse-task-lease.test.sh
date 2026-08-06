@@ -436,6 +436,44 @@ run_teardown_force() {
     PATH="$FAKEBIN:$PATH" "$TEARDOWN" "$id" --force
 }
 
+make_secondmate_retirement_fixture() {  # <home> <parent-id>
+  local home=$1 parent_id=$2
+  mkdir -p "$home/data" "$home/state" "$home/config" "$home/projects" "$home/bin"
+  printf '%s\n' "$parent_id" > "$home/.fm-secondmate-home"
+  printf '# test home\n' > "$home/AGENTS.md"
+  printf 'off\n' > "$home/config/herdr-presentation-spaces"
+  cat > "$HOME_A/state/$parent_id.meta" <<EOF
+window=firstmate:fm-$parent_id
+endpoint_task_id=$parent_id
+worktree=$home
+project=$home
+harness=sh
+kind=secondmate
+mode=secondmate
+yolo=off
+home=$home
+projects=test
+EOF
+  printf -- '- %s - test secondmate (home: %s; scope: lease lifecycle; projects: test; added 2026-08-06)\n' \
+    "$parent_id" "$home" >> "$HOME_A/data/secondmates.md"
+  printf '@parent-%s\tfm-%s\n' "$parent_id" "$parent_id" >> "$TMUX_WINDOWS"
+}
+
+hold_task_lifecycle_lock() {  # <lock> <ready> <release>
+  local lock=$1 ready=$2 release=$3
+  (
+    # shellcheck source=bin/fm-wake-lib.sh
+    . "$ROOT/bin/fm-wake-lib.sh"
+    fm_lock_acquire_wait "$lock"
+    : > "$ready"
+    while [ ! -f "$release" ]; do
+      "$FM_REAL_SLEEP" 0.05
+    done
+    fm_lock_release "$lock"
+  ) &
+  HELD_LOCK_PID=$!
+}
+
 run_backend_late_failure() {  # <backend> <home> <id> <expected-path> <ambiguous>
   local backend=$1 home=$2 id=$3 expected_path=$4 ambiguous=$5
   [ "$backend" != cmux ] || rm -f -- "$CMUX_FOCUS_MARKER"
@@ -779,6 +817,105 @@ lifecycle_return_line=$(grep -n '^treehouse return --force ' "$EVENT_LOG" | tail
   || fail 'teardown returned the lease before replacement metadata publication completed'
 assert_absent "$LIFECYCLE_META" 'ordered teardown retained replacement task metadata'
 pass 'replacement publication and exact lease return serialize on one task lifecycle'
+
+RETIRE_HOME="$WORLD/retiring-secondmate"
+make_secondmate_retirement_fixture "$RETIRE_HOME" retire-admission
+make_brief "$RETIRE_HOME" held-child
+run_spawn "$RETIRE_HOME" held-child "$WT1" --backend tmux >/dev/null \
+  || fail 'retirement admission fixture could not publish its child'
+RETIRE_LOCK_READY="$WORLD/retire-child-lock.ready"
+RETIRE_LOCK_RELEASE="$WORLD/retire-child-lock.release"
+hold_task_lifecycle_lock "$RETIRE_HOME/state/.spawn-held-child.lock" \
+  "$RETIRE_LOCK_READY" "$RETIRE_LOCK_RELEASE"
+i=0
+while [ ! -f "$RETIRE_LOCK_READY" ] && [ "$i" -lt 100 ]; do
+  sleep 0.05
+  i=$((i + 1))
+done
+[ -f "$RETIRE_LOCK_READY" ] || fail 'retirement fixture did not hold the existing child lifecycle'
+run_teardown_force "$HOME_A" retire-admission \
+  >"$WORLD/retire-admission.out" 2>"$WORLD/retire-admission.err" &
+retire_pid=$!
+RETIRE_MARKER="$RETIRE_HOME/state/.secondmate-retiring"
+i=0
+while [ ! -f "$RETIRE_MARKER" ] && [ "$i" -lt 100 ]; do
+  sleep 0.05
+  i=$((i + 1))
+done
+[ -f "$RETIRE_MARKER" ] || fail 'forced secondmate retirement did not publish its admission barrier'
+make_brief "$RETIRE_HOME" refused-child
+retire_gets_before=$(grep -c '^get ' "$TREEHOUSE_LOG")
+if run_spawn "$RETIRE_HOME" refused-child "$WT2" --backend tmux \
+  >"$WORLD/refused-child.out" 2>"$WORLD/refused-child.err"; then
+  fail 'child launch passed admission after secondmate retirement began'
+fi
+retire_gets_after=$(grep -c '^get ' "$TREEHOUSE_LOG")
+[ "$retire_gets_after" -eq "$retire_gets_before" ] \
+  || fail 'retiring-home refusal acquired a child Treehouse lease'
+assert_absent "$RETIRE_HOME/state/refused-child.meta" 'retiring-home refusal published child metadata'
+assert_absent "$RETIRE_HOME/state/.refused-child.treehouse-lease-acquire.json" \
+  'retiring-home refusal left child acquisition evidence'
+: > "$RETIRE_LOCK_RELEASE"
+wait "$HELD_LOCK_PID" || fail 'held child lifecycle lock did not release cleanly'
+wait "$retire_pid" \
+  || fail "forced secondmate retirement failed after admission proof\n$(cat "$WORLD/retire-admission.err")"
+assert_absent "$RETIRE_HOME" 'completed secondmate retirement retained its home'
+pass 'secondmate retirement blocks every later child launch before acquisition'
+
+RETIRE_REPLACEMENT_HOME="$WORLD/retiring-replacement-secondmate"
+make_secondmate_retirement_fixture "$RETIRE_REPLACEMENT_HOME" retire-replacement
+make_brief "$RETIRE_REPLACEMENT_HOME" replacing-child
+run_spawn "$RETIRE_REPLACEMENT_HOME" replacing-child "$WT1" --backend tmux >/dev/null \
+  || fail 'retirement replacement fixture could not publish its child'
+RETIRE_REPLACEMENT_META="$RETIRE_REPLACEMENT_HOME/state/replacing-child.meta"
+retire_old_identity=$(sed -n 's/^tmux_window_id=//p' "$RETIRE_REPLACEMENT_META")
+backend_endpoint_remove tmux "$retire_old_identity"
+RETIRE_REPLACEMENT_READY="$WORLD/retire-replacement.ready"
+RETIRE_REPLACEMENT_RELEASE="$WORLD/retire-replacement.release"
+FM_FAKE_BLOCK_BEFORE_META_PUBLISH=1 FM_FAKE_PUBLISH_ID=replacing-child \
+  FM_FAKE_PUBLISH_READY="$RETIRE_REPLACEMENT_READY" \
+  FM_FAKE_PUBLISH_RELEASE="$RETIRE_REPLACEMENT_RELEASE" \
+  run_spawn "$RETIRE_REPLACEMENT_HOME" replacing-child "$WT1" --backend tmux \
+  >"$WORLD/retire-replacement-spawn.out" 2>"$WORLD/retire-replacement-spawn.err" &
+retire_replacement_spawn_pid=$!
+i=0
+while [ ! -f "$RETIRE_REPLACEMENT_READY" ] && [ "$i" -lt 100 ]; do
+  sleep 0.05
+  i=$((i + 1))
+done
+[ -f "$RETIRE_REPLACEMENT_READY" ] \
+  || fail 'child replacement did not reach its guarded publication boundary'
+retire_replacement_returns_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+run_teardown_force "$HOME_A" retire-replacement \
+  >"$WORLD/retire-replacement.out" 2>"$WORLD/retire-replacement.err" &
+retire_replacement_pid=$!
+RETIRE_REPLACEMENT_MARKER="$RETIRE_REPLACEMENT_HOME/state/.secondmate-retiring"
+i=0
+while [ ! -f "$RETIRE_REPLACEMENT_MARKER" ] && [ "$i" -lt 100 ]; do
+  sleep 0.05
+  i=$((i + 1))
+done
+[ -f "$RETIRE_REPLACEMENT_MARKER" ] \
+  || fail 'replacement retirement did not publish its admission barrier'
+sleep 0.2
+retire_replacement_returns_held=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+[ "$retire_replacement_returns_held" -eq "$retire_replacement_returns_before" ] \
+  || fail 'forced secondmate cleanup returned a child lease during replacement publication'
+assert_present "$RETIRE_REPLACEMENT_META" \
+  'forced secondmate cleanup erased child metadata during replacement publication'
+: > "$RETIRE_REPLACEMENT_RELEASE"
+wait "$retire_replacement_spawn_pid" \
+  || fail "child replacement failed after publication release\n$(cat "$WORLD/retire-replacement-spawn.err")"
+wait "$retire_replacement_pid" \
+  || fail "forced secondmate cleanup failed after replacement publication\n$(cat "$WORLD/retire-replacement.err")"
+retire_replacement_publish_line=$(grep -n '^metadata-published replacing-child$' "$EVENT_LOG" | tail -1 | cut -d: -f1)
+retire_replacement_return_line=$(grep -n '^treehouse return --force ' "$EVENT_LOG" | tail -1 | cut -d: -f1)
+[ -n "$retire_replacement_publish_line" ] && [ -n "$retire_replacement_return_line" ] \
+  || fail 'secondmate replacement ordering did not record publication and return'
+[ "$retire_replacement_publish_line" -lt "$retire_replacement_return_line" ] \
+  || fail 'forced secondmate cleanup returned the child lease before replacement publication'
+assert_absent "$RETIRE_REPLACEMENT_HOME" 'replacement cleanup retained the retired secondmate home'
+pass 'forced secondmate cleanup retains child lifecycle ownership through exact return'
 
 make_brief "$HOME_A" ambiguous-acquire
 return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)

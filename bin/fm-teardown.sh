@@ -157,6 +157,8 @@ SUB_HOME_PARENT_MARKER=".fm-secondmate-parent"
 . "$SCRIPT_DIR/fm-secondmate-registry-lib.sh"
 # shellcheck source=bin/fm-secondmate-parent-lib.sh
 . "$SCRIPT_DIR/fm-secondmate-parent-lib.sh"
+# shellcheck source=bin/fm-secondmate-lifecycle-lib.sh
+. "$SCRIPT_DIR/fm-secondmate-lifecycle-lib.sh"
 # shellcheck source=bin/fm-wake-lib.sh
 . "$SCRIPT_DIR/fm-wake-lib.sh"
 # shellcheck source=bin/fm-nm-run-lib.sh
@@ -177,10 +179,19 @@ FM_LOCK_LOG_PREFIX=teardown
 TEARDOWN_TASK_LOCK="$STATE/.spawn-$ID.lock"
 TEARDOWN_TASK_LOCK_HELD=0
 TEARDOWN_HERDR_LOCK_RECORDS=
+TEARDOWN_CHILD_TASK_LOCKS=
+TEARDOWN_ACTIVE_HOME_ADMISSION_LOCK=
 teardown_exit_cleanup() {
   local status=$?
   if declare -F teardown_release_herdr_locks >/dev/null 2>&1; then
     teardown_release_herdr_locks
+  fi
+  if declare -F teardown_secondmate_child_locks_release >/dev/null 2>&1; then
+    teardown_secondmate_child_locks_release
+  fi
+  if [ -n "$TEARDOWN_ACTIVE_HOME_ADMISSION_LOCK" ]; then
+    fm_lock_release "$TEARDOWN_ACTIVE_HOME_ADMISSION_LOCK" || true
+    TEARDOWN_ACTIVE_HOME_ADMISSION_LOCK=
   fi
   if [ "$TEARDOWN_TASK_LOCK_HELD" = 1 ]; then
     TEARDOWN_TASK_LOCK_HELD=0
@@ -1934,6 +1945,8 @@ validate_firstmate_home_children_removal() {
       child_home=$(meta_value "$child_meta" home)
       [ -n "$child_home" ] || child_home=$child_wt
       validate_firstmate_home_for_removal "$child_home" "child firstmate home" "$child_id" >/dev/null || return 1
+      teardown_secondmate_home_retirement_begin "$child_home" || return 1
+      validate_secondmate_home_acquisition_evidence "$child_home" || return 1
       validate_firstmate_home_children_removal "$child_home" || return 1
     elif [ "$child_backend" = orca ]; then
       child_orca_worktree_id=$(require_orca_worktree_id "$child_meta") || return 1
@@ -1950,6 +1963,102 @@ validate_firstmate_home_children_removal() {
       }
       child_proj=$(meta_value "$child_meta" project)
       validate_child_worktree_for_removal "$child_wt" "$child_proj" >/dev/null || return 1
+    fi
+  done
+}
+
+teardown_secondmate_child_lock_held() {  # <lock>
+  local expected=$1 held
+  [ -n "$TEARDOWN_CHILD_TASK_LOCKS" ] || return 1
+  while IFS= read -r held; do
+    [ "$held" != "$expected" ] || return 0
+  done <<FMEOF
+$TEARDOWN_CHILD_TASK_LOCKS
+FMEOF
+  return 1
+}
+
+teardown_secondmate_child_locks_release() {
+  local held
+  [ -n "$TEARDOWN_CHILD_TASK_LOCKS" ] || return 0
+  while IFS= read -r held; do
+    [ -n "$held" ] || continue
+    fm_lock_release "$held" || true
+  done <<FMEOF
+$TEARDOWN_CHILD_TASK_LOCKS
+FMEOF
+  TEARDOWN_CHILD_TASK_LOCKS=
+}
+
+teardown_secondmate_home_retirement_begin() {  # <home>
+  local home=$1 state admission meta lock receipt base id ids='' task_lock
+  state="$home/state"
+  [ -d "$state" ] || return 0
+  admission=$(fm_secondmate_retirement_lock_path "$state") || return 1
+  TEARDOWN_ACTIVE_HOME_ADMISSION_LOCK=$admission
+  fm_lock_acquire_wait "$admission" || return 1
+  if ! fm_secondmate_retirement_mark_locked "$state"; then
+    echo "REFUSED: secondmate retirement marker is unsafe for $home; preserving the home and every child" >&2
+    return 1
+  fi
+  for meta in "$state"/*.meta; do
+    [ -e "$meta" ] || continue
+    id=$(basename "$meta" .meta)
+    fm_task_id_path_safe "$id" || return 1
+    ids="$ids
+$id"
+  done
+  for lock in "$state"/.spawn-*.lock; do
+    [ -e "$lock" ] || [ -L "$lock" ] || continue
+    base=${lock##*/}
+    id=${base#.spawn-}
+    id=${id%.lock}
+    fm_task_id_path_safe "$id" || return 1
+    ids="$ids
+$id"
+  done
+  for receipt in "$state"/.*.treehouse-lease-acquire.json; do
+    [ -e "$receipt" ] || [ -L "$receipt" ] || continue
+    base=${receipt##*/}
+    id=${base#.}
+    id=${id%.treehouse-lease-acquire.json}
+    fm_task_id_path_safe "$id" || return 1
+    ids="$ids
+$id"
+  done
+  while IFS= read -r id; do
+    [ -n "$id" ] || continue
+    task_lock="$state/.spawn-$id.lock"
+    teardown_secondmate_child_lock_held "$task_lock" && continue
+    fm_lock_acquire_wait "$task_lock" || return 1
+    if [ -n "$TEARDOWN_CHILD_TASK_LOCKS" ]; then
+      TEARDOWN_CHILD_TASK_LOCKS="$TEARDOWN_CHILD_TASK_LOCKS
+$task_lock"
+    else
+      TEARDOWN_CHILD_TASK_LOCKS=$task_lock
+    fi
+  done <<FMEOF
+$(printf '%s\n' "$ids" | sed '/^$/d' | sort -u)
+FMEOF
+  fm_lock_release "$admission" || true
+  TEARDOWN_ACTIVE_HOME_ADMISSION_LOCK=
+}
+
+validate_secondmate_home_acquisition_evidence() {  # <home>
+  local home=$1 state receipt base id meta
+  state="$home/state"
+  [ -d "$state" ] || return 0
+  for receipt in "$state"/.*.treehouse-lease-acquire.json; do
+    [ -e "$receipt" ] || [ -L "$receipt" ] || continue
+    base=${receipt##*/}
+    id=${base#.}
+    id=${id%.treehouse-lease-acquire.json}
+    meta="$state/$id.meta"
+    if ! fm_treehouse_lease_meta_read_exact "$meta" \
+      || ! fm_treehouse_lease_receipt_matches_exact "$receipt" \
+        "$FM_TREEHOUSE_LEASE_PATH" "$FM_TREEHOUSE_LEASE_ID" "$FM_TREEHOUSE_LEASE_HOLDER"; then
+      echo "REFUSED: child $id has ambiguous Treehouse acquisition evidence; preserving its receipt and secondmate home" >&2
+      return 1
     fi
   done
 }
@@ -2096,6 +2205,10 @@ cleanup_firstmate_home_children() {
   for child_meta in "$sub_state"/*.meta; do
     [ -e "$child_meta" ] || continue
     child_id=$(basename "$child_meta" .meta)
+    if ! teardown_secondmate_child_lock_held "$sub_state/.spawn-$child_id.lock"; then
+      echo "REFUSED: child $child_id lifecycle lock is not held; preserving the child and secondmate home" >&2
+      return 1
+    fi
     child_wt=$(meta_value "$child_meta" worktree)
     child_proj=$(meta_value "$child_meta" project)
     child_kind=$(meta_value "$child_meta" kind)
@@ -2172,6 +2285,7 @@ cleanup_firstmate_home_children() {
       child_busy_gen=$(cat "$sub_state/$child_id.busy-gen" 2>/dev/null || true)
     fi
     retire_busy_state "$sub_state" "$child_id" "$child_busy_gen" || return 1
+    rm -f -- "$sub_state/.$child_id.treehouse-lease-acquire.json"
     rm -f "$sub_state/$child_id.status" "$sub_state/$child_id.turn-ended" \
       "$sub_state/$child_id.meta" "$sub_state/$child_id.pi-ext.ts" \
       "$sub_state/$child_id.grok-turnend-token" "$sub_state/$child_id.kimi-turnend-token" \
@@ -2196,6 +2310,8 @@ validate_pr_poll_cleanup "$STATE" "$ID" || exit 1
 if [ "$KIND" = secondmate ]; then
   [ -n "$HOME_PATH" ] || HOME_PATH=$WT
   validate_firstmate_home_for_removal "$HOME_PATH" "secondmate home" "$ID" >/dev/null || exit 1
+  teardown_secondmate_home_retirement_begin "$HOME_PATH" || exit 1
+  validate_secondmate_home_acquisition_evidence "$HOME_PATH" || exit 1
   if [ "$FORCE" = "--force" ]; then
     validate_firstmate_home_children_removal "$HOME_PATH" || exit 1
     if [ "$BACKEND" = herdr ]; then
