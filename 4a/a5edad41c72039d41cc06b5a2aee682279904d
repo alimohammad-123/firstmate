@@ -1,0 +1,64 @@
+docs/verification/runtime-backends.md
+  s_df6e8431fec1a7::t_3a861906dbd524 216,231-233
+docs/tmux-backend.md
+  s_df6e8431fec1a7::t_e7dd57481b458c 48
+tests/fm-treehouse-task-lease.test.sh
+  s_df6e8431fec1a7::t_c87fda52ad6b91 29,55,161-167,172-175,186-191,501,519
+  s_df6e8431fec1a7::t_f1e3f9a26aeb09 149
+  s_df6e8431fec1a7::t_4409136e6a42e0 39-40
+  s_df6e8431fec1a7::t_d82cb45678da04 212
+  s_df6e8431fec1a7::t_06ba827e2687e9 642-643,645,647,649-653,655-658,660,662-664,666-675,677-685,687-692,694-704,706-710,712-718,720-726
+  s_df6e8431fec1a7::t_28e1803d1d4548 646,659,665,676,686,693,711,719
+  s_df6e8431fec1a7::t_6bad941e2fa37b 654
+  s_df6e8431fec1a7::t_1adb810c2ef3ac 206-209
+  s_df6e8431fec1a7::t_8ec9f26a290794 30-31,52,56,198-205,210-211,213-235,239-325,327-362,364-384
+  s_df6e8431fec1a7::t_daf21c37b308a2 34,385-399,427-428,430,433-485
+  s_df6e8431fec1a7::t_c9080a11b39c03 144-148,150-154,431-432
+  s_df6e8431fec1a7::t_f5847e662a5887 32,35,326,363,429
+  s_df6e8431fec1a7::t_e5e37fde1cc0e2 414
+  s_df6e8431fec1a7::t_9dd85af544c844 236-238
+  s_df6e8431fec1a7::t_daa7a641bb5153 486
+docs/architecture.md
+  s_df6e8431fec1a7::t_3a861906dbd524 138
+bin/backends/cmux.sh
+  s_df6e8431fec1a7::t_e062f89a5361c4 594-597,601-604
+  s_df6e8431fec1a7::t_48b789002094bc 646,649-663
+  s_df6e8431fec1a7::t_b16839acf71810 591-592,600,607-612,620-624,683-685,698,706
+  s_df6e8431fec1a7::t_f5847e662a5887 644,647-648,664
+  s_df6e8431fec1a7::t_2c5975beb2a579 593,605-606
+  s_df6e8431fec1a7::t_6e48a3c238526c 598-599
+docs/configuration.md
+  s_df6e8431fec1a7::t_e7dd57481b458c 72
+bin/fm-backend.sh
+  s_df6e8431fec1a7::t_c9080a11b39c03 387,452-471
+bin/backends/tmux.sh
+  s_df6e8431fec1a7::t_c9080a11b39c03 251-257,259-267,281
+  s_df6e8431fec1a7::t_591266cf3d913b 235-237
+  s_df6e8431fec1a7::t_b16839acf71810 127
+docs/cmux-backend.md
+  s_df6e8431fec1a7::t_3a861906dbd524 122
+bin/fm-spawn.sh
+  s_df6e8431fec1a7::t_32a2707edc0ecf 691-692,694-711,766,2307
+  s_df6e8431fec1a7::t_344d4908622941 715
+  s_df6e8431fec1a7::t_a61fe25be89efd 693,2306
+  s_df6e8431fec1a7::t_b16839acf71810 639,675,677,683-690,712-714,716-746,775,822-827,830-832,838-839,841-846,1624,1793,1807,1821
+  s_df6e8431fec1a7::t_3a861906dbd524 41-47,1564,1568,1572,1576
+tests/fm-backend-cmux.test.sh
+  s_df6e8431fec1a7::t_c87fda52ad6b91 1013-1014,1020-1032,1051-1053,1057
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "4aa5edad41c72039d41cc06b5a2aee682279904d",
+  "prompts": {},
+  "sessions": {
+    "s_df6e8431fec1a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd542-71fd-7b63-9b59-c792a85ce480",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
