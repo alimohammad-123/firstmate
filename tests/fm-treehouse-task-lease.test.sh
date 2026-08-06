@@ -437,6 +437,12 @@ if [ "${FM_FAKE_BLOCK_BEFORE_META_PUBLISH:-0}" = 1 ] \
     "$FM_REAL_SLEEP" 0.05
   done
 fi
+source_arg=${@: -2:1}
+if [ "${FM_FAKE_RECOVERY_PUBLISH_FAIL:-0}" = 1 ] \
+   && [ "$dest" = "${FM_STATE_OVERRIDE:-}/${FM_FAKE_PUBLISH_ID:-}.meta" ] \
+   && [[ "$source_arg" == *.meta.lease-recovery.* ]]; then
+  exit 1
+fi
 "$FM_REAL_MV" "$@"
 status=$?
 if [ "$status" -eq 0 ] \
@@ -465,6 +471,12 @@ if [ -n "${FM_FAKE_REMOVE_HOME:-}" ] && [ "$target" = "$FM_FAKE_REMOVE_HOME" ]; 
   done
   exit 0
 fi
+exec "$FM_REAL_RM" "$@"
+SH
+chmod +x "$FAKEBIN/rm"
+cat > "$FAKEBIN/no-mistakes" <<'SH'
+#!/usr/bin/env bash
+set -u
 if [ "${FM_FAKE_BLOCK_DURING_TEARDOWN:-0}" = 1 ] \
    && [ ! -e "${FM_FAKE_TEARDOWN_READY:-}" ]; then
   : > "$FM_FAKE_TEARDOWN_READY"
@@ -472,10 +484,17 @@ if [ "${FM_FAKE_BLOCK_DURING_TEARDOWN:-0}" = 1 ] \
     "$FM_REAL_SLEEP" 0.05
   done
 fi
-exec "$FM_REAL_RM" "$@"
+exit 0
 SH
-chmod +x "$FAKEBIN/rm"
-fm_fake_exit0 "$FAKEBIN" no-mistakes gh gh-axi lsof ps sleep
+chmod +x "$FAKEBIN/no-mistakes"
+cat > "$FAKEBIN/lsof" <<'SH'
+#!/usr/bin/env bash
+set -u
+[ "${FM_FAKE_RECORD_REAP:-0}" != 1 ] || printf 'reap-scan %s\n' "$*" >> "$EVENT_LOG"
+exit 0
+SH
+chmod +x "$FAKEBIN/lsof"
+fm_fake_exit0 "$FAKEBIN" gh gh-axi ps sleep
 
 make_brief() {
   local home=$1 id=$2
@@ -570,6 +589,16 @@ run_backend_late_failure() {  # <backend> <home> <id> <expected-path> <ambiguous
     zellij:1) FM_FAKE_CURRENT_PATH_FAIL=1 FM_FAKE_ZELLIJ_KILL_AMBIGUOUS=1 run_spawn "$home" "$id" "$expected_path" --backend zellij ;;
     cmux:0) FM_FAKE_CURRENT_PATH_FAIL=1 FM_FAKE_CMUX_CURRENT_WINDOW_EMPTY=1 run_spawn "$home" "$id" "$expected_path" --backend cmux ;;
     cmux:1) FM_FAKE_CURRENT_PATH_FAIL=1 FM_FAKE_CMUX_CURRENT_WINDOW_EMPTY=1 FM_FAKE_CMUX_KILL_AMBIGUOUS=1 run_spawn "$home" "$id" "$expected_path" --backend cmux ;;
+  esac
+}
+
+run_backend_teardown_ambiguous() {  # <backend> <home> <id>
+  local backend=$1 home=$2 id=$3
+  case "$backend" in
+    tmux) FM_FAKE_TMUX_KILL_FAIL=1 run_teardown_force "$home" "$id" ;;
+    herdr) FM_FAKE_HERDR_KILL_AMBIGUOUS=1 run_teardown_force "$home" "$id" ;;
+    zellij) FM_FAKE_ZELLIJ_KILL_AMBIGUOUS=1 run_teardown_force "$home" "$id" ;;
+    cmux) FM_FAKE_CMUX_KILL_AMBIGUOUS=1 run_teardown_force "$home" "$id" ;;
   esac
 }
 
@@ -877,6 +906,39 @@ run_teardown_force "$PRIMARY_COMPAT_HOME" primary-parent-compat >/dev/null \
   || fail 'primary parent-write compatibility fixture could not be torn down'
 pass 'ordinary primary spawn retains its home-local per-task lock path'
 
+for backend in tmux herdr zellij cmux; do
+  id="teardown-order-$backend"
+  make_brief "$HOME_A" "$id"
+  run_spawn "$HOME_A" "$id" "$WT1" --backend "$backend" >/dev/null \
+    || fail "$backend teardown-order fixture could not publish"
+  meta="$HOME_A/state/$id.meta"
+  field=$(backend_endpoint_meta_field "$backend")
+  identity=$(sed -n "s/^$field=//p" "$meta")
+  return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+  if run_backend_teardown_ambiguous "$backend" "$HOME_A" "$id" >/dev/null 2>&1; then
+    fail "$backend teardown accepted an endpoint close without exact absence proof"
+  fi
+  return_count_after=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+  [ "$return_count_after" -eq "$return_count_before" ] \
+    || fail "$backend teardown returned its lease after ambiguous endpoint cleanup"
+  backend_endpoint_is_live "$backend" "$identity" \
+    || fail "$backend ambiguous teardown did not preserve the live endpoint"
+  assert_present "$meta" "$backend ambiguous teardown erased task metadata"
+  event_before=$(wc -l < "$EVENT_LOG" | tr -d ' ')
+  FM_FAKE_RECORD_REAP=1 run_teardown_force "$HOME_A" "$id" >/dev/null \
+    || fail "$backend teardown-order fixture could not close exactly"
+  event_slice="$WORLD/$id.events"
+  tail -n "+$((event_before + 1))" "$EVENT_LOG" > "$event_slice"
+  kill_line=$(grep -nF "$(backend_kill_event_pattern "$backend")" "$event_slice" | head -1 | cut -d: -f1)
+  reap_line=$(grep -nF 'reap-scan ' "$event_slice" | head -1 | cut -d: -f1)
+  return_line=$(grep -nF 'treehouse return --force ' "$event_slice" | head -1 | cut -d: -f1)
+  [ -n "$kill_line" ] && [ -n "$reap_line" ] && [ -n "$return_line" ] \
+    || fail "$backend teardown did not exercise endpoint retirement, process reap, and exact return"
+  [ "$kill_line" -lt "$reap_line" ] && [ "$reap_line" -lt "$return_line" ] \
+    || fail "$backend teardown did not retire endpoint before reap and return after reap"
+done
+pass 'all Treehouse backends retire endpoints before process reap and lease return'
+
 make_brief "$HOME_A" tmux-final-rebound
 run_spawn "$HOME_A" tmux-final-rebound "$WT1" >/dev/null \
   || fail 'tmux final-correlation fixture could not publish'
@@ -1112,6 +1174,91 @@ for backend in tmux herdr zellij cmux; do
     || fail "$backend replacement recovery could not be torn down exactly"
 done
 pass 'recovered leases preserve durable metadata and replacement endpoint identity'
+
+make_brief "$HOME_A" metadata-owner-race
+run_spawn "$HOME_A" metadata-owner-race "$WT1" --backend tmux >/dev/null \
+  || fail 'metadata owner race fixture could not publish its first endpoint'
+METADATA_RACE_META="$HOME_A/state/metadata-owner-race.meta"
+metadata_race_old=$(sed -n 's/^tmux_window_id=//p' "$METADATA_RACE_META")
+backend_endpoint_remove tmux "$metadata_race_old"
+METADATA_RACE_READY="$WORLD/metadata-owner-race.ready"
+METADATA_RACE_RELEASE="$WORLD/metadata-owner-race.release"
+FM_FAKE_CURRENT_PATH_FAIL=1 FM_FAKE_TMUX_KILL_FAIL=1 \
+  FM_FAKE_BLOCK_BEFORE_META_PUBLISH=1 FM_FAKE_PUBLISH_ID=metadata-owner-race \
+  FM_FAKE_PUBLISH_READY="$METADATA_RACE_READY" FM_FAKE_PUBLISH_RELEASE="$METADATA_RACE_RELEASE" \
+  run_spawn "$HOME_A" metadata-owner-race "$WT1" --backend tmux \
+  >"$WORLD/metadata-owner-race.spawn.out" 2>"$WORLD/metadata-owner-race.spawn.err" &
+metadata_race_spawn_pid=$!
+i=0
+while [ ! -e "$METADATA_RACE_READY" ] && [ "$i" -lt 100 ]; do
+  "$FM_REAL_SLEEP" 0.05
+  i=$((i + 1))
+done
+assert_present "$METADATA_RACE_READY" 'recovery publication did not reach its metadata mutation barrier'
+PATH="$FAKEBIN:$PATH" FM_HOME="$HOME_A" FM_ROOT_OVERRIDE="$ROOT" \
+  "$ROOT/bin/fm-x-link.sh" metadata-owner-race req-concurrent \
+    --carry-count 2 --carry-ts 1700000000 --carry-platform x --carry-max 280 \
+  >"$WORLD/metadata-owner-race.x.out" 2>"$WORLD/metadata-owner-race.x.err" &
+metadata_race_x_pid=$!
+PATH="$FAKEBIN:$PATH" FM_HOME="$HOME_A" FM_ROOT_OVERRIDE="$ROOT" \
+  "$ROOT/bin/fm-pr-check.sh" metadata-owner-race https://github.com/example/project/pull/42 \
+  >"$WORLD/metadata-owner-race.pr.out" 2>"$WORLD/metadata-owner-race.pr.err" &
+metadata_race_pr_pid=$!
+"$FM_REAL_SLEEP" 0.2
+kill -0 "$metadata_race_x_pid" 2>/dev/null \
+  || fail 'X metadata writer bypassed the active task metadata mutation lock'
+kill -0 "$metadata_race_pr_pid" 2>/dev/null \
+  || fail 'PR metadata writer bypassed the active task metadata mutation lock'
+: > "$METADATA_RACE_RELEASE"
+if wait "$metadata_race_spawn_pid"; then
+  fail 'metadata owner race spawn unexpectedly survived its late failure'
+fi
+wait "$metadata_race_x_pid" \
+  || fail "X metadata writer failed after recovery publication\n$(cat "$WORLD/metadata-owner-race.x.err")"
+wait "$metadata_race_pr_pid" \
+  || fail "PR metadata writer failed after recovery publication\n$(cat "$WORLD/metadata-owner-race.pr.err")"
+metadata_race_new=$(sed -n 's/^tmux_window_id=//p' "$METADATA_RACE_META")
+[ -n "$metadata_race_new" ] && [ "$metadata_race_new" != "$metadata_race_old" ] \
+  || fail 'concurrent metadata writers restored stale endpoint identity'
+assert_grep 'x_request=req-concurrent' "$METADATA_RACE_META" 'recovery lost concurrent X metadata'
+assert_grep 'x_followups=2' "$METADATA_RACE_META" 'recovery lost concurrent X follow-up state'
+assert_grep 'pr=https://github.com/example/project/pull/42' "$METADATA_RACE_META" \
+  'recovery lost concurrent PR metadata'
+run_teardown_force "$HOME_A" metadata-owner-race >/dev/null \
+  || fail 'metadata owner race fixture could not be torn down exactly'
+pass 'task lifecycle lock serializes recovery, PR, and X metadata owners'
+
+make_brief "$HOME_A" recovery-publish-failure
+run_spawn "$HOME_A" recovery-publish-failure "$WT1" --backend tmux >/dev/null \
+  || fail 'recovery publication failure fixture could not publish its first endpoint'
+RECOVERY_FAILURE_META="$HOME_A/state/recovery-publish-failure.meta"
+recovery_failure_old=$(sed -n 's/^tmux_window_id=//p' "$RECOVERY_FAILURE_META")
+backend_endpoint_remove tmux "$recovery_failure_old"
+if FM_FAKE_CURRENT_PATH_FAIL=1 FM_FAKE_TMUX_KILL_FAIL=1 \
+  FM_FAKE_RECOVERY_PUBLISH_FAIL=1 FM_FAKE_PUBLISH_ID=recovery-publish-failure \
+  run_spawn "$HOME_A" recovery-publish-failure "$WT1" --backend tmux \
+  >"$WORLD/recovery-publish-failure.out" 2>"$WORLD/recovery-publish-failure.err"; then
+  fail 'recovery publication failure fixture unexpectedly succeeded'
+fi
+set -- "$HOME_A/state/.recovery-publish-failure.meta.lease-recovery."*
+[ "$#" -eq 1 ] && [ -f "$1" ] \
+  || fail 'failed recovery publication did not retain one exact temporary evidence record'
+RECOVERY_FAILURE_TMP=$1
+assert_grep "recovery evidence remains at $RECOVERY_FAILURE_TMP" "$WORLD/recovery-publish-failure.err" \
+  'failed recovery publication did not report its actionable evidence path'
+assert_grep 'treehouse_lease_recovery=spawn-rollback-failed' "$RECOVERY_FAILURE_TMP" \
+  'temporary recovery evidence omitted its recovery state'
+recovery_failure_new=$(sed -n 's/^tmux_window_id=//p' "$RECOVERY_FAILURE_TMP")
+[ -n "$recovery_failure_new" ] && [ "$recovery_failure_new" != "$recovery_failure_old" ] \
+  || fail 'temporary recovery evidence did not bind the surviving replacement endpoint'
+backend_endpoint_is_live tmux "$recovery_failure_new" \
+  || fail 'failed recovery publication lost its surviving replacement endpoint'
+grep -Fq "$WT1"$'\t' "$TREEHOUSE_STATE" \
+  || fail 'failed recovery publication returned the held lease'
+"$FM_REAL_MV" -f -- "$RECOVERY_FAILURE_TMP" "$RECOVERY_FAILURE_META"
+run_teardown_force "$HOME_A" recovery-publish-failure >/dev/null \
+  || fail 'recovery publication failure fixture could not reconcile exact retained evidence'
+pass 'recovery publication failure retains and reports exact temporary evidence'
 
 make_brief "$HOME_A" publication-handoff
 return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)

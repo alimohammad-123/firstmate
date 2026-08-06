@@ -647,6 +647,7 @@ TREEHOUSE_LEASE_ID=
 TREEHOUSE_LEASE_HOLDER=
 TREEHOUSE_LEASE_RECEIPT=
 TREEHOUSE_LEASE_RECEIPT_RETIRE=0
+TREEHOUSE_LEASE_RECOVERY_EVIDENCE=
 TREEHOUSE_LEASE_ROLLBACK=0
 FM_TREEHOUSE_LEASE_ACQUISITION_ARMED=0
 TREEHOUSE_ENDPOINT_CREATION_ATTEMPTED=0
@@ -764,8 +765,9 @@ spawn_preserve_treehouse_lease_evidence() {
   [ -n "${TREEHOUSE_LEASE_PATH:-}" ] || return 0
   [ -n "${TREEHOUSE_LEASE_ID:-}" ] || return 0
   [ -n "${TREEHOUSE_LEASE_HOLDER:-}" ] || return 0
-  mkdir -p "$STATE" 2>/dev/null || return 0
+  mkdir -p "$STATE" 2>/dev/null || return 1
   recovery_tmp="$STATE/.$ID.meta.lease-recovery.$$"
+  TREEHOUSE_LEASE_RECOVERY_EVIDENCE=$recovery_tmp
   existing_meta="$STATE/$ID.meta"
   if [ -f "$existing_meta" ] && [ ! -L "$existing_meta" ]; then
     [ "$(spawn_meta_field_exact "$existing_meta" endpoint_task_id)" = "$ID" ] || return 1
@@ -779,7 +781,8 @@ spawn_preserve_treehouse_lease_evidence() {
       $1 == "herdr_session" || $1 == "herdr_workspace_id" || $1 == "herdr_tab_id" || $1 == "herdr_pane_id" ||
       $1 == "zellij_session" || $1 == "zellij_tab_id" || $1 == "zellij_pane_id" ||
       $1 == "cmux_workspace_id" || $1 == "cmux_surface_id" ||
-      $1 == "treehouse_lease_id" || $1 == "treehouse_lease_holder" || $1 == "treehouse_lease_recovery" { next }
+      $1 == "treehouse_lease_id" || $1 == "treehouse_lease_holder" ||
+      $1 == "treehouse_lease_recovery" || $1 == "treehouse_endpoint_retired" { next }
       { print }
     ' "$existing_meta" > "$recovery_tmp" 2>/dev/null || return 1
   else
@@ -803,7 +806,11 @@ spawn_preserve_treehouse_lease_evidence() {
     echo "treehouse_lease_holder=$TREEHOUSE_LEASE_HOLDER"
     echo "treehouse_lease_recovery=spawn-rollback-failed"
   } >> "$recovery_tmp" 2>/dev/null || return 1
-  mv -f -- "$recovery_tmp" "$STATE/$ID.meta" 2>/dev/null || true
+  if ! mv -f -- "$recovery_tmp" "$STATE/$ID.meta" 2>/dev/null; then
+    echo "error: could not publish exact Treehouse recovery metadata for $ID; retained the recovery record at $recovery_tmp for inspection and retry" >&2
+    return 1
+  fi
+  TREEHOUSE_LEASE_RECOVERY_EVIDENCE=
 }
 
 spawn_treehouse_lease_rollback_is_armed() {
@@ -902,10 +909,16 @@ spawn_abort_cleanup() {
   fi
   if [ "$endpoint_cleanup_failed" = 1 ]; then
     if [ "$endpoint_identity_exact" = 1 ] || spawn_treehouse_lease_rollback_is_armed; then
-      spawn_preserve_treehouse_lease_evidence
+      if ! spawn_preserve_treehouse_lease_evidence; then
+        echo "error: could not publish the replacement endpoint recovery record for $ID; the exact lease receipt remains at $TREEHOUSE_LEASE_RECEIPT and recovery evidence remains at ${TREEHOUSE_LEASE_RECOVERY_EVIDENCE:-<unavailable>}" >&2
+      fi
     fi
     spawn_treehouse_lease_rollback_disarm
-    echo "error: could not confirm removal of the exact invocation-created endpoint for $ID; preserved its current endpoint and Treehouse lease identity without returning the worktree" >&2
+    if [ -z "$TREEHOUSE_LEASE_RECOVERY_EVIDENCE" ]; then
+      echo "error: could not confirm removal of the exact invocation-created endpoint for $ID; preserved its current endpoint and Treehouse lease identity without returning the worktree" >&2
+    else
+      echo "error: could not confirm removal of the exact invocation-created endpoint for $ID; did not return the worktree, and recovery metadata publication failed visibly" >&2
+    fi
   elif spawn_treehouse_lease_rollback_is_armed; then
     spawn_treehouse_lease_rollback_disarm
     if ! spawn_treehouse_lease_rollback_receipt_read_exact; then
@@ -914,8 +927,11 @@ spawn_abort_cleanup() {
       "$TREEHOUSE_LEASE_PATH" "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" "$PROJ_ABS" >/dev/null 2>&1; then
       [ -z "$TREEHOUSE_LEASE_RECEIPT" ] || rm -f -- "$TREEHOUSE_LEASE_RECEIPT"
     else
-      spawn_preserve_treehouse_lease_evidence
-      echo "error: failed to roll back the exact Treehouse lease acquired for $ID; preserved its identity in $STATE/$ID.meta and its acquisition receipt at $TREEHOUSE_LEASE_RECEIPT. Verify it with 'treehouse status --json' and release only with the recorded lease id and holder." >&2
+      if spawn_preserve_treehouse_lease_evidence; then
+        echo "error: failed to roll back the exact Treehouse lease acquired for $ID; preserved its identity in $STATE/$ID.meta and its acquisition receipt at $TREEHOUSE_LEASE_RECEIPT. Verify it with 'treehouse status --json' and release only with the recorded lease id and holder." >&2
+      else
+        echo "error: failed to roll back the exact Treehouse lease acquired for $ID and could not publish its task metadata; retained its acquisition receipt at $TREEHOUSE_LEASE_RECEIPT and recovery evidence at ${TREEHOUSE_LEASE_RECOVERY_EVIDENCE:-<unavailable>}. Verify it with 'treehouse status --json' and reconcile only the recorded identity." >&2
+      fi
     fi
   fi
   [ -z "$SPAWN_META_TMP" ] || rm -f -- "$SPAWN_META_TMP"

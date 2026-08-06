@@ -97,10 +97,11 @@
 # checks before any destructive return. Teardown output notes every wait, retry, and
 # removal so the operator can see what happened.
 #
-# Pre-teardown cleanup sequence (runs once every landed/discard-work safety
-# refusal above has already passed, and BEFORE any worktree return, branch
-# delete, or backend kill below - a still-active run or a leaked process may
-# own live work in that worktree):
+# Pre-return cleanup sequence runs once every landed/discard-work safety refusal
+# above has passed. It concludes an attributable parked no-mistakes run, freshly
+# correlates and retires the exact Treehouse-backed endpoint, reaps surviving
+# worktree descendants, and only then returns the exact lease. Orca retains its
+# existing backend-owned endpoint and worktree removal sequence.
 #   Fix 1 - conclude the task's own no-mistakes run. A ship task's worktree can
 #     be torn down while its no-mistakes pipeline run is still PARKED at a gate
 #     (awaiting_approval/fix_review/any awaiting_agent field), with no worker
@@ -117,7 +118,7 @@
 #     that verified run instance. A run already terminal
 #     (an outcome is set) or not parked at a gate is left untouched. Idempotent:
 #     an already-aborted run reads back terminal and is skipped on retry.
-#   Fix 2 - reap leaked descendant processes. A backgrounded/disowned process
+#   Fix 2 - after exact endpoint retirement, reap leaked descendant processes. A backgrounded/disowned process
 #     started under the worktree (or its per-task tasktmp) does not receive the
 #     SIGHUP/SIGTERM that closing the backend pane sends to its own foreground
 #     process group, so it survives reparented to init (observed 2026-08-03:
@@ -1216,6 +1217,74 @@ teardown_tmux_endpoint_retire_exact() {  # <meta> <task-id> <target>
     echo "REFUSED: tmux endpoint for task $task_id has $reason identity after close; preserving its lease and records." >&2
     return 1
   }
+}
+
+teardown_mark_treehouse_endpoint_retired() {  # <meta> <task-id>
+  local meta=$1 task_id=$2 tmp
+  tmp="$STATE/.$task_id.meta.endpoint-retired.$$"
+  awk -F= '
+    $1 == "treehouse_endpoint_retired" { next }
+    $1 == "pr" && !inserted { print "treehouse_endpoint_retired=1"; inserted=1 }
+    { print }
+    END { if (!inserted) print "treehouse_endpoint_retired=1" }
+  ' "$meta" > "$tmp" || return 1
+  if ! mv -f -- "$tmp" "$meta"; then
+    echo "error: exact endpoint retirement for $task_id could not be published; retained its updated task record at $tmp and preserved the lease" >&2
+    return 1
+  fi
+}
+
+teardown_treehouse_endpoint_retire_exact() {  # <meta> <task-id> <backend>
+  local meta=$1 task_id=$2 expected_backend=$3 target tab_id endpoint_retired
+  fm_backend_validate_task_endpoint "$meta" "$task_id" || return 1
+  [ "$FM_BACKEND_VALIDATED_BACKEND" = "$expected_backend" ] || return 1
+  target=$FM_BACKEND_VALIDATED_TARGET
+  tab_id=
+  [ "$expected_backend" != zellij ] || tab_id=$(meta_value "$meta" zellij_tab_id)
+  endpoint_retired=$(meta_value "$meta" treehouse_endpoint_retired)
+  if [ "$endpoint_retired" = 1 ]; then
+    fm_backend_endpoint_confirmed_gone "$expected_backend" "$target" "$tab_id" "fm-$task_id" >/dev/null 2>&1 || {
+      echo "error: endpoint-retirement evidence for $task_id no longer proves exact absence; preserving its lease and records" >&2
+      return 1
+    }
+    T=$target
+    TEARDOWN_ENDPOINT_RETIRED=1
+    return 0
+  fi
+  case "$expected_backend" in
+    tmux)
+      teardown_tmux_endpoint_retire_exact "$meta" "$task_id" "$target" || return 1
+      ;;
+    herdr)
+      fm_backend_herdr_parse_target "$target" || return 1
+      teardown_herdr_session_lock_held "$FM_BACKEND_HERDR_SESSION" || {
+        echo "error: herdr session presentation lock is not held for $task_id; preserving its endpoint, lease, and records" >&2
+        return 1
+      }
+      if [ "$HERDR_PRESENTATION_RETIRE_CANDIDATE" = 1 ]; then
+        fm_backend_herdr_projection_close_pane_focus_preserving \
+          "$HERDR_PRESENTATION_SESSION" "$HERDR_PRESENTATION_PANE" >/dev/null 2>&1 || true
+      else
+        fm_backend_herdr_kill_serialized \
+          "$FM_BACKEND_HERDR_SESSION" "$FM_BACKEND_HERDR_PANE" >/dev/null 2>&1 || true
+      fi
+      fm_backend_herdr_endpoint_confirmed_gone "$target" || {
+        echo "error: herdr pane $target for $task_id is not confirmed gone; preserving its lease and records" >&2
+        return 1
+      }
+      ;;
+    zellij|cmux)
+      fm_backend_kill "$expected_backend" "$target" "$tab_id" "fm-$task_id" >/dev/null 2>&1 \
+        && fm_backend_endpoint_confirmed_gone "$expected_backend" "$target" "$tab_id" "fm-$task_id" >/dev/null 2>&1 || {
+          echo "error: $expected_backend endpoint $target for $task_id is not confirmed gone; preserving its lease and records" >&2
+          return 1
+        }
+      ;;
+    *) return 1 ;;
+  esac
+  teardown_mark_treehouse_endpoint_retired "$meta" "$task_id" || return 1
+  T=$target
+  TEARDOWN_ENDPOINT_RETIRED=1
 }
 
 validate_worktree_teardown_safety() {
@@ -2575,19 +2644,17 @@ if [ -d "$WT" ] && [ "$FORCE" != "--force" ]; then
 fi
 
 # Every landed/discard-work refusal above has now passed (or --force skipped
-# them). Fix 1 and Fix 2 (see script header) run here, unconditionally on
-# --force, and before ANY destructive step below - a still-parked run or a
-# leaked process can own live work in this exact worktree. Not for
+# them). Conclude an attributable parked run before the exact endpoint-retire
+# and leaked-process-reap boundary below. Not for
 # kind=secondmate: a secondmate home's own runtime lifecycle is owned by the
 # dedicated process-event and firstmate-home removal machinery further below,
 # not by task-worktree cleanup.
 if [ "$KIND" != secondmate ]; then
   conclude_task_no_mistakes_run "$WT"
-  reap_task_worktree_processes worktree "$WT" "$TASK_TMP"
 fi
 
 # A Herdr close may reposition shared workspace order, so the whole
-# destructive sequence below (worktree return, pane close, record removal)
+# destructive sequence below (pane close, process reap, worktree return, record removal)
 # runs under the named-session presentation lock, acquired BEFORE anything is
 # returned or erased: a contended lock refuses here while the isolated copy,
 # every durable record, and the endpoint are all still intact for a plain
@@ -2601,6 +2668,35 @@ if [ "$BACKEND" = herdr ]; then
   fm_backend_herdr_parse_target "$T" || exit 1
   TEARDOWN_HERDR_SESSION=$FM_BACKEND_HERDR_SESSION
   TEARDOWN_HERDR_PANE=$FM_BACKEND_HERDR_PANE
+fi
+
+HERDR_PRESENTATION_JOURNAL="$STATE/$ID.herdr-presentation"
+HERDR_PRESENTATION_RETIRE_CANDIDATE=0
+HERDR_PRESENTATION_SESSION=
+HERDR_PRESENTATION_PANE=
+if [ "$BACKEND" = herdr ] \
+   && { [ -e "$HERDR_PRESENTATION_JOURNAL" ] || [ -L "$HERDR_PRESENTATION_JOURNAL" ]; }; then
+  fm_backend_source herdr || true
+  HERDR_PRESENTATION_SESSION=$(meta_value "$META" herdr_session)
+  HERDR_PRESENTATION_WORKSPACE=$(meta_value "$META" herdr_workspace_id)
+  HERDR_PRESENTATION_PANE=$(meta_value "$META" herdr_pane_id)
+  if [ -n "$HERDR_PRESENTATION_SESSION" ] \
+     && [ -n "$HERDR_PRESENTATION_WORKSPACE" ] \
+     && [ -n "$HERDR_PRESENTATION_PANE" ] \
+     && [ "$T" = "$HERDR_PRESENTATION_SESSION:$HERDR_PRESENTATION_PANE" ] \
+     && fm_backend_herdr_projection_endpoint_matches_journal \
+       "$HERDR_PRESENTATION_SESSION" "$HERDR_PRESENTATION_WORKSPACE" \
+       "$HERDR_PRESENTATION_JOURNAL" "$ID"; then
+    HERDR_PRESENTATION_RETIRE_CANDIDATE=1
+  fi
+fi
+
+if [ -d "$WT" ] && [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ]; then
+  teardown_treehouse_endpoint_retire_exact "$META" "$ID" "$BACKEND" || exit 1
+fi
+
+if [ "$KIND" != secondmate ]; then
+  reap_task_worktree_processes worktree "$WT" "$TASK_TMP"
 fi
 
 if [ "$KIND" = secondmate ] && [ "$FORCE" != "--force" ]; then
@@ -2637,17 +2733,13 @@ elif [ -d "$WT" ] && [ "$KIND" != secondmate ]; then
   # Remove our hook file so a reused pool worktree cannot fire signals for a dead task.
   rm -f "$WT/.claude/settings.local.json" "$WT/.opencode/plugins/fm-turn-end.js" \
     "$WT/.fm-grok-turnend" "$WT/.fm-kimi-turnend"
-  # Kills remaining processes in the worktree (including the agent), resets, returns
-  # to pool. treehouse resolves the pool from the working directory, so run it from
+  # The endpoint and remaining worktree processes are already retired above.
+  # Reset and return to the pool. treehouse resolves the pool from the working directory, so run it from
   # the project. teardown_treehouse_return tolerates transient and stale git locks
   # left by a killed crew process; see the script header for retry and stale-lock proof.
   post_lock_cleanup_check=
   if [ "$FORCE" != "--force" ] && [ "$KIND" != scout ] && [ "$KIND" != secondmate ]; then
     post_lock_cleanup_check=validate_worktree_teardown_safety
-  fi
-  if [ "$BACKEND" = tmux ]; then
-    teardown_tmux_endpoint_retire_exact "$META" "$ID" "$T" || exit 1
-    TEARDOWN_ENDPOINT_RETIRED=1
   fi
   teardown_treehouse_return "$WT" "$PROJ" "worktree" "$post_lock_cleanup_check" \
     "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" || {
@@ -2656,28 +2748,7 @@ elif [ -d "$WT" ] && [ "$KIND" != secondmate ]; then
   }
 fi
 
-HERDR_PRESENTATION_JOURNAL="$STATE/$ID.herdr-presentation"
-HERDR_PRESENTATION_RETIRE_CANDIDATE=0
-HERDR_PRESENTATION_SESSION=
-HERDR_PRESENTATION_PANE=
-if [ "$BACKEND" = herdr ] \
-   && { [ -e "$HERDR_PRESENTATION_JOURNAL" ] || [ -L "$HERDR_PRESENTATION_JOURNAL" ]; }; then
-  fm_backend_source herdr || true
-  HERDR_PRESENTATION_SESSION=$(meta_value "$META" herdr_session)
-  HERDR_PRESENTATION_WORKSPACE=$(meta_value "$META" herdr_workspace_id)
-  HERDR_PRESENTATION_PANE=$(meta_value "$META" herdr_pane_id)
-  if [ -n "$HERDR_PRESENTATION_SESSION" ] \
-     && [ -n "$HERDR_PRESENTATION_WORKSPACE" ] \
-     && [ -n "$HERDR_PRESENTATION_PANE" ] \
-     && [ "$T" = "$HERDR_PRESENTATION_SESSION:$HERDR_PRESENTATION_PANE" ] \
-     && fm_backend_herdr_projection_endpoint_matches_journal \
-       "$HERDR_PRESENTATION_SESSION" "$HERDR_PRESENTATION_WORKSPACE" \
-       "$HERDR_PRESENTATION_JOURNAL" "$ID"; then
-    HERDR_PRESENTATION_RETIRE_CANDIDATE=1
-  fi
-fi
-
-if [ "$HERDR_PRESENTATION_RETIRE_CANDIDATE" = 1 ]; then
+if [ "$TEARDOWN_ENDPOINT_RETIRED" != 1 ] && [ "$HERDR_PRESENTATION_RETIRE_CANDIDATE" = 1 ]; then
   # The presentation lock was acquired before the worktree return above; a
   # contended lock already refused this teardown while everything was intact.
   if teardown_herdr_session_lock_held "$HERDR_PRESENTATION_SESSION"; then
@@ -2694,7 +2765,7 @@ if [ "$HERDR_PRESENTATION_RETIRE_CANDIDATE" = 1 ]; then
   else
     echo "warning: herdr presentation focus lock unavailable; refusing a concurrent focus-unsafe pane close" >&2
   fi
-elif [ "$BACKEND" = herdr ]; then
+elif [ "$TEARDOWN_ENDPOINT_RETIRED" != 1 ] && [ "$BACKEND" = herdr ]; then
   if teardown_herdr_session_lock_held "$TEARDOWN_HERDR_SESSION"; then
     fm_backend_herdr_kill_serialized "$TEARDOWN_HERDR_SESSION" "$TEARDOWN_HERDR_PANE" 2>/dev/null || true
   else

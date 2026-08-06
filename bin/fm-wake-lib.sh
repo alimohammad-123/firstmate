@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared durable wake queue and portable lock helpers.
+# Shared durable wake queue, task metadata lock routing, and portable lock helpers.
 
 FM_WAKE_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FM_WAKE_DEFAULT_ROOT="$(cd "$FM_WAKE_LIB_DIR/.." && pwd)"
@@ -476,6 +476,19 @@ fm_lock_release() {
   [ "$pid" = "$current" ] || return 0
   fm_lock_clean_known_files "$lockdir"
   rmdir "$lockdir" 2>/dev/null || true
+}
+
+fm_meta_mutation_lock_path() {  # <state/task.meta>
+  local meta=$1 dir base id
+  dir=${meta%/*}
+  base=${meta##*/}
+  [ "$dir" != "$meta" ] || return 1
+  case "$base" in
+    *.meta) id=${base%.meta} ;;
+    *) return 1 ;;
+  esac
+  case "$id" in ''|*[!A-Za-z0-9._-]*) return 1 ;; esac
+  printf '%s/.spawn-%s.lock\n' "$dir" "$id"
 }
 
 fm_failure_episode_reset() {

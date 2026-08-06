@@ -360,7 +360,8 @@ fm_backend_target_of_meta() {  # <meta-file>
 # fm_backend_validate_task_endpoint: validate a task cleanup record before any
 # cleanup mutation. Durable metadata binds the exact task id, selected backend,
 # target, project, and worktree; restart-scoped tmux and cmux ids are then
-# correlated against live exact task identity. New non-tmux records carry
+# correlated against live exact task identity unless teardown already recorded
+# exact endpoint absence in treehouse_endpoint_retired=. New non-tmux records carry
 # endpoint_task_id because their opaque runtime ids do not encode the task
 # label. Legacy tmux records remain valid only when their window name itself is
 # exactly fm-<task-id>.
@@ -385,6 +386,7 @@ fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
   local meta=$1 id=$2 backend_count backend window worktree project binding_count binding
   local session pane recorded_session workspace tab terminal worktree_id surface
   local tmux_window_id tmux_window_id_count tmux_resolved tmux_reason cmux_resolved cmux_reason
+  local endpoint_retired_count endpoint_retired=0
   FM_BACKEND_VALIDATED_BACKEND=
   FM_BACKEND_VALIDATED_TARGET=
   [ -f "$meta" ] && [ ! -L "$meta" ] || {
@@ -421,6 +423,21 @@ fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
     echo "REFUSED: task $id has a missing, ambiguous, or unknown backend identity; preserving task state." >&2
     return 1
   fi
+  endpoint_retired_count=$(grep -c '^treehouse_endpoint_retired=' "$meta" 2>/dev/null || true)
+  case "$endpoint_retired_count" in
+    0) ;;
+    1)
+      endpoint_retired=$(fm_backend_meta_exact_value "$meta" treehouse_endpoint_retired) || endpoint_retired=
+      [ "$endpoint_retired" = 1 ] || {
+        echo "REFUSED: task $id has malformed endpoint-retirement evidence; preserving task state." >&2
+        return 1
+      }
+      ;;
+    *)
+      echo "REFUSED: task $id has ambiguous endpoint-retirement evidence; preserving task state." >&2
+      return 1
+      ;;
+  esac
   binding_count=$(grep -c '^endpoint_task_id=' "$meta" 2>/dev/null || true)
   case "$binding_count" in
     0) binding= ;;
@@ -462,17 +479,20 @@ fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
             echo "REFUSED: tmux endpoint '$window' has a malformed stable window identity; preserving task state." >&2
             return 1
           }
-          fm_backend_source tmux || {
+          if [ "$endpoint_retired" = 1 ]; then
+            tmux_resolved=$tmux_window_id
+          elif ! fm_backend_source tmux; then
             echo "REFUSED: tmux endpoint '$window' cannot load its runtime identity verifier; preserving task state." >&2
             return 1
-          }
-          FM_BACKEND_TMUX_CORRELATION_ERROR=unreadable
-          fm_backend_tmux_correlate_task_window "$session" "$pane" "$tmux_window_id" || {
-            tmux_reason=${FM_BACKEND_TMUX_CORRELATION_ERROR:-unreadable}
-            echo "REFUSED: tmux endpoint '$window' has $tmux_reason live window identity for recorded id $tmux_window_id; preserving task state." >&2
-            return 1
-          }
-          tmux_resolved=${FM_BACKEND_TMUX_CORRELATED_TARGET:-}
+          else
+            FM_BACKEND_TMUX_CORRELATION_ERROR=unreadable
+            fm_backend_tmux_correlate_task_window "$session" "$pane" "$tmux_window_id" || {
+              tmux_reason=${FM_BACKEND_TMUX_CORRELATION_ERROR:-unreadable}
+              echo "REFUSED: tmux endpoint '$window' has $tmux_reason live window identity for recorded id $tmux_window_id; preserving task state." >&2
+              return 1
+            }
+            tmux_resolved=${FM_BACKEND_TMUX_CORRELATED_TARGET:-}
+          fi
           [ -n "$tmux_resolved" ] || {
             echo "REFUSED: tmux endpoint '$window' has unreadable live window identity; preserving task state." >&2
             return 1
@@ -556,17 +576,20 @@ fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
         echo "REFUSED: cmux endpoint metadata for task $id is malformed or inconsistent; preserving task state." >&2
         return 1
       fi
-      fm_backend_source cmux || {
+      if [ "$endpoint_retired" = 1 ]; then
+        cmux_resolved=$workspace
+      elif ! fm_backend_source cmux; then
         echo "REFUSED: cmux endpoint '$window' cannot load its runtime identity verifier; preserving task state." >&2
         return 1
-      }
-      FM_BACKEND_CMUX_CORRELATION_ERROR=unreadable
-      fm_backend_cmux_correlate_task_workspace "$workspace" "fm-$id" || {
-        cmux_reason=${FM_BACKEND_CMUX_CORRELATION_ERROR:-unreadable}
-        echo "REFUSED: cmux endpoint '$window' has $cmux_reason live workspace identity; preserving task state." >&2
-        return 1
-      }
-      cmux_resolved=${FM_BACKEND_CMUX_CORRELATED_WORKSPACE:-}
+      else
+        FM_BACKEND_CMUX_CORRELATION_ERROR=unreadable
+        fm_backend_cmux_correlate_task_workspace "$workspace" "fm-$id" || {
+          cmux_reason=${FM_BACKEND_CMUX_CORRELATION_ERROR:-unreadable}
+          echo "REFUSED: cmux endpoint '$window' has $cmux_reason live workspace identity; preserving task state." >&2
+          return 1
+        }
+        cmux_resolved=${FM_BACKEND_CMUX_CORRELATED_WORKSPACE:-}
+      fi
       [ -n "$cmux_resolved" ] || {
         echo "REFUSED: cmux endpoint '$window' has unreadable live workspace identity; preserving task state." >&2
         return 1

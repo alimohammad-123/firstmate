@@ -77,6 +77,7 @@ A zellij task additionally records `zellij_session=`, `zellij_tab_id=`, and `zel
 An Orca task additionally records `orca_worktree_id=` and `terminal=`, with `window=fm-<id>` kept as the shared firstmate alias.
 A cmux task additionally records `cmux_workspace_id=` and `cmux_surface_id=`.
 Every ordinary non-Orca task additionally records `treehouse_lease_id=` and `treehouse_lease_holder=` beside its exact `worktree=` path; [`bin/fm-treehouse-lease-lib.sh`](../bin/fm-treehouse-lease-lib.sh) owns the full identity and conditional-return contract.
+Spawn/recovery, PR, X-link, and promotion metadata mutations share the task's `state/.spawn-<id>.lock`, so every owner reads the latest record before atomically replacing only its fields.
 Task selectors for `fm-peek.sh`, `fm-send.sh`, and `fm-crew-state.sh` resolve centrally through `fm_backend_resolve_selector`.
 A selector containing `:` is passed through as an explicit backend endpoint escape hatch.
 Otherwise an exact task id matching `state/<id>.meta` wins before the legacy `fm-<id>` label fallback, so task ids that themselves start with `fm-` route to their own metadata instead of being stripped.
@@ -85,6 +86,7 @@ Only metadata-routed task selectors carry secondmate-marker and Codex-harness co
 These five sentences are the single owner of the task-selector vocabulary; backend guides and other documents point here instead of restating the resolution order.
 `fm-teardown.sh <id>` takes a task id directly, structurally validates its complete endpoint metadata before any backend call, and then read-only correlates restart-scoped tmux and cmux identity before any mutating runtime dispatch or cleanup mutation.
 For an ordinary Treehouse-backed task it also verifies the recorded lease triple against supported JSON status before any process, copy, endpoint, or task-record cleanup, and every return retry carries both lease-id and holder conditions.
+It freshly correlates and retires the exact endpoint before process reaping, records `treehouse_endpoint_retired=1` only after exact absence is confirmed, and accepts that marker on a retry only while exact absence still holds before returning the lease.
 Missing, empty, duplicate, malformed, backend-inconsistent, task-mismatched, legacy, or currently mismatched endpoint or lease records are preserved and refused.
 An in-flight task created before lease identity was recorded has no safe automatic upgrade because Treehouse cannot target an existing copy for acquisition; reconcile the preserved copy with `treehouse status --json` and never guess, edit Treehouse state, or release it by path.
 Legacy tmux metadata remains cleanup-compatible when its exact window name is `fm-<id>`; opaque non-tmux endpoints require their recorded `endpoint_task_id=` binding.

@@ -19,6 +19,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FM_ROOT="${FM_ROOT_OVERRIDE:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 FM_HOME="${FM_HOME:-${FM_ROOT_OVERRIDE:-$FM_ROOT}}"
 STATE="${FM_STATE_OVERRIDE:-$FM_HOME/state}"
+# shellcheck source=bin/fm-wake-lib.sh
+. "$SCRIPT_DIR/fm-wake-lib.sh"
 
 MODE=
 YOLO=
@@ -71,6 +73,9 @@ esac
 "$FM_ROOT/bin/fm-guard.sh" || true
 ID=${POS[0]}
 META="$STATE/$ID.meta"
+META_MUTATION_LOCK=$(fm_meta_mutation_lock_path "$META") || exit 1
+fm_lock_acquire_wait "$META_MUTATION_LOCK" || exit 1
+trap 'fm_lock_release "$META_MUTATION_LOCK" || true' EXIT
 [ -f "$META" ] || { echo "error: no meta for task $ID at $META" >&2; exit 1; }
 grep -qx 'kind=scout' "$META" || { echo "error: task $ID is not a scout task (kind=scout not in meta)" >&2; exit 1; }
 
@@ -82,6 +87,9 @@ grep -v -e '^kind=' -e '^mode=' -e '^yolo=' "$META" > "$TMP"
   echo "yolo=$YOLO"
 } >> "$TMP"
 mv "$TMP" "$META"
+fm_lock_release "$META_MUTATION_LOCK" || exit 1
+META_MUTATION_LOCK=
+trap - EXIT
 
 HOME_Q=$(printf '%q' "$FM_HOME")
 echo "promoted $ID to ship mode=$MODE yolo=$YOLO (teardown protection restored)"
