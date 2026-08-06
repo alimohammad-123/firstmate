@@ -1,0 +1,33 @@
+bin/backends/tmux.sh
+  s_e0786a9284795d::t_bc1812b8ec1728 134,138
+bin/fm-treehouse-lease-lib.sh
+  s_e0786a9284795d::t_bc1812b8ec1728 88
+bin/fm-secondmate-lifecycle-lib.sh
+  s_e0786a9284795d::t_bc1812b8ec1728 161,174
+bin/fm-teardown.sh
+  s_e0786a9284795d::t_bc1812b8ec1728 1328-1332,1697
+  s_e0786a9284795d::t_667046fe5d04a7 1402,2648
+  s_e0786a9284795d::t_7b4d629b15afc9 1663,1862,1871,1877,1968,1975,2070,2160,2784,2945,3030
+tests/fm-teardown-endpoint-safety.test.sh
+  s_e0786a9284795d::t_bc1812b8ec1728 158,160
+bin/backends/cmux.sh
+  s_e0786a9284795d::t_e1a158f0d3c848 657
+tests/fm-decision-hold-lifecycle.test.sh
+  s_e0786a9284795d::t_bc1812b8ec1728 326
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "5cfde95d1f2cbc194823fd976a7d58d0bb12d849",
+  "prompts": {},
+  "sessions": {
+    "s_e0786a9284795d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd7a9-84e2-7f23-87bb-75233d710ea4",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

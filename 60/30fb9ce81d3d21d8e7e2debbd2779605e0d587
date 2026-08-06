@@ -1,0 +1,55 @@
+docs/zellij-backend.md
+  s_df6e8431fec1a7::t_b66b90669e1f0d 100
+bin/fm-backend.sh
+  s_df6e8431fec1a7::t_e9712632233a2b 386,464-468,470-471,477-479
+  s_df6e8431fec1a7::t_ae46fdd96bd57f 469,472-476
+bin/fm-spawn.sh
+  s_df6e8431fec1a7::t_b66b90669e1f0d 2097,2099
+bin/fm-teardown.sh
+  s_df6e8431fec1a7::t_a53006ba394a16 185,2030-2039,2073-2087
+  s_12e9144fc597b1::t_fa1239af20d7b1 2088
+tests/fm-treehouse-task-lease.test.sh
+  s_df6e8431fec1a7::t_1a90d647496d45 152,166,168,178,194,497,589,607
+  s_df6e8431fec1a7::t_23b8ebafcf8259 1021
+  s_df6e8431fec1a7::t_5b4876b75e9150 742,745,751,759,762
+  s_df6e8431fec1a7::t_5cc34c6cb83e8c 836-841,867-872
+  s_df6e8431fec1a7::t_f056eab4c3a256 702-709
+  s_df6e8431fec1a7::t_e043c868ad0ace 1114-1145,1149-1156
+  s_df6e8431fec1a7::t_b9ed293edd0dbd 1099-1101,1146-1148
+  s_df6e8431fec1a7::t_eb9c71a3d24e53 644-701,710-713
+  s_df6e8431fec1a7::t_c401bffd61f4cd 1157
+tests/fm-spawn-worktree-settle.test.sh
+  s_df6e8431fec1a7::t_b66b90669e1f0d 2,6-10
+bin/fm-secondmate-lifecycle-lib.sh
+  s_df6e8431fec1a7::t_705479ca1b6593 63-64,79-81
+  s_df6e8431fec1a7::t_a53006ba394a16 8-10,15,27,40-46,48-62,70-71,76-78,82-87,95,104,108,112-126
+  s_df6e8431fec1a7::t_7740c84de9782f 47,65-69,72-75,93,97-101
+bin/backends/tmux.sh
+  s_df6e8431fec1a7::t_e9712632233a2b 83-84,97-100,102-126,128-133,135-138
+  s_df6e8431fec1a7::t_ae46fdd96bd57f 101,127,134
+  s_12e9144fc597b1::t_1e41f049e6ebe6 139-140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "6030fb9ce81d3d21d8e7e2debbd2779605e0d587",
+  "prompts": {},
+  "sessions": {
+    "s_12e9144fc597b1": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fd45d-d9d8-7078-80f2-8d38f926e3b2",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    },
+    "s_df6e8431fec1a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd542-71fd-7b63-9b59-c792a85ce480",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

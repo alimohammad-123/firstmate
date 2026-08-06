@@ -1,0 +1,63 @@
+bin/backends/zellij.sh
+  s_df6e8431fec1a7::t_dc97e7193dc14b 536-537,550-551,553-554
+  s_df6e8431fec1a7::t_6062dc41e7850e 538-549,552,555-557
+tests/fm-backend-zellij.test.sh
+  s_df6e8431fec1a7::t_4fd466ea60c3cb 833-840,842-848,850-854,1163
+  s_df6e8431fec1a7::t_dc97e7193dc14b 841,849
+tests/fm-backend-autodetect-smoke.test.sh
+  s_df6e8431fec1a7::t_5707b4ba7d1fbd 71-72
+tests/herdr-test-safety.sh
+  s_df6e8431fec1a7::t_5707b4ba7d1fbd 43-58
+tests/fm-treehouse-task-lease.test.sh
+  s_df6e8431fec1a7::t_b7f867c6d0ebc4 337-345
+  s_df6e8431fec1a7::t_fff8ff201ffad0 378,389-391
+  s_df6e8431fec1a7::t_ade29e8243420a 29-30,45,52,132,291-292,294
+  s_df6e8431fec1a7::t_5ac5996285b08c 279-280,293,295,298,313-321,324-326,328-333,335-336
+  s_df6e8431fec1a7::t_74b7ba02708e79 224-225
+  s_df6e8431fec1a7::t_e186130631b392 206-207
+  s_df6e8431fec1a7::t_4a5473a1513491 322-323,327,334
+  s_df6e8431fec1a7::t_7a86a198ff48ec 28,44,134,141-150,153-158,166
+  s_df6e8431fec1a7::t_01738c9f8b217f 346
+tests/fm-backend-herdr-launcher-workspace-e2e.test.sh
+  s_df6e8431fec1a7::t_5707b4ba7d1fbd 68
+bin/fm-backend.sh
+  s_df6e8431fec1a7::t_6062dc41e7850e 757-769
+bin/fm-teardown.sh
+  s_df6e8431fec1a7::t_59d4626b6eadde 414-415,449-457,2436-2438
+bin/backends/tmux.sh
+  s_df6e8431fec1a7::t_6062dc41e7850e 139-142
+docs/verification/runtime-backends.md
+  s_df6e8431fec1a7::t_b7f867c6d0ebc4 247
+  s_df6e8431fec1a7::t_4eb33cac340065 233,243,245-246
+bin/backends/cmux.sh
+  s_df6e8431fec1a7::t_6062dc41e7850e 651,654,657-659
+  s_df6e8431fec1a7::t_dc97e7193dc14b 649-650,652-653,655-656
+tests/fm-backend-cmux.test.sh
+  s_df6e8431fec1a7::t_dc97e7193dc14b 1016,1023
+  s_df6e8431fec1a7::t_4fd466ea60c3cb 1009-1015,1017-1022,1024-1028,1124
+tests/fm-backend-herdr-workspace-per-home-e2e.test.sh
+  s_df6e8431fec1a7::t_5707b4ba7d1fbd 73-74
+bin/fm-spawn.sh
+  s_df6e8431fec1a7::t_dc97e7193dc14b 763
+  s_df6e8431fec1a7::t_30051c3bccd59d 639,1522,1561-1569,1590,2427-2428,2430
+  s_df6e8431fec1a7::t_4eb33cac340065 41-45
+  s_df6e8431fec1a7::t_ccddb8b33344e7 641-642,672-684,712,759-762,764-768,771-774,1673,1676,1724,1744,1782,1837,1848,1852,1862,1866,1876,2420-2421
+bin/fm-treehouse-lease-lib.sh
+  s_df6e8431fec1a7::t_e8c867783e67e8 63-70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "52793c8d636bc4936800f5ab3cea5fbdf3c90ccc",
+  "prompts": {},
+  "sessions": {
+    "s_df6e8431fec1a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd542-71fd-7b63-9b59-c792a85ce480",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

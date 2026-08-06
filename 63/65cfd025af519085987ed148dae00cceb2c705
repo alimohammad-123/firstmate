@@ -1,0 +1,28 @@
+bin/fm-teardown.sh
+  s_df6e8431fec1a7::t_5ed97c729174c6 177-195
+docs/verification/runtime-backends.md
+  s_df6e8431fec1a7::t_5ed97c729174c6 648,656
+bin/backends/tmux.sh
+  s_df6e8431fec1a7::t_5ed97c729174c6 5-8
+tests/fm-treehouse-task-lease.test.sh
+  s_df6e8431fec1a7::t_5ed97c729174c6 35-36,391-397,400-403,740-781
+  s_df6e8431fec1a7::t_f821e551fc9eb0 782
+bin/fm-backend.sh
+  s_df6e8431fec1a7::t_5ed97c729174c6 34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "6365cfd025af519085987ed148dae00cceb2c705",
+  "prompts": {},
+  "sessions": {
+    "s_df6e8431fec1a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd542-71fd-7b63-9b59-c792a85ce480",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

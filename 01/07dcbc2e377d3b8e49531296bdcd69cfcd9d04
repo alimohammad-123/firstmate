@@ -1,0 +1,202 @@
+tests/fm-backend-cmux-smoke.test.sh
+  s_724632d840b3f9::t_07ec9a171fefb0 108-111,119,121
+tests/fm-backend-autodetect-smoke.test.sh
+  s_724632d840b3f9::t_cd93c91e3506ff 57-58,74-82
+  s_724632d840b3f9::t_2a00e5f7b3dcb1 72-73
+  s_724632d840b3f9::t_501b5864e967d7 84-88
+  s_724632d840b3f9::t_297d2642771f5c 71
+tests/fm-backend-zellij.test.sh
+  s_724632d840b3f9::t_6ef6c6c2149949 836-837,846,849-850,856-867,872
+  s_724632d840b3f9::t_b9a1c0094ea111 883,885-887,908,910-912,918-928
+  s_724632d840b3f9::t_5383a20e97061e 698-701
+docs/cmux-backend.md
+  s_724632d840b3f9::t_d92fd8e91f276b 5-6,91-92,128
+tests/fm-shared-captain-inheritance.test.sh
+  s_724632d840b3f9::t_60b3c376b79d9c 222-234
+tests/fm-teardown.test.sh
+  s_724632d840b3f9::t_fe86c59619977d 555-557
+  s_724632d840b3f9::t_b76957742ba09a 547,549,554,558,561
+  s_724632d840b3f9::t_84b6ee90e880ff 548,550-553,559-560,562-568,578,1644-1646
+  s_724632d840b3f9::t_3c8128feb70b41 359-360,387-388,426-427
+  s_724632d840b3f9::t_44f685cf456834 60-61,206-224,540-546,569-574,579-580
+  s_724632d840b3f9::t_0ee88a54dcf55f 589
+  s_724632d840b3f9::t_e062853267aafd 1757-1759
+  s_724632d840b3f9::t_99d0fbc416abe4 1568-1573
+bin/fm-install-treehouse.sh
+  s_724632d840b3f9::t_4dee284a6adddc 12-13,16,18,34,38,42,46,72,86
+bin/backends/herdr.sh
+  s_724632d840b3f9::t_6546c8c4ed484c 2515-2519,2527-2528
+tests/fm-trace-context-spawn.test.sh
+  s_724632d840b3f9::t_aace331504da39 81
+bin/backends/zellij.sh
+  s_724632d840b3f9::t_74796e637eebb0 53-57,377-381
+docs/tmux-backend.md
+  s_724632d840b3f9::t_20a75162207d14 47-48,102
+tests/fm-backend-cmux.test.sh
+  s_724632d840b3f9::t_47510ecc594d7c 685-687
+tests/fm-backend-zellij-smoke.test.sh
+  s_724632d840b3f9::t_4de76de257b30e 143-146,152-153
+tests/fm-busy-adapter-wiring.test.sh
+  s_724632d840b3f9::t_7872dd4c265eb9 38-39
+bin/fm-teardown.sh
+  s_724632d840b3f9::t_3dfe66bebcdf03 1043-1046,1048-1056,1059,1064
+  s_724632d840b3f9::t_68bc416c9a6b51 1047
+  s_724632d840b3f9::t_5e681cb9c69061 164-165,411-415,417-432,434,436-451
+  s_724632d840b3f9::t_55032b53a670d0 2-3,25-32,75-76
+  s_724632d840b3f9::t_4b1a11a0e67c9c 416,433,435
+  s_724632d840b3f9::t_f494f6c47c3bff 2326-2328
+  s_724632d840b3f9::t_b13ee76bb96ce8 1089,1116
+  s_724632d840b3f9::t_c54ebdebf0887a 1915-1920,2064-2065,2086-2090,2132-2133,2135-2136
+docs/architecture.md
+  s_724632d840b3f9::t_7e433566f327b5 112,138-139,312
+tests/fm-x-mode.test.sh
+  s_724632d840b3f9::t_d68b328ddbe806 749-754
+tests/fm-backend-herdr.test.sh
+  s_724632d840b3f9::t_465f8c2f3f7176 2932
+bin/fm-spawn.sh
+  s_724632d840b3f9::t_0cee4fd4852a56 744
+  s_724632d840b3f9::t_d7378f6ffd09a9 1968,1976,1988
+  s_724632d840b3f9::t_c61dbbbde007fa 1481-1524,1526-1554,1619
+  s_724632d840b3f9::t_14f8b704ebef58 2313-2317
+  s_724632d840b3f9::t_6a698bd4401f01 34-44,74-75
+  s_724632d840b3f9::t_2c7966d80c2185 1951-1954,1956,1961-1966,1973,1975,1979,1989,1993
+  s_724632d840b3f9::t_be1350981f97c8 1525
+  s_724632d840b3f9::t_373844326d65d5 1857-1861
+  s_724632d840b3f9::t_270590922af367 228-229,633-638,667-692,741-743,745-751
+  s_724632d840b3f9::t_d0140d97875bf7 2318,2356-2359,2364-2366,2368-2374
+  s_724632d840b3f9::t_309ce8e979d812 1620
+tests/fm-backend.test.sh
+  s_724632d840b3f9::t_03d5b4816fd397 845-848
+  s_724632d840b3f9::t_bc03e1eeaf2ce0 809,878
+  s_724632d840b3f9::t_ecb934ac92a683 940-944,958-959,963-965,1003-1004
+bin/fm-backend.sh
+  s_724632d840b3f9::t_5380e766f8b9c6 303-306,311
+tests/fm-spawn-dispatch-profile.test.sh
+  s_724632d840b3f9::t_a2f4d4295c574a 45-46
+tests/fm-secondmate-safety.test.sh
+  s_724632d840b3f9::t_4468de4fc5673f 2042-2046,2048-2049,2073-2074
+  s_724632d840b3f9::t_571f0024e542e9 1920-1921,1972-1973,2032-2033,2337-2338,2384-2385,2437-2438,2484-2485
+tests/secondmate-helpers.sh
+  s_724632d840b3f9::t_c3ac038a5ebc3e 78-87,91-95,97-105
+  s_724632d840b3f9::t_3a048bca682dbb 88-90
+bin/fm-bootstrap.sh
+  s_724632d840b3f9::t_cef7a399f3c875 51-53
+  s_724632d840b3f9::t_c2deb404677bef 711-721,1049-1052,1054
+.agents/skills/stuck-crewmate-recovery/SKILL.md
+  s_724632d840b3f9::t_12adf1155415df 29-30,33-37
+tests/fm-secondmate-liveness.test.sh
+  s_724632d840b3f9::t_ab8748bf1e9d71 209,227-232
+tests/fm-secondmate-sync.test.sh
+  s_724632d840b3f9::t_d9bcbcb47ba047 294,333-338
+tests/fm-grok-harness.test.sh
+  s_724632d840b3f9::t_91b18ca3ec1aad 29-30
+bin/fm-test-run.sh
+  s_724632d840b3f9::t_6804d32e62bb1f 194,934-936
+  s_724632d840b3f9::t_c1e5cd586bbfcc 937
+bin/backends/cmux.sh
+  s_724632d840b3f9::t_9eb6e2d1fd4f01 35-39
+  s_724632d840b3f9::t_03b3ce3a8aa2e4 434-439
+tests/fm-secondmate-harness.test.sh
+  s_724632d840b3f9::t_c35ca94a0605c7 607
+  s_724632d840b3f9::t_cbef42834cd8a9 855
+  s_724632d840b3f9::t_48c97fcb34f12c 984,1026-1031
+tests/fm-startup-memory-budget.test.sh
+  s_724632d840b3f9::t_37ba37a32d799a 18,40-45
+tests/fm-gate-refuse.test.sh
+  s_724632d840b3f9::t_c210ea675cdff5 155
+  s_724632d840b3f9::t_f2451ea971717d 285
+  s_724632d840b3f9::t_e3e095d5b5b33d 288-309,341-343
+tests/fm-tangle-guard.test.sh
+  s_724632d840b3f9::t_2d85327f592ec8 172,251,295-297
+  s_724632d840b3f9::t_277c9646df8edb 152-153,227-228
+tests/fm-bootstrap.test.sh
+  s_724632d840b3f9::t_ff646527988b5e 680,682-685,701-703,705
+  s_724632d840b3f9::t_f89a3f3204ef1f 522,530-542,544-545
+  s_724632d840b3f9::t_9bc919dfa8153c 667,669-670,710,998
+  s_724632d840b3f9::t_178290ee4813b7 43,64-81
+.agents/skills/bootstrap-diagnostics/SKILL.md
+  s_724632d840b3f9::t_05db1a1da64c3a 20
+tests/fm-remote-secondmate-parent-binding.test.sh
+  s_724632d840b3f9::t_9ea4716cb7d73f 228-230,233,237-252
+docs/herdr-backend.md
+  s_724632d840b3f9::t_c56c5a86698316 7-8
+docs/zellij-backend.md
+  s_724632d840b3f9::t_959570f0772e4c 5-6,70-72,106
+  s_724632d840b3f9::t_5de89a10f4663f 66
+bin/fm-treehouse-lease-lib.sh
+  s_724632d840b3f9::t_8a084ccdd1ef47 35,37
+  s_724632d840b3f9::t_a3ed534ec34924 78-81
+  s_724632d840b3f9::t_a5b886cf53a94d 1-34,36,38-77,82-111,114-116,119,124-138,141-143,150
+  s_724632d840b3f9::t_438f10d4d87841 112-113,117-118,120-123
+  s_724632d840b3f9::t_858dcb2b7fcef0 139-140,144-149
+tests/fm-public-followup.test.sh
+  s_724632d840b3f9::t_97ef1f86d7f89a 1111,1118
+  s_724632d840b3f9::t_c72463978edee5 29-79,122,142
+  s_724632d840b3f9::t_5dcee0c0db60c0 773,810,841,876,908
+tests/fm-teardown-endpoint-safety.test.sh
+  s_724632d840b3f9::t_e56605f0841d83 28-33,38-46,272-275
+  s_724632d840b3f9::t_8b1c2c519fc5f6 34-37
+tests/fm-backend-herdr-workspace-per-home-e2e.test.sh
+  s_724632d840b3f9::t_4c233e63a50e58 66,71-85
+  s_724632d840b3f9::t_aa43f240659b83 87-96
+tests/lib.sh
+  s_724632d840b3f9::t_4383b9b178661c 213
+  s_724632d840b3f9::t_fc4e5e1a9eba09 11-14,173-177,180-182,187-201,209-212,218-226
+  s_724632d840b3f9::t_cd6d7d5700b96b 178-179,183-184,202
+  s_724632d840b3f9::t_d41dcfb06b9544 185-186,203-208,214-217
+  s_724632d840b3f9::t_6c22e7c77e1245 227-228
+docs/configuration.md
+  s_724632d840b3f9::t_c0787aa7831dda 53-54,76,84-86,303-304
+  s_724632d840b3f9::t_e767a380f3fac5 298-299
+tests/fm-session-start.test.sh
+  s_724632d840b3f9::t_5d7eb3623934bd 62,80-85
+tests/fm-treehouse-task-lease.test.sh
+  s_724632d840b3f9::t_7dfc673598fd37 32-33,178,203,231,265
+  s_724632d840b3f9::t_268e3e9e5547ab 175,191,233
+  s_724632d840b3f9::t_1d41fcba029d66 192
+  s_724632d840b3f9::t_3c21d26e6ff130 237-253
+  s_724632d840b3f9::t_a477ca079e69a7 84
+  s_724632d840b3f9::t_a39f764491e81f 176-177,197
+  s_724632d840b3f9::t_a6720c07472aa6 285-312,329
+  s_724632d840b3f9::t_e40e7e1dcd3633 225-226
+  s_724632d840b3f9::t_bdb81c348feebb 75-78,313-328
+  s_724632d840b3f9::t_beb6f1da94f77d 91,234
+  s_724632d840b3f9::t_15fa28406132d5 1-31,34-74,79-83,85-90,92-106,111-174,179-190,193-196,198-202,204-224,227-230,232,235-236,254-264,266-267,284,330
+  s_724632d840b3f9::t_45a47e357bb13a 107-110,268-283
+docs/verification/runtime-backends.md
+  s_724632d840b3f9::t_278bb5c594b0ab 210
+  s_724632d840b3f9::t_9e5c2a2b57edb6 197-198
+  s_724632d840b3f9::t_fbab25bde44b5e 183-196,199-206,208-209,212-227
+  s_724632d840b3f9::t_ec8c347e407357 207
+  s_724632d840b3f9::t_4cf73b16a184aa 211
+tests/fm-kimi-harness.test.sh
+  s_724632d840b3f9::t_cdc9e4ae134e11 128-129
+bin/backends/tmux.sh
+  s_724632d840b3f9::t_bb659d2fca5540 99
+  s_724632d840b3f9::t_608dc70401ac0e 11-13,106-107
+tests/fm-spawn-worktree-settle.test.sh
+  s_724632d840b3f9::t_e84002bad67454 57
+tests/fm-backend-orca.test.sh
+  s_724632d840b3f9::t_7f56eeb6d5d606 689
+tests/fm-backend-herdr-launcher-workspace-e2e.test.sh
+  s_724632d840b3f9::t_a04cf413d75cee 60-74,83
+  s_724632d840b3f9::t_b5506ccb98764d 87-91
+docs/scripts.md
+  s_724632d840b3f9::t_69ec4385c80798 30,52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "0107dcbc2e377d3b8e49531296bdcd69cfcd9d04",
+  "prompts": {},
+  "sessions": {
+    "s_724632d840b3f9": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fd4a5-2dc5-7558-b4c0-c9223861caf0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

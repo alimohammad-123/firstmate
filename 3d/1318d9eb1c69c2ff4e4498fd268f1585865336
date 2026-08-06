@@ -1,0 +1,22 @@
+docs/verification/runtime-backends.md
+  s_df6e8431fec1a7::t_62ce44086984fe 200,209-211,215,221,223
+  s_df6e8431fec1a7::t_b193a2ee2dcca0 216-217
+  s_df6e8431fec1a7::t_583ff96a2f8325 198-199,202-208,212-214,218-220,222,224-232
+  s_df6e8431fec1a7::t_399110233629a7 201
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "3d1318d9eb1c69c2ff4e4498fd268f1585865336",
+  "prompts": {},
+  "sessions": {
+    "s_df6e8431fec1a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd542-71fd-7b63-9b59-c792a85ce480",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

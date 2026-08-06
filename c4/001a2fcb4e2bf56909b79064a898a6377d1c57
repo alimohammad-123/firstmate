@@ -1,0 +1,31 @@
+bin/fm-spawn.sh
+  s_df6e8431fec1a7::t_ef64a4c0c23879 218-219,367-375,623,951-959,2471
+tests/fm-treehouse-task-lease.test.sh
+  s_df6e8431fec1a7::t_50748f9dd6df46 439-476,821-918
+  s_df6e8431fec1a7::t_85021e7687a036 919
+bin/fm-secondmate-lifecycle-lib.sh
+  s_df6e8431fec1a7::t_ef64a4c0c23879 1-13,20-43
+  s_df6e8431fec1a7::t_50748f9dd6df46 14-19
+bin/fm-teardown.sh
+  s_df6e8431fec1a7::t_ef64a4c0c23879 160-161,182-183,189-195,1948-1949,1970-1993,1995-2065,2208-2211,2288
+  s_df6e8431fec1a7::t_19ac48dcdeaf1f 1994
+  s_df6e8431fec1a7::t_a2299d7b71dfa0 2313-2314
+bin/fm-backend.sh
+  s_df6e8431fec1a7::t_a2299d7b71dfa0 9-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "c4001a2fcb4e2bf56909b79064a898a6377d1c57",
+  "prompts": {},
+  "sessions": {
+    "s_df6e8431fec1a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd542-71fd-7b63-9b59-c792a85ce480",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+bin/fm-secondmate-lifecycle-lib.sh
+  s_df6e8431fec1a7::t_1ca4b420006e8b 6-9,26-44,46,48,57,60-63,113-120
+tests/fm-teardown-endpoint-safety.test.sh
+  s_df6e8431fec1a7::t_0036091f0b1680 156-160
+tests/fm-treehouse-task-lease.test.sh
+  s_df6e8431fec1a7::t_eb00823942b683 33,39
+  s_df6e8431fec1a7::t_6fa4d5bbbd8a15 801-854
+  s_df6e8431fec1a7::t_f0caba05f36e6b 1166-1169
+docs/verification/runtime-backends.md
+  s_df6e8431fec1a7::t_f0caba05f36e6b 233-234,243-245,252-253,257-262
+bin/fm-backend.sh
+  s_df6e8431fec1a7::t_fd70295b134d18 387,559-574
+  s_df6e8431fec1a7::t_eb00823942b683 360-366
+bin/backends/cmux.sh
+  s_df6e8431fec1a7::t_fd70295b134d18 630-670,688,694-695
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "a1e9123fa21483385b98e6c998c7dfe54d6a6a72",
+  "prompts": {},
+  "sessions": {
+    "s_df6e8431fec1a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd542-71fd-7b63-9b59-c792a85ce480",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Ali Mohammad <ali@arenacrm.com>"
+    }
+  }
+}
