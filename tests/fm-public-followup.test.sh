@@ -26,6 +26,57 @@ TMP_ROOT=$(fm_test_tmproot fm-public-followup)
 command -v jq >/dev/null 2>&1 || { echo "skip: jq not found"; exit 0; }
 command -v tasks-axi >/dev/null 2>&1 || { echo "skip: tasks-axi not found"; exit 0; }
 
+# Public-followup teardown fixtures are ordinary Treehouse-backed tasks unless
+# explicitly marked secondmate. Keep their lease identity current automatically
+# so each test reaches the public-reply decision it owns rather than the earlier
+# lease-identity safety boundary.
+fm_write_meta() {
+  local file=$1 kv id home kind=ship has_worktree=0
+  shift
+  : > "$file"
+  for kv in "$@"; do
+    printf '%s\n' "$kv" >> "$file"
+    case "$kv" in
+      worktree=*) has_worktree=1 ;;
+      kind=*) kind=${kv#kind=} ;;
+    esac
+  done
+  if [ "$has_worktree" -eq 1 ] && [ "$kind" != secondmate ]; then
+    id=$(basename "$file" .meta)
+    home=$(CDPATH='' cd -- "$(dirname "$file")/.." && pwd -P) || return 1
+    printf 'treehouse_lease_id=public-followup-%s\n' "$id" >> "$file"
+    printf 'treehouse_lease_holder=firstmate-task:%s:%s\n' "$home" "$id" >> "$file"
+  fi
+}
+
+install_public_followup_treehouse_fake() {  # <fakebin>
+  cat > "$1/treehouse" <<'SH'
+#!/usr/bin/env bash
+set -u
+case "${1:-}" in
+  status)
+    [ "${2:-}" = --json ] || exit 2
+    state=${FM_STATE_OVERRIDE:-${FM_HOME:?}/state}
+    for meta in "$state"/*.meta; do
+      [ -f "$meta" ] || continue
+      path=$(sed -n 's/^worktree=//p' "$meta")
+      lease_id=$(sed -n 's/^treehouse_lease_id=//p' "$meta")
+      holder=$(sed -n 's/^treehouse_lease_holder=//p' "$meta")
+      [ -n "$path" ] && [ -n "$lease_id" ] && [ -n "$holder" ] || continue
+      jq -nc --arg path "$path" --arg lease_id "$lease_id" --arg lease_holder "$holder" \
+        '{path:$path,status:"leased",lease_id:$lease_id,lease_holder:$lease_holder}'
+    done | jq -s .
+    ;;
+  return)
+    printf '%s\n' "$*" | grep -F -- '--if-lease-id' >/dev/null \
+      && printf '%s\n' "$*" | grep -F -- '--if-lease-holder' >/dev/null
+    ;;
+  *) exit 0 ;;
+esac
+SH
+  chmod +x "$1/treehouse"
+}
+
 # A fakebin `curl` standing in for the relay. It logs every call so a test can
 # prove exactly how many public posts happened, and honours FAKE_FOLLOWUP_CODE so
 # a transport failure can be simulated.
@@ -68,6 +119,7 @@ esac
 exit 0
 SH
   chmod +x "$fakebin/curl"
+  install_public_followup_treehouse_fake "$fakebin"
   printf '%s\n' "$fakebin"
 }
 
@@ -87,7 +139,7 @@ make_home() {  # <name> [relay-on|relay-off]
 EOF
   [ "$relay" = relay-off ] || printf 'FMX_PAIRING_TOKEN=test-token\n' > "$home/.env"
   make_fake_curl "$home" >/dev/null
-  fm_fake_exit0 "$home/fakebin" tmux treehouse no-mistakes gh gh-axi
+  fm_fake_exit0 "$home/fakebin" tmux no-mistakes gh gh-axi
   printf '%s\n' "$home"
 }
 
@@ -718,7 +770,7 @@ test_secondmate_teardown_resolves_parent_from_durable_record_when_env_lost() {
   child=$(cd "$child" && pwd -P)
   parent_resolved=$(cd "$parent" && pwd -P)
   make_fake_curl "$child" >/dev/null
-  fm_fake_exit0 "$child/fakebin" tmux treehouse no-mistakes gh gh-axi
+  fm_fake_exit0 "$child/fakebin" tmux no-mistakes gh gh-axi
 
   assert_local_secondmate_parent_record "$child" "$parent_resolved"
 
@@ -755,7 +807,7 @@ test_secondmate_teardown_durable_record_missing_parent_registration_still_refuse
   child=$(cd "$child" && pwd -P)
   parent_resolved=$(cd "$parent" && pwd -P)
   make_fake_curl "$child" >/dev/null
-  fm_fake_exit0 "$child/fakebin" tmux treehouse no-mistakes gh gh-axi
+  fm_fake_exit0 "$child/fakebin" tmux no-mistakes gh gh-axi
   assert_local_secondmate_parent_record "$child" "$parent_resolved"
   fm_write_meta "$child/state/work-child.meta" \
     "window=firstmate:fm-work-child" "endpoint_task_id=work-child" \
@@ -786,7 +838,7 @@ test_secondmate_teardown_durable_record_with_unknown_field_succeeds() {
   child=$(cd "$child" && pwd -P)
   parent_resolved=$(cd "$parent" && pwd -P)
   make_fake_curl "$child" >/dev/null
-  fm_fake_exit0 "$child/fakebin" tmux treehouse no-mistakes gh gh-axi
+  fm_fake_exit0 "$child/fakebin" tmux no-mistakes gh gh-axi
   assert_local_secondmate_parent_record "$child" "$parent_resolved"
   printf 'some_future_field=value\n' >> "$child/.fm-secondmate-parent"
   parent_alias="$TMP_ROOT/teardown-durable-clean-parent-alias"
@@ -821,7 +873,7 @@ test_secondmate_teardown_rejects_conflicting_live_and_durable_parent_bindings() 
   child=$(cd "$child" && pwd -P)
   parent_resolved=$(cd "$durable_parent" && pwd -P)
   make_fake_curl "$child" >/dev/null
-  fm_fake_exit0 "$child/fakebin" tmux treehouse no-mistakes gh gh-axi
+  fm_fake_exit0 "$child/fakebin" tmux no-mistakes gh gh-axi
   assert_local_secondmate_parent_record "$child" "$parent_resolved"
   fm_write_meta "$durable_parent/state/mate.meta" "kind=secondmate" "home=$child"
   fm_git_init_commit "$child/projects/worktree"
@@ -853,7 +905,7 @@ test_secondmate_teardown_rejects_unsafe_durable_parent_records() {
       || fail "real secondmate seeding failed for $case_name"
     child=$(cd "$child" && pwd -P)
     make_fake_curl "$child" >/dev/null
-    fm_fake_exit0 "$child/fakebin" tmux treehouse no-mistakes gh gh-axi
+    fm_fake_exit0 "$child/fakebin" tmux no-mistakes gh gh-axi
     fm_write_meta "$child/state/work-child.meta" \
       "window=firstmate:fm-work-child" "endpoint_task_id=work-child" \
       "worktree=$child" "project=$child" "kind=ship" "mode=local-only"
@@ -1056,13 +1108,14 @@ test_cleanup_refuses_while_a_public_reply_is_owed() {
   local home rc
   home=$(make_home cleanup-guard)
   seed_commitment "$home" pf-guard req-guard discord main ship-task
+  fm_git_worktree "$home/projects/sample" "$home/projects/gone" public-followup-cleanup
   fm_write_meta "$home/state/ship-task.meta" \
     "window=firstmate:fm-ship-task" \
     "worktree=$home/projects/gone" \
     "project=$home/projects/sample" \
     "harness=codex" \
     "kind=ship" \
-    "mode=no-mistakes"
+    "mode=local-only"
 
   rc=0
   PATH="$home/fakebin:$PATH" FM_ROOT_OVERRIDE="$ROOT" FM_HOME="$home" \

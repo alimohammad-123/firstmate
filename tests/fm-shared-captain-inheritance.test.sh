@@ -219,7 +219,19 @@ SH
 # Version-aware stubs so bootstrap's tool floors stay quiet in fixture PATH.
 add_bootstrap_compatible_tools() {
   local fakebin=$1
-  fm_fake_exit0 "$fakebin" node chrome-devtools-axi gh treehouse
+  fm_fake_exit0 "$fakebin" node jq chrome-devtools-axi gh
+  cat > "$fakebin/treehouse" <<'SH'
+#!/usr/bin/env bash
+if [ "${2:-}" = --help ]; then
+  case "${1:-}" in
+    get) printf '%s\n' 'Usage: treehouse get [--lease] [--json] [--lease-holder <holder>]' ;;
+    status) printf '%s\n' 'Usage: treehouse status [--json]' ;;
+    return) printf '%s\n' 'Usage: treehouse return [--if-lease-id <id>] [--if-lease-holder <holder>]' ;;
+  esac
+fi
+exit 0
+SH
+  chmod +x "$fakebin/treehouse"
   fm_fake_version_tool "$fakebin" lavish-axi FM_FAKE_LAVISH_AXI_VERSION 0.1.45
   cat > "$fakebin/gh-axi" <<'SH'
 #!/usr/bin/env bash

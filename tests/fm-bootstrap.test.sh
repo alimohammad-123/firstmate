@@ -40,7 +40,7 @@ unset TMUX TMUX_PANE HERDR_ENV HERDR_PANE_ID HERDR_SESSION HERDR_SOCKET_PATH \
 make_fake_toolchain() {
   local dir=$1 fakebin
   fakebin=$(fm_fakebin "$dir")
-  fm_fake_exit0 "$fakebin" tmux node chrome-devtools-axi
+  fm_fake_exit0 "$fakebin" tmux node jq chrome-devtools-axi
   fm_fake_version_tool "$fakebin" lavish-axi FM_FAKE_LAVISH_AXI_VERSION 0.1.45
   cat > "$fakebin/gh-axi" <<'SH'
 #!/usr/bin/env bash
@@ -61,12 +61,24 @@ SH
   chmod +x "$fakebin/gh"
   cat > "$fakebin/treehouse" <<'SH'
 #!/usr/bin/env bash
-if [ "${1:-}" = get ] && [ "${2:-}" = --help ]; then
-  if [ "${FM_FAKE_TREEHOUSE_LEASE_HELP:-}" = 1 ]; then
-    printf '%s\n' 'Usage: treehouse get [--lease] [--lease-holder <holder>]'
-  else
-    printf '%s\n' 'Usage: treehouse get'
-  fi
+if [ "${2:-}" = --help ]; then
+  case "${1:-}" in
+    get)
+      if [ "${FM_FAKE_TREEHOUSE_LEASE_HELP:-}" = 1 ]; then
+        printf '%s\n' 'Usage: treehouse get [--lease] [--json] [--lease-holder <holder>]'
+      else
+        printf '%s\n' 'Usage: treehouse get'
+      fi
+      ;;
+    status)
+      [ "${FM_FAKE_TREEHOUSE_LEASE_HELP:-}" = 1 ] \
+        && printf '%s\n' 'Usage: treehouse status [--json]'
+      ;;
+    return)
+      [ "${FM_FAKE_TREEHOUSE_LEASE_HELP:-}" = 1 ] \
+        && printf '%s\n' 'Usage: treehouse return [--if-lease-id <id>] [--if-lease-holder <holder>]'
+      ;;
+  esac
   exit 0
 fi
 exit 0
@@ -507,7 +519,7 @@ SH
 }
 
 test_orca_backend_gates_orca_tool_only_when_selected() {
-  local case_dir fakebin out missing_orca
+  local case_dir fakebin bash_env out missing_orca
   missing_orca="MISSING: orca (install: brew install orca  # or the platform's package manager)"
 
   case_dir="$TMP_ROOT/orca-backend-selected"
@@ -515,9 +527,22 @@ test_orca_backend_gates_orca_tool_only_when_selected() {
   printf '%s\n' manual > "$case_dir/home/config/backlog-backend"
   printf '%s\n' orca > "$case_dir/home/config/backend"
   fakebin=$(make_fake_toolchain "$case_dir")
-  out=$(PATH="$fakebin:$BASE_PATH" FM_HOME="$case_dir/home" FM_ROOT_OVERRIDE="$case_dir/home" \
+  bash_env="$case_dir/no-jq.bash"
+  cat > "$bash_env" <<'SH'
+command() {
+  if [ "${1:-}" = -v ] && [ "${2:-}" = jq ]; then
+    return 1
+  fi
+  builtin command "$@"
+}
+jq() {
+  return 127
+}
+SH
+  out=$(PATH="$fakebin:$BASE_PATH" BASH_ENV="$bash_env" FM_HOME="$case_dir/home" FM_ROOT_OVERRIDE="$case_dir/home" \
     FM_FAKE_TREEHOUSE_LEASE_HELP=1 "$ROOT/bin/fm-bootstrap.sh")
-  [ "$out" = "$missing_orca" ] || fail "backend=orca should require only the Orca-specific missing tool, got: $out"
+  [ "$out" = "$missing_orca" ] \
+    || fail "backend=orca should keep its tool delta independent of jq and Treehouse, got: $out"
 
   case_dir="$TMP_ROOT/orca-backend-not-selected"
   mkdir -p "$case_dir/home/config"
@@ -639,9 +664,10 @@ test_unknown_backend_reports_invalid_configuration() {
   pass "bootstrap: unknown resolved backends fail closed with an actionable diagnostic"
 }
 
-test_json_backends_require_jq_not_tmux() {
+test_treehouse_backends_require_jq_not_other_session_clis() {
   local backend case_dir fakebin bash_env out
-  # herdr/zellij/cmux parse their backend's JSON output, so jq is a genuine dep.
+  # Every Treehouse-backed task needs jq for durable lease identity. Orca owns
+  # its worktree and retains its independent tool requirements.
   # jq lives in a system BASE_PATH dir on many hosts, so force it missing with a
   # command()/jq() override (the same technique the git-required case uses) to keep
   # the assertion host-independent.
@@ -651,10 +677,12 @@ test_json_backends_require_jq_not_tmux() {
     mkdir -p "$case_dir/home/config"
     printf '%s\n' manual > "$case_dir/home/config/backlog-backend"
     printf '%s\n' "$backend" > "$case_dir/home/config/backend"
-    # Session CLI present, tmux absent, jq deliberately NOT stubbed and masked below.
+    # Selected session CLI present and jq deliberately masked below.
     fakebin=$(make_fake_toolchain "$case_dir")
-    rm -f "$fakebin/tmux"
-    fm_fake_exit0 "$fakebin" "$backend"
+    if [ "$backend" != tmux ]; then
+      rm -f "$fakebin/tmux"
+      fm_fake_exit0 "$fakebin" "$backend"
+    fi
     bash_env="$case_dir/no-jq.bash"
     cat > "$bash_env" <<'SH'
 command() {
@@ -670,13 +698,16 @@ SH
     out=$(PATH="$fakebin:$BASE_PATH" BASH_ENV="$bash_env" FM_HOME="$case_dir/home" FM_ROOT_OVERRIDE="$case_dir/home" \
       FM_FAKE_TREEHOUSE_LEASE_HELP=1 "$ROOT/bin/fm-bootstrap.sh")
     assert_contains "$out" "MISSING: jq" "backend=$backend must fail closed on missing jq"
-    assert_not_contains "$out" "MISSING: tmux" "backend=$backend must not demand tmux when jq is missing"
+    if [ "$backend" != tmux ]; then
+      assert_not_contains "$out" "MISSING: tmux" "backend=$backend must not demand tmux when jq is missing"
+    fi
   done <<'ROWS'
+tmux
 herdr
 zellij
 cmux
 ROWS
-  pass "bootstrap: JSON-emitting backends require jq (their genuine dep), never tmux"
+  pass "bootstrap: every Treehouse-backed backend requires jq without demanding another session CLI"
 }
 
 test_treehouse_lease_check_follows_resolved_backend() {
@@ -964,7 +995,7 @@ test_session_provider_backends_gate_own_cli_not_tmux
 test_herdr_install_requires_manual_action
 test_cmux_bundled_cli_satisfies_dependency
 test_unknown_backend_reports_invalid_configuration
-test_json_backends_require_jq_not_tmux
+test_treehouse_backends_require_jq_not_other_session_clis
 test_treehouse_lease_check_follows_resolved_backend
 test_fleet_sync_timeout_scales_with_origin_backed_project_count
 test_fleet_sync_timeout_floor_preserves_small_fleets

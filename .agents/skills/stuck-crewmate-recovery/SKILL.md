@@ -26,12 +26,15 @@ Read the targeted current state with `bin/fm-crew-state.sh <id>` before deciding
 A no-mistakes run matched to the crew's branch and current code remains authoritative when the endpoint is dead: handle a terminal or parked run through the normal lifecycle, and keep supervising an active run instead of creating a duplicate worker.
 
 When no authoritative run accounts for the task, inspect only its recorded backend and worktree inventory.
-Use `treehouse status` for treehouse-backed tmux, herdr, zellij, or cmux tasks, and use the recorded `orca_worktree_id=` and `terminal=` for Orca tasks.
+For a Treehouse-backed tmux, Herdr, Zellij, or cmux task, the exact `worktree=`, `treehouse_lease_id=`, and `treehouse_lease_holder=` metadata must match one leased `treehouse status --json` record.
+Use the recorded `orca_worktree_id=` and `terminal=` instead for Orca tasks.
 Do not sweep another home's endpoints or infer ownership from a matching window label.
 
-Before relaunch, prove that no live agent still owns the recorded task and that the existing worktree remains available.
-Preserve its uncommitted changes and commits, keep the same task identity, and resume or relaunch the recorded harness in that existing worktree with the same brief plus a concise progress note.
-Do not use a fresh generic spawn while the recorded worktree is unaccounted for, because allocating another worktree can split one task across two copies.
+Before relaunch, prove that no live agent still owns the recorded task and that its exact lease or Orca worktree remains current.
+Preserve its uncommitted changes and commits, keep the same task identity, and respawn through `bin/fm-spawn.sh` on the recorded backend with the same brief plus a concise progress note.
+For a Treehouse-backed task, spawn verifies and reuses the recorded lease; it never allocates a replacement copy for an existing task record.
+A legacy task with no exact lease identity, a changed holder or path, or an unreadable current lease has no safe automatic recovery path because Treehouse cannot target an existing copy for acquisition.
+Preserve it, report the conflict, and never guess a lease, edit Treehouse state, or release the copy by path.
 If the worktree or ownership cannot be reconciled safely, leave all state intact and report the task failed or blocked with the conflicting evidence.
 
 ## Live-endpoint escalation

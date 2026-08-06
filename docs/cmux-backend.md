@@ -2,7 +2,8 @@
 
 cmux is an experimental macOS GUI terminal backend.
 It provides task workspaces and surfaces while Treehouse continues to provide git worktrees.
-[`configuration.md`](configuration.md#runtime-backend-configbackend--fm_backend) owns shared selection and metadata semantics.
+Ordinary cmux ship and scout copies use the shared durable Treehouse task-lease contract and therefore remain reserved independently of the app or its workspace UUIDs.
+[`configuration.md`](configuration.md#runtime-backend-configbackend--fm_backend) owns that lease contract plus shared selection and metadata semantics.
 
 ## Setup
 
@@ -87,8 +88,8 @@ A genuinely fresh surface returns an internal error from `read-screen` until som
 Target readiness therefore uses the structural `list-panes` response instead of a content read.
 Capture remains bounded and locally trimmed after `read-screen` becomes available.
 
-`current_directory` follows a top-level shell `cd` but not the foreground subshell opened by `treehouse get`.
-Spawn-time worktree discovery sends begin and end markers around `pwd`, captures the marked block, and joins wrapped path lines.
+`current_directory` follows the top-level shell `cd` used to enter an already-acquired lease but not nested foreground subshell cwd changes.
+Spawn-time lease-path verification sends begin and end markers around `pwd`, captures the marked block, joins wrapped path lines, and requires the exact leased path.
 
 Literal send and Enter are separate calls.
 Enter, Escape, and Ctrl-C are supported.
@@ -124,6 +125,7 @@ Real tests share the captain's running app rather than creating an isolated cmux
 ## Regression entry points
 
 ```sh
+tests/fm-treehouse-task-lease.test.sh
 tests/fm-backend-cmux.test.sh
 tests/fm-backend-cmux-smoke.test.sh
 ```

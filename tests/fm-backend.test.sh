@@ -806,7 +806,7 @@ esac
 exit 0
 SH
   chmod +x "$fb/tmux"
-  fm_fake_exit0 "$fb" treehouse
+  fm_fake_treehouse_task_lease "$fb" "$wt"
   printf '%s\n' "$fb"
 }
 
@@ -842,11 +842,10 @@ run_spawn_case() {  # <bin-root> <fakebin> <log> <state> <data> <config> <proj> 
 # docs/herdr-backend.md "Known gaps": a real backend's pane_current_path read
 # (tmux, herdr) reports the OS-level PHYSICALLY-resolved cwd. When the project
 # itself lives under a symlinked prefix (e.g. macOS's /tmp -> /private/tmp),
-# fm-spawn.sh's PROJ_ABS - a logical `cd && pwd` - differs string-for-string
-# from that physical read even before treehouse moves the pane at all, so the
-# worktree-discovery poll used to mistake an UNMOVED pane for one that had
-# already left the project, handing validate_spawn_worktree the project's own
-# directory as "the worktree" and tripping its false isolation refusal.
+# fm-spawn.sh's PROJ_ABS - a logical `cd && pwd` - can differ string-for-string
+# from that physical read. The leased-path verification must canonicalize both
+# sides rather than mistaking an equivalent physical path for a mismatch or
+# accepting the project clone as the assigned copy.
 # make_spawn_symlink_fakebin's tmux stub returns an unmoved project path on the
 # first pane_current_path poll, then the real worktree path from the second poll
 # onward, so this test fails loudly if the PROJ_ABS/PROJ_ABS_REAL
@@ -876,7 +875,7 @@ esac
 exit 0
 SH
   chmod +x "$fb/tmux"
-  fm_fake_exit0 "$fb" treehouse
+  fm_fake_treehouse_task_lease "$fb" "$wt"
   printf '%s\n' "$fb"
 }
 
@@ -938,6 +937,11 @@ SH
 #!/usr/bin/env bash
 set -u
 { printf 'treehouse'; for a in "$@"; do printf '\x1f%s' "$a"; done; printf '\n'; } >> "${FM_TMUX_LOG:?}"
+if [ "${1:-}" = status ] && [ "${2:-}" = --json ]; then
+  jq -n --arg path "$FM_FAKE_TREEHOUSE_PATH" --arg lease_id "$FM_FAKE_TREEHOUSE_LEASE_ID" \
+    --arg lease_holder "$FM_FAKE_TREEHOUSE_LEASE_HOLDER" \
+    '[{path:$path,status:"leased",lease_id:$lease_id,lease_holder:$lease_holder}]'
+fi
 exit 0
 SH
   chmod +x "$fb/tmux" "$fb/treehouse"
@@ -951,10 +955,14 @@ SH
 # worktree-tangle check runs identically (and silently) for both, regardless
 # of which fm-teardown.sh (old or new) is actually being invoked.
 run_teardown_case() {
-  local script=$1 fmroot=$2 fb=$3 log=$4 state=$5 data=$6 config=$7 id=$8
+  local script=$1 fmroot=$2 fb=$3 log=$4 state=$5 data=$6 config=$7 id=$8 meta
+  meta="$state/$id.meta"
   : > "$log"
   env PATH="$fb:$PATH" FM_ROOT_OVERRIDE="$fmroot" \
     FM_STATE_OVERRIDE="$state" FM_DATA_OVERRIDE="$data" FM_CONFIG_OVERRIDE="$config" \
+    FM_FAKE_TREEHOUSE_PATH="$(sed -n 's/^worktree=//p' "$meta")" \
+    FM_FAKE_TREEHOUSE_LEASE_ID="$(sed -n 's/^treehouse_lease_id=//p' "$meta")" \
+    FM_FAKE_TREEHOUSE_LEASE_HOLDER="$(sed -n 's/^treehouse_lease_holder=//p' "$meta")" \
     FM_TMUX_LOG="$log" \
     "$script" "$id"
 }
@@ -992,6 +1000,8 @@ test_teardown_conformance_old_vs_new() {
     "decisions_reviewed=1" "decision_keys="
   fm_write_meta "$state_new/$id.meta" \
     "window=firstmate:fm-$id" "worktree=$wt" "project=$proj" "harness=claude" "kind=scout" "mode=no-mistakes" "yolo=off" \
+    "treehouse_lease_id=teardown-conformance-lease" \
+    "treehouse_lease_holder=firstmate-task:$(cd "$old_bin" && pwd -P):$id" \
     "decisions_reviewed=1" "decision_keys="
   touch "$state_old/.last-watcher-beat" "$state_new/.last-watcher-beat"
 

@@ -59,7 +59,7 @@ new_world() {
 # test deliberately breaks one. Mirrors fm-bootstrap.test.sh's fixture.
 make_fake_toolchain() {
   local fakebin=$1
-  fm_fake_exit0 "$fakebin" tmux node chrome-devtools-axi
+  fm_fake_exit0 "$fakebin" tmux node jq chrome-devtools-axi
   fm_fake_version_tool "$fakebin" lavish-axi FM_FAKE_LAVISH_AXI_VERSION 0.1.45
   cat > "$fakebin/gh-axi" <<'SH'
 #!/usr/bin/env bash
@@ -77,9 +77,12 @@ SH
   chmod +x "$fakebin/gh"
   cat > "$fakebin/treehouse" <<'SH'
 #!/usr/bin/env bash
-if [ "${1:-}" = get ] && [ "${2:-}" = --help ]; then
-  printf '%s\n' 'Usage: treehouse get [--lease]'
-  exit 0
+if [ "${2:-}" = --help ]; then
+  case "${1:-}" in
+    get) printf '%s\n' 'Usage: treehouse get [--lease] [--json] [--lease-holder <holder>]' ;;
+    status) printf '%s\n' 'Usage: treehouse status [--json]' ;;
+    return) printf '%s\n' 'Usage: treehouse return [--if-lease-id <id>] [--if-lease-holder <holder>]' ;;
+  esac
 fi
 exit 0
 SH

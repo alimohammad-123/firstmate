@@ -54,8 +54,8 @@ herdr_forget_inherited_pane
 # TMP_ROOT is physically resolved (mktemp -d "$(pwd -P)"-relative) to keep this
 # real-herdr smoke fixture free of unrelated OS symlink noise.
 # The old fm-spawn bug that originally motivated this fixture shape was fixed in
-# fm-spawn-symlink-guard-s8: fm-spawn.sh now normalizes PROJ_ABS and observed
-# backend cwd reads before the worktree-discovery comparison.
+# fm-spawn-symlink-guard-s8: fm-spawn.sh normalizes the acquired lease path and
+# observed backend cwd before exact leased-path verification.
 # The dedicated regression is
 # tests/fm-backend.test.sh:test_spawn_symlinked_project_prefix_avoids_false_refusal.
 TMP_ROOT=$(mktemp -d "$(cd "${TMPDIR:-/tmp}" && pwd -P)/fm-backend-autodetect-smoke.XXXXXX")
@@ -68,10 +68,24 @@ export HERDR_SESSION="$HERDR_LAB_SESSION"
 ID="autodetectsmoke1"
 WT=
 cleanup_all() {
-  local cleanup_status=0
-  [ -n "$WT" ] && command -v treehouse >/dev/null 2>&1 && treehouse return --force "$WT" >/dev/null 2>&1
+  local cleanup_status=0 state=${STATE:-} meta='' lease_id='' lease_holder='' project=''
+  [ -z "$state" ] || meta="$state/$ID.meta"
+  if [ -n "$WT" ] && [ -n "$meta" ] && [ -f "$meta" ] && command -v treehouse >/dev/null 2>&1; then
+    lease_id=$(sed -n 's/^treehouse_lease_id=//p' "$meta")
+    lease_holder=$(sed -n 's/^treehouse_lease_holder=//p' "$meta")
+    project=$(sed -n 's/^project=//p' "$meta")
+    if [ -n "$lease_id" ] && [ -n "$lease_holder" ] && [ -d "$project" ]; then
+      (cd "$project" && treehouse return --force "$WT" \
+        --if-lease-id "$lease_id" --if-lease-holder "$lease_holder") >/dev/null 2>&1 \
+        || cleanup_status=$?
+    fi
+  fi
   "$HERDR_LAB_HELPER" teardown "$HERDR_LAB_SESSION" || cleanup_status=$?
-  rm -rf "$TMP_ROOT"
+  if [ "$cleanup_status" -eq 0 ]; then
+    rm -rf "$TMP_ROOT"
+  else
+    printf 'warning: exact cleanup failed; preserved lease evidence at %s\n' "$TMP_ROOT" >&2
+  fi
   return "$cleanup_status"
 }
 on_exit() {

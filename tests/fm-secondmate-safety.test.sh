@@ -1917,6 +1917,8 @@ harness=echo
 kind=ship
 mode=no-mistakes
 yolo=off
+treehouse_lease_id=force-child-lease
+treehouse_lease_holder=firstmate-task:$(cd "$subhome" && pwd -P):child
 EOF
   fakebin=$(make_fake_tmux "$TMP_ROOT/force-teardown-fake")
   log="$TMP_ROOT/force-teardown-fake/tmux.log"
@@ -1967,6 +1969,8 @@ harness=echo
 kind=ship
 mode=no-mistakes
 yolo=off
+treehouse_lease_id=quarantine-child-lease
+treehouse_lease_holder=firstmate-task:$(cd "$subhome" && pwd -P):child
 EOF
   printf 'child check\n' > "$subhome/state/child.check.sh"
   printf 'external quarantine artifact\n' > "$external/child.check.protected"
@@ -2025,6 +2029,8 @@ harness=echo
 kind=ship
 mode=no-mistakes
 yolo=off
+treehouse_lease_id=lock-child-lease
+treehouse_lease_holder=firstmate-task:$(cd "$subhome" && pwd -P):child
 EOF
   fakebin=$(make_fake_tmux "$TMP_ROOT/force-lock-child-fake")
   log="$TMP_ROOT/force-lock-child-fake/tmux.log"
@@ -2033,16 +2039,14 @@ EOF
 set -u
 printf 'treehouse %s\n' "$*" >> "${FM_FAKE_TMUX_LOG:-/dev/null}"
 case "${1:-}" in
+  status)
+    jq -n --arg path "$FM_FAKE_TREEHOUSE_TASK_PATH" --arg lease_id "$FM_FAKE_TREEHOUSE_TASK_LEASE_ID" \
+      --arg lease_holder "$FM_FAKE_TREEHOUSE_TASK_LEASE_HOLDER" \
+      '[{path:$path,status:"leased",lease_id:$lease_id,lease_holder:$lease_holder}]'
+    ;;
   return)
-    shift
-    target=
-    while [ $# -gt 0 ]; do
-      case "$1" in
-        --force) ;;
-        *) target=$1 ;;
-      esac
-      shift
-    done
+    [ "${2:-}" = --force ] || exit 2
+    target=${3:-}
     lock=$(git -C "$target" rev-parse --git-path index.lock 2>/dev/null || true)
     if [ -n "$lock" ] && [ -e "$lock" ]; then
       echo "fatal: Unable to create '$lock': File exists." >&2
@@ -2066,6 +2070,8 @@ SH
 
   set +e
   PATH="$fakebin:$PATH" FM_HOME="$home" FM_FAKE_TMUX_LOG="$log" FM_FAKE_TMUX_CAPTURE="$TMP_ROOT/force-lock-child-fake/pane.txt" \
+    FM_FAKE_TREEHOUSE_TASK_PATH="$childwt" FM_FAKE_TREEHOUSE_TASK_LEASE_ID=lock-child-lease \
+    FM_FAKE_TREEHOUSE_TASK_LEASE_HOLDER="firstmate-task:$(cd "$subhome" && pwd -P):child" \
     FM_STALE_WORKTREE_LOCK_RETRY_WAIT_SECS=0 FM_STALE_WORKTREE_LOCK_AGE_SECS=1 \
     "$ROOT/bin/fm-teardown.sh" domain --force >/dev/null 2>"$err"
   rc=$?
@@ -2328,6 +2334,8 @@ harness=echo
 kind=ship
 mode=no-mistakes
 yolo=off
+treehouse_lease_id=prevalidate-child-lease
+treehouse_lease_holder=firstmate-task:$(cd "$subhome" && pwd -P):child
 EOF
   fakebin=$(make_fake_tmux "$TMP_ROOT/prevalidate-teardown-fake")
   log="$TMP_ROOT/prevalidate-teardown-fake/tmux.log"
@@ -2373,6 +2381,8 @@ harness=echo
 kind=ship
 mode=no-mistakes
 yolo=off
+treehouse_lease_id=active-descendant-child-lease
+treehouse_lease_holder=firstmate-task:$(cd "$subhome" && pwd -P):child
 EOF
   fakebin=$(make_fake_tmux "$TMP_ROOT/child-active-descendant-fake")
   log="$TMP_ROOT/child-active-descendant-fake/tmux.log"
@@ -2424,6 +2434,8 @@ harness=echo
 kind=ship
 mode=no-mistakes
 yolo=off
+treehouse_lease_id=repo-descendant-child-lease
+treehouse_lease_holder=firstmate-task:$(cd "$subhome" && pwd -P):child
 EOF
   fakebin=$(make_fake_tmux "$TMP_ROOT/child-repo-descendant-fake")
   log="$TMP_ROOT/child-repo-descendant-fake/tmux.log"
@@ -2469,6 +2481,8 @@ harness=echo
 kind=ship
 mode=no-mistakes
 yolo=off
+treehouse_lease_id=unregistered-child-lease
+treehouse_lease_holder=firstmate-task:$(cd "$subhome" && pwd -P):child
 EOF
   fakebin=$(make_fake_tmux "$TMP_ROOT/unregistered-child-fake")
   log="$TMP_ROOT/unregistered-child-fake/tmux.log"

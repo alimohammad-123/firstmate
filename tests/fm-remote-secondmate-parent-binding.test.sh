@@ -225,13 +225,31 @@ write_child_meta() {
   fm_write_meta "$REMOTE_HOME/state/work-child.meta" \
     "window=firstmate:fm-work-child" "endpoint_task_id=work-child" \
     "worktree=$CHILD_WT" "project=$CHILD_WT" "harness=codex" "kind=ship" \
-    "mode=local-only" "yolo=off"
+    "mode=local-only" "yolo=off" \
+    "treehouse_lease_id=remote-parent-binding-work-child" \
+    "treehouse_lease_holder=firstmate-task:$REMOTE_HOME:work-child"
 }
 mkdir -p "$TMP_ROOT/childfake"
-for t in tmux treehouse no-mistakes gh gh-axi tasks-axi; do
+for t in tmux no-mistakes gh gh-axi tasks-axi; do
   printf '#!/usr/bin/env bash\nexit 0\n' > "$TMP_ROOT/childfake/$t"
   chmod +x "$TMP_ROOT/childfake/$t"
 done
+cat > "$TMP_ROOT/childfake/treehouse" <<SH
+#!/usr/bin/env bash
+case "\${1:-}" in
+  status)
+    jq -n --arg path "$CHILD_WT" --arg lease_id remote-parent-binding-work-child \\
+      --arg lease_holder "firstmate-task:$REMOTE_HOME:work-child" \\
+      '[{path:\$path,status:"leased",lease_id:\$lease_id,lease_holder:\$lease_holder}]'
+    ;;
+  return)
+    printf '%s\\n' "\$*" | grep -F -- '--if-lease-id' >/dev/null \\
+      && printf '%s\\n' "\$*" | grep -F -- '--if-lease-holder' >/dev/null
+    ;;
+  *) exit 0 ;;
+esac
+SH
+chmod +x "$TMP_ROOT/childfake/treehouse"
 
 run_child_teardown() { # <extra env assignments...>
   local out rc=0

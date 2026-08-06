@@ -4,7 +4,8 @@ Herdr is an experimental agent-native terminal backend with native per-pane agen
 Firstmate requires Herdr protocol 14 or newer; broad backend verification covers versions 0.7.1, 0.7.3, 0.7.4, 0.7.5, and 0.8.0, while protocol-16 features remain gated by availability.
 Default-on presentation spaces have a higher floor of Herdr 0.8.0 for the reason given under [Presentation spaces](#presentation-spaces).
 Herdr provides the terminal session while Treehouse continues to provide task worktrees.
-[`configuration.md`](configuration.md#runtime-backend-configbackend--fm_backend) owns shared backend selection and metadata semantics.
+Ordinary Herdr ship and scout copies use the shared durable Treehouse task-lease contract, so restored layouts and restarted agent processes never determine whether a copy is allocatable.
+[`configuration.md`](configuration.md#runtime-backend-configbackend--fm_backend) owns that lease contract plus shared backend selection and metadata semantics.
 
 ## Setup
 

@@ -50,19 +50,11 @@
 #      words, NOT "C-c" or "Ctrl+c" - all verified to fail).
 #   3. `new-tab --cwd --name` DOES return the created tab's bare integer id on
 #      stdout, exactly as documented.
-#   4. `list-panes --json`'s `pane_cwd` reflects a `cd` run DIRECTLY in the
-#      pane's own top-level shell within one poll (<0.3s) - but does NOT
-#      reflect a `cd` performed by a NESTED SUBSHELL the pane's shell
-#      launched as a foreground command (verified: `treehouse get` opens
-#      exactly such a subshell). `pane_cwd` stays frozen at wherever the
-#      pane's shell was when it invoked that foreground command - worse than
-#      herdr's frozen-cwd trap (herdr at least exposes a `foreground_cwd`
-#      that tracks this; zellij's CLI exposes no live-process cwd field and
-#      no per-pane pid to read it from `/proc`/`lsof` either). This directly
-#      contradicts the design report's assumption ("acceptable for tmux and
-#      zellij") and required a different implementation strategy - see
-#      fm_backend_zellij_current_path below and docs/zellij-backend.md
-#      "Worktree-path discovery: pane_cwd does not track a subshell".
+#   4. `list-panes --json`'s `pane_cwd` reflects the top-level shell `cd`
+#      that current fm-spawn uses to enter an already-acquired durable lease.
+#      It does not follow nested foreground subshell cwd changes, so the active
+#      marker probe remains the exact spawn-time verification primitive rather
+#      than trusting a passive field whose semantics vary by command shape.
 #   5. `new-tab` DOES steal focus from an attached client with NO flag to
 #      suppress it (unlike herdr's --no-focus and tmux's new-window -d).
 #      Mitigated (fm_backend_zellij_create_task): capture the previously
@@ -382,24 +374,11 @@ fm_backend_zellij_target_ready() {  # <target> [expected-label]
 }
 
 # fm_backend_zellij_current_path: the live pane's cwd, or empty on any error.
-# Mirrors tmux's pane_current_path poll used for worktree-path discovery after
-# `treehouse get`.
-#
-# Verified pitfall (docs/zellij-backend.md "Worktree-path discovery: pane_cwd
-# does not track a subshell"): `list-panes --json`'s `pane_cwd` DOES reflect a
-# `cd` run directly in the pane's own top-level shell, but stays FROZEN at
-# whatever directory the pane's shell was in when it launched `treehouse get`
-# as a foreground command - it never follows that command's own internal `cd`
-# into the acquired worktree, even after the subshell is fully interactive and
-# a `pwd` typed into it prints the correct live path on screen. Zellij's CLI
-# exposes no per-pane pid and no live-process cwd field to read instead
-# (unlike herdr's `foreground_cwd`), so passive JSON polling cannot solve
-# this. Active probe instead: print the pane's `$PWD` with a unique marker
-# (atomically submitted, mirroring send_text_line), briefly settle, then capture
-# and read only that marker line. Scoped to fm-spawn.sh's own worktree-discovery
-# poll loop (the only caller of this op), where injecting a harmless extra
-# command before the harness ever launches is an acceptable trade for a reliable
-# answer.
+# Current spawn enters a pre-acquired lease with a top-level shell `cd`, which
+# `pane_cwd` can follow, but this active marker probe remains the stronger exact
+# postcondition and avoids depending on passive update timing. It prints the
+# pane's `$PWD` between unique markers, captures the block, and returns only that
+# value. The harmless probe is scoped to fm-spawn.sh before harness launch.
 fm_backend_zellij_current_path() {  # <target> [expected-label]
   local target=$1 expected_label=${2:-} out line marker_begin="__FM_ZELLIJ_CWD_BEGIN__" marker_end="__FM_ZELLIJ_CWD_END__" in_block=0 chunk="" last=""
   fm_backend_zellij_target_ready "$target" "$expected_label" || return 0

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Tear down a finished task: return the treehouse worktree, release the Orca
-# worktree, or retire a secondmate home; kill the recorded runtime endpoint,
+# Tear down a finished task: conditionally return the exact durable Treehouse
+# task lease, release the Orca worktree, or retire a secondmate home; kill the recorded runtime endpoint,
 # clear volatile state, refresh/prune the project's clone for PR-based ship
 # tasks, then print a backlog-refresh reminder for ship and scout teardowns
 # (a secondmate teardown prints none, since secondmates are not backlog items).
@@ -22,6 +22,14 @@
 # A gh lookup error falls back to the content check; if that is also inconclusive,
 # teardown refuses rather than risk discarding unlanded work.
 # Uncommitted changes are never landed.
+# Ordinary tmux/Herdr/Zellij/cmux tasks additionally require one exact
+# worktree=/treehouse_lease_id=/treehouse_lease_holder= triple owned by
+# bin/fm-treehouse-lease-lib.sh. Teardown verifies that triple against
+# `treehouse status --json` before any process, worktree, endpoint, or state
+# cleanup, then passes both conditional predicates to every return retry.
+# Missing or legacy identity, a different owning-home holder, a path mismatch,
+# or a current Treehouse mismatch preserves the task and prints an actionable
+# recovery refusal. Orca and persistent secondmate-home cleanup are unchanged.
 # local-only projects additionally accept work merged into the local default
 # branch (firstmate performs that merge after configured approval) as a fallback
 # for the common case where there is no remote at all.
@@ -64,7 +72,8 @@
 # (the dying process finishes or exits within seconds) and must never be force-deleted
 # while a live git process might still own it - the fix is patience, not rm.
 #
-# On that failure signature only, teardown_treehouse_return:
+# On that failure signature only, teardown_treehouse_return (which preserves an
+# ordinary task's exact conditional lease arguments on every attempt):
 #   1. Retries up to FM_TREEHOUSE_RETURN_LOCK_RETRIES times (default 3), waiting
 #      FM_TREEHOUSE_RETURN_LOCK_RETRY_WAIT_SECS (default 1s; falls back to the older
 #      FM_STALE_WORKTREE_LOCK_RETRY_WAIT_SECS name when the new one is unset) between
@@ -152,6 +161,8 @@ SUB_HOME_PARENT_MARKER=".fm-secondmate-parent"
 . "$SCRIPT_DIR/fm-wake-lib.sh"
 # shellcheck source=bin/fm-nm-run-lib.sh
 . "$SCRIPT_DIR/fm-nm-run-lib.sh"
+# shellcheck source=bin/fm-treehouse-lease-lib.sh
+. "$SCRIPT_DIR/fm-treehouse-lease-lib.sh"
 if [ "$#" -lt 1 ] || ! fm_task_id_path_safe "$1"; then
   echo "error: invalid teardown request" >&2
   exit 2
@@ -381,9 +392,6 @@ WT=$(fm_meta_get "$META" worktree)
 PROJ=$(fm_meta_get "$META" project)
 T_ORCA=
 [ "$BACKEND" != orca ] || T_ORCA=$T
-if [ "${FM_TEARDOWN_GUARD_DONE:-0}" != 1 ]; then
-  "$FM_ROOT/bin/fm-guard.sh" || true
-fi
 HOME_PATH=$(grep '^home=' "$META" | cut -d= -f2- || true)
 PR_URL=$(grep '^pr=' "$META" | tail -1 | cut -d= -f2- || true)
 # tasktmp is recorded by fm-spawn for tasks that set up a per-task temp root
@@ -400,6 +408,47 @@ KIND=$(grep '^kind=' "$META" | cut -d= -f2- || true)
 [ -n "$KIND" ] || KIND=ship
 MODE=$(grep '^mode=' "$META" | cut -d= -f2- || true)
 [ -n "$MODE" ] || MODE=no-mistakes
+TREEHOUSE_LEASE_PATH=
+TREEHOUSE_LEASE_ID=
+TREEHOUSE_LEASE_HOLDER=
+
+treehouse_task_lease_require() {  # <meta> <owning-home> <task-id>
+  local meta=$1 owning_home=$2 task_id=$3 home_real expected_holder project_dir
+  if ! fm_treehouse_lease_meta_read_exact "$meta"; then
+    echo "REFUSED: task $task_id has missing, duplicate, legacy, or unreadable durable Treehouse lease identity. Preserving its copy; reconcile it with 'treehouse status --json' and never release it by path alone." >&2
+    return 1
+  fi
+  TREEHOUSE_LEASE_PATH=$FM_TREEHOUSE_LEASE_PATH
+  TREEHOUSE_LEASE_ID=$FM_TREEHOUSE_LEASE_ID
+  TREEHOUSE_LEASE_HOLDER=$FM_TREEHOUSE_LEASE_HOLDER
+  home_real=$(CDPATH='' cd -- "$owning_home" 2>/dev/null && pwd -P) || {
+    echo "REFUSED: cannot resolve the owning Firstmate home for task $task_id; preserving its Treehouse lease." >&2
+    return 1
+  }
+  expected_holder=$(fm_treehouse_lease_holder_for_task "$home_real" "$task_id") || return 1
+  [ "$TREEHOUSE_LEASE_HOLDER" = "$expected_holder" ] || {
+    echo "REFUSED: task $task_id's Treehouse lease holder does not match its owning Firstmate home. Preserving the copy and refusing cross-home release." >&2
+    return 1
+  }
+  project_dir=$(fm_meta_get "$meta" project)
+  if ! fm_treehouse_lease_verify_current \
+    "$TREEHOUSE_LEASE_PATH" "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" "$project_dir"; then
+    echo "REFUSED: task $task_id's current Treehouse lease does not exactly match its recorded path, identity, and holder. No process, worktree, or endpoint cleanup was attempted." >&2
+    return 1
+  fi
+}
+
+if [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ]; then
+  treehouse_task_lease_require "$META" "$FM_HOME" "$ID" || exit 1
+  [ "$TREEHOUSE_LEASE_PATH" = "$WT" ] || {
+    echo "REFUSED: task $ID's Treehouse lease path does not exactly match worktree= metadata. Preserving both identities for recovery." >&2
+    exit 1
+  }
+fi
+if [ "${FM_TEARDOWN_GUARD_DONE:-0}" != 1 ]; then
+  "$FM_ROOT/bin/fm-guard.sh" || true
+fi
+
 PUBLIC_FOLLOWUP_HOME=$FM_HOME
 PUBLIC_FOLLOWUP_STATE=$STATE
 PUBLIC_FOLLOWUP_WORK_HOME=main
@@ -991,15 +1040,28 @@ cleanup_stale_lock_for_safety_check() {
   return "$TEARDOWN_TREEHOUSE_LOCK_REFUSED"
 }
 
-# Return a worktree/home via `treehouse return --force`, tolerating a transient or
-# stale git index.lock left by a killed crew process. See the script header.
+teardown_treehouse_return_once() {  # <dir> <cd-dir> [lease-id] [holder]
+  local dir=$1 cd_dir=$2 lease_id=${3:-} holder=${4:-}
+  if [ -n "$lease_id" ] || [ -n "$holder" ]; then
+    [ -n "$lease_id" ] && [ -n "$holder" ] || return 1
+    fm_treehouse_lease_return_exact "$dir" "$lease_id" "$holder" "$cd_dir"
+  else
+    ( CDPATH='' cd -- "$cd_dir" && treehouse return --force "$dir" )
+  fi
+}
+
+# Return a worktree/home via Treehouse, tolerating a transient or stale git
+# index.lock left by a killed crew process. Ordinary task call sites pass the
+# exact lease id and holder; persistent secondmate homes retain their existing
+# unconditional lease behavior. See the script header.
 teardown_treehouse_return() {
   local dir=$1 cd_dir=$2 label=$3 post_cleanup_check=${4:-}
+  local lease_id=${5:-} lease_holder=${6:-}
   local out lock attempt=0 max_retries lock_desc
 
   # Capture stdout+stderr so non-lock failures stay visible and lock failures can
   # be matched by signature even when the lock file is already gone mid-check.
-  if out=$( ( cd "$cd_dir" && treehouse return --force "$dir" ) 2>&1 ); then
+  if out=$(teardown_treehouse_return_once "$dir" "$cd_dir" "$lease_id" "$lease_holder" 2>&1); then
     [ -n "$out" ] && printf '%s\n' "$out"
     return 0
   fi
@@ -1024,7 +1086,7 @@ teardown_treehouse_return() {
     echo "teardown: $label return failed with transient git lock ($lock_desc); waiting ${TREEHOUSE_RETURN_LOCK_RETRY_WAIT_SECS}s and retrying ($attempt/${max_retries})" >&2
     sleep "$TREEHOUSE_RETURN_LOCK_RETRY_WAIT_SECS"
 
-    if out=$( ( cd "$cd_dir" && treehouse return --force "$dir" ) 2>&1 ); then
+    if out=$(teardown_treehouse_return_once "$dir" "$cd_dir" "$lease_id" "$lease_holder" 2>&1); then
       [ -n "$out" ] && printf '%s\n' "$out"
       echo "teardown: $label return succeeded on retry; lock cleared on its own" >&2
       return 0
@@ -1051,7 +1113,7 @@ teardown_treehouse_return() {
           return 1
         fi
       fi
-      if out=$( ( cd "$cd_dir" && treehouse return --force "$dir" ) 2>&1 ); then
+      if out=$(teardown_treehouse_return_once "$dir" "$cd_dir" "$lease_id" "$lease_holder" 2>&1); then
         [ -n "$out" ] && printf '%s\n' "$out"
         echo "teardown: $label return succeeded after stale-lock cleanup" >&2
         return 0
@@ -1850,7 +1912,12 @@ validate_firstmate_home_children_removal() {
         validate_child_worktree_for_removal "$child_wt" "$child_proj" >/dev/null || return 1
         require_orca_worktree_path_match "$child_orca_worktree_id" "$child_wt" || return 1
       fi
-    elif [ -n "$child_wt" ] && [ -e "$child_wt" ]; then
+    else
+      treehouse_task_lease_require "$child_meta" "$home" "$child_id" || return 1
+      [ "$TREEHOUSE_LEASE_PATH" = "$child_wt" ] || {
+        echo "REFUSED: child task $child_id's Treehouse lease path does not match its worktree metadata; preserving the child and secondmate home" >&2
+        return 1
+      }
       child_proj=$(meta_value "$child_meta" project)
       validate_child_worktree_for_removal "$child_wt" "$child_proj" >/dev/null || return 1
     fi
@@ -1994,7 +2061,8 @@ preflight_firstmate_home_herdr_children() {  # <home>
 }
 
 cleanup_firstmate_home_children() {
-  local home=$1 sub_state child_meta child_id child_t child_wt child_proj child_kind child_home child_backend child_orca_worktree_id child_return_rc child_busy_gen
+  local home=$1 sub_state child_meta child_id child_t child_wt child_proj child_kind child_home child_backend child_orca_worktree_id child_busy_gen
+  local child_treehouse_lease_id child_treehouse_lease_holder
   sub_state="$home/state"
   [ -d "$sub_state" ] || return 0
   for child_meta in "$sub_state"/*.meta; do
@@ -2015,6 +2083,11 @@ cleanup_firstmate_home_children() {
       if [ -n "$child_wt" ] && [ -e "$child_wt" ]; then
         validate_child_worktree_for_removal "$child_wt" "$child_proj" >/dev/null || return 1
       fi
+    elif [ "$child_kind" != secondmate ]; then
+      treehouse_task_lease_require "$child_meta" "$home" "$child_id" || return 1
+      [ "$TREEHOUSE_LEASE_PATH" = "$child_wt" ] || return 1
+      child_treehouse_lease_id=$TREEHOUSE_LEASE_ID
+      child_treehouse_lease_holder=$TREEHOUSE_LEASE_HOLDER
     fi
     if [ -n "$child_t" ]; then
       if [ "$child_backend" = herdr ]; then
@@ -2056,17 +2129,11 @@ cleanup_firstmate_home_children() {
         "$child_wt/.opencode/plugins/fm-busy-state.js" \
         "$child_wt/.fm-grok-turnend" "$child_wt/.fm-kimi-turnend"
       if [ -n "$child_proj" ] && [ -d "$child_proj" ] && command -v treehouse >/dev/null 2>&1; then
-        if teardown_treehouse_return "$child_wt" "$child_proj" "child worktree"; then
-          :
-        else
-          child_return_rc=$?
-          if [ "$child_return_rc" -eq "$TEARDOWN_TREEHOUSE_LOCK_REFUSED" ]; then
-            return "$child_return_rc"
-          fi
-          safe_rm_rf_child_worktree "$child_wt" "$child_proj"
-        fi
+        teardown_treehouse_return "$child_wt" "$child_proj" "child worktree" "" \
+          "$child_treehouse_lease_id" "$child_treehouse_lease_holder" || return $?
       else
-        safe_rm_rf_child_worktree "$child_wt" "$child_proj"
+        echo "REFUSED: exact Treehouse lease return prerequisites are unavailable for child $child_id; preserving the child and secondmate home" >&2
+        return 1
       fi
     fi
     remove_grok_turnend_auth "$sub_state" "$child_id"
@@ -2256,8 +2323,9 @@ elif [ -d "$WT" ] && [ "$KIND" != secondmate ]; then
   if [ "$FORCE" != "--force" ] && [ "$KIND" != scout ] && [ "$KIND" != secondmate ]; then
     post_lock_cleanup_check=validate_worktree_teardown_safety
   fi
-  teardown_treehouse_return "$WT" "$PROJ" "worktree" "$post_lock_cleanup_check" || {
-    echo "error: treehouse return failed for worktree $WT; teardown aborted" >&2
+  teardown_treehouse_return "$WT" "$PROJ" "worktree" "$post_lock_cleanup_check" \
+    "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" || {
+    echo "error: exact conditional Treehouse lease return failed for worktree $WT; teardown aborted with task identity preserved" >&2
     exit 1
   }
 fi

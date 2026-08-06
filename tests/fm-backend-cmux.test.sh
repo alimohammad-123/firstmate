@@ -682,10 +682,9 @@ test_send_text_line_reports_unsafe_input_when_cleanup_fails() {
 
 test_current_path_probes_with_marker() {
   local dir fb out
-  # Verified real-cmux pitfall (docs/cmux-backend.md finding #2): the surface's
-  # cwd is frozen at creation time (the top-level shell's cwd), never following
-  # a foreground subshell (e.g. treehouse get) - so current_path actively
-  # prints a marked cwd line and reads only that marker from the capture.
+  # Verified real-cmux pitfall: current_directory does not follow a foreground
+  # subshell's cwd. current_path therefore retains the stronger active marked-pwd
+  # probe used to verify exact leased-path entry.
   dir="$TMP_ROOT/cwd"; mkdir -p "$dir/responses"
   # 1: list-panes (current_path's own target_ready)
   # 2: list-panes (target_ready, called by send_text_line->send_literal)

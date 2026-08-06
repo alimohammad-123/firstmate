@@ -180,6 +180,51 @@ Valid cleanup removed only the exact task-bound target and left the control wind
 The metadata-only validation covers tmux, Herdr, Zellij, Orca, and cmux before backend dispatch.
 Claude, Codex, OpenCode, Pi, pi-signed, Grok, Kimi, and Muse share that backend cleanup boundary; their harness-specific hook files, tokens, and session-log sidecars are cleaned only after it, so no harness needs a separate endpoint parser.
 
+### Durable Treehouse task leases
+
+The ordinary task lease contract was verified on 2026-08-06 against Treehouse 2.1.1 and a stateful fake of the same documented command surface.
+The executable regression drives the real spawn and teardown entry points without reading or editing Treehouse private state.
+
+```sh
+treehouse --version
+treehouse get --help
+treehouse status --help
+treehouse return --help
+tests/fm-treehouse-task-lease.test.sh
+```
+
+The installed CLI exposed `get --lease --json --lease-holder`, `status --json`, and both `return --if-lease-id` and `return --if-lease-holder`.
+An isolated temporary-home probe against that binary confirmed leased JSON status, exclusion from the next allocation, refusal on a wrong conditional identity, and successful return on the exact identity.
+The stateful fake proved one home-scoped immutable lease per allocation, same-task reuse after a simulated endpoint or owner restart, exclusion from later allocation, cross-home separation for the same task id, refusal before return on wrong identity, exact conditional return on correct identity, exact rollback after pre-publication failure, retained metadata plus raw acquisition evidence when rollback failed, and raw-only preservation when acquisition identity was ambiguous.
+
+```text
+ok - spawn acquires and records one home-scoped durable Treehouse lease before launch
+ok - endpoint or owner restart reuses the exact recorded lease without process identity
+ok - a later allocation cannot select a worktree held by an earlier task lease
+ok - two homes using the same task id receive non-colliding lease identities and holders
+ok - wrong lease identity refuses before any conditional return or task-record cleanup
+ok - correct path, identity, and holder conditionally return the exact task lease
+ok - legacy in-flight tasks are preserved with actionable recovery instead of guessed allocation or release
+ok - pre-publication spawn failure rolls back only its own exact lease
+ok - failed exact rollback preserves both lease identity and raw acquisition evidence
+ok - Herdr, Zellij, and cmux share the durable pre-endpoint lease and exact rollback guarantee
+ok - ambiguous acquisition preserves raw evidence and never guesses a lease release
+```
+
+Applicability was rechecked through the affected backend and lifecycle suites.
+Tmux, Herdr, Zellij, and cmux converge on the shared lease owner before their endpoint-specific creation paths; Orca continues to bypass Treehouse, and persistent secondmate-home acquisition and retirement remain on their pre-existing lease path.
+
+```sh
+tests/fm-backend.test.sh
+tests/fm-backend-herdr.test.sh
+tests/fm-backend-zellij.test.sh
+tests/fm-backend-cmux.test.sh
+tests/fm-backend-orca.test.sh
+tests/fm-secondmate-lifecycle-e2e.test.sh
+tests/fm-secondmate-safety.test.sh
+tests/fm-teardown.test.sh
+```
+
 ## Herdr
 
 The compatibility floor is protocol 14.

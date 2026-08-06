@@ -31,9 +31,17 @@
 #   docs/cmux-backend.md),
 #   then tmux.
 #   Spawn-capable backends are the reference tmux adapter and experimental
-#   herdr, zellij, orca, and cmux. Orca owns both the task worktree and
-#   terminal, so ship/scout Orca spawns do not run treehouse get; cmux is a
-#   session provider only, exactly like herdr/zellij, so it does. An
+#   herdr, zellij, orca, and cmux. For every ordinary tmux/herdr/zellij/cmux
+#   ship or scout, bin/fm-treehouse-lease-lib.sh acquires a process-independent
+#   Treehouse lease before endpoint creation, parses only path/lease_id/holder
+#   from `treehouse get --lease --json`, and the endpoint explicitly cd's to
+#   that exact path. The holder includes this home's absolute identity, and
+#   metadata records the immutable lease id and holder beside worktree=.
+#   Relaunch verifies and reuses that exact lease instead of allocating again.
+#   A pre-publication failure conditionally returns only the acquired lease;
+#   ambiguous or failed rollback preserves an acquisition receipt and recovery
+#   metadata. Orca owns both the task worktree and terminal and never uses this
+#   path; persistent secondmate-home leases remain unchanged. An
 #   auto-detected herdr or cmux spawn prints a loud stderr notice;
 #   auto-detected tmux stays silent; zellij and orca are never auto-detected.
 #   codex-app is not a known backend yet; docs/codex-app-backend.md owns that
@@ -63,8 +71,8 @@
 #   plus authoritative metadata may replace one exact agent-free husk in place.
 #   The journal, visible token, and labels alone are never endpoint or ownership
 #   authority, and every ambiguous recovery stays on the flat fallback after
-#   duplicate-agent risk is independently absent. Treehouse allocation and task
-#   metadata are unchanged.
+#   duplicate-agent risk is independently absent. Presentation changes never
+#   alter the shared durable Treehouse task-lease contract above.
 #   A clean projected create or exact resume makes one bounded attempt to hold
 #   the one session-scoped presentation-order lock (keyed by named session plus
 #   canonical socket, outside any home's state/) through launch handoff. Lock
@@ -217,6 +225,8 @@ SUB_HOME_MARKER=".fm-secondmate-home"
 . "$SCRIPT_DIR/fm-trace-context-lib.sh"
 # shellcheck source=bin/fm-remote-readiness-lib.sh
 . "$SCRIPT_DIR/fm-remote-readiness-lib.sh"
+# shellcheck source=bin/fm-treehouse-lease-lib.sh
+. "$SCRIPT_DIR/fm-treehouse-lease-lib.sh"
 # Fail closed before any fleet mutation: a no-mistakes gate agent must never spawn
 # a direct report (see bin/fm-gate-refuse-lib.sh).
 fm_refuse_if_gate_agent
@@ -620,6 +630,12 @@ fi
 ORCA_ABORT_CLEANUP=0
 ORCA_WORKTREE_ID=
 ORCA_TERMINAL=
+TREEHOUSE_LEASE_PATH=
+TREEHOUSE_LEASE_ID=
+TREEHOUSE_LEASE_HOLDER=
+TREEHOUSE_LEASE_RECEIPT=
+TREEHOUSE_LEASE_ROLLBACK=0
+SPAWN_META_TMP=
 HERDR_PROJECTION_ABORT_CLEANUP=0
 HERDR_PROJECTION_ABORT_SESSION=
 HERDR_PROJECTION_ABORT_TASK_PANE=
@@ -646,6 +662,32 @@ parse_orca_worktree_result() {
   else
     ORCA_TERMINAL=
   fi
+}
+
+spawn_preserve_treehouse_lease_evidence() {
+  local recovery_tmp
+  [ -n "${TREEHOUSE_LEASE_PATH:-}" ] || return 0
+  [ -n "${TREEHOUSE_LEASE_ID:-}" ] || return 0
+  [ -n "${TREEHOUSE_LEASE_HOLDER:-}" ] || return 0
+  mkdir -p "$STATE" 2>/dev/null || return 0
+  recovery_tmp="$STATE/.$ID.meta.lease-recovery.$$"
+  {
+    echo "window=${T:-}"
+    echo "endpoint_task_id=$ID"
+    echo "worktree=$TREEHOUSE_LEASE_PATH"
+    echo "project=${PROJ_ABS:-}"
+    echo "harness=${HARNESS:-}"
+    echo "kind=${KIND:-ship}"
+    [ -z "${MODE:-}" ] || echo "mode=$MODE"
+    [ -z "${YOLO:-}" ] || echo "yolo=$YOLO"
+    echo "model=${MODEL:-default}"
+    echo "effort=${EFFORT:-default}"
+    [ "${BACKEND:-tmux}" = tmux ] || echo "backend=$BACKEND"
+    echo "treehouse_lease_id=$TREEHOUSE_LEASE_ID"
+    echo "treehouse_lease_holder=$TREEHOUSE_LEASE_HOLDER"
+    echo "treehouse_lease_recovery=spawn-rollback-failed"
+  } > "$recovery_tmp" 2>/dev/null || return 0
+  mv -f -- "$recovery_tmp" "$STATE/$ID.meta" 2>/dev/null || true
 }
 
 spawn_abort_cleanup() {
@@ -696,6 +738,17 @@ spawn_abort_cleanup() {
       fi
     fi
   fi
+  if [ "$TREEHOUSE_LEASE_ROLLBACK" = 1 ]; then
+    TREEHOUSE_LEASE_ROLLBACK=0
+    if fm_treehouse_lease_return_exact \
+      "$TREEHOUSE_LEASE_PATH" "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" "$PROJ_ABS" >/dev/null 2>&1; then
+      [ -z "$TREEHOUSE_LEASE_RECEIPT" ] || rm -f -- "$TREEHOUSE_LEASE_RECEIPT"
+    else
+      spawn_preserve_treehouse_lease_evidence
+      echo "error: failed to roll back the exact Treehouse lease acquired for $ID; preserved its identity in $STATE/$ID.meta and its acquisition receipt at $TREEHOUSE_LEASE_RECEIPT. Verify it with 'treehouse status --json' and release only with the recorded lease id and holder." >&2
+    fi
+  fi
+  [ -z "$SPAWN_META_TMP" ] || rm -f -- "$SPAWN_META_TMP"
   if [ "$SPAWN_TASK_LOCK_HELD" = 1 ]; then
     SPAWN_TASK_LOCK_HELD=0
     fm_lock_release "$SPAWN_TASK_LOCK" || true
@@ -1425,6 +1478,80 @@ herdr_projection_meta_field_exact() {  # <meta> <key>
 # Under the session lock, authoritative metadata must identify one positively
 # dead or agent-free endpoint before token inspection may allow flat fallback.
 # Exact Herdr fields are retained for the narrower version 2 reclaim path.
+prepare_treehouse_task_lease() {
+  local meta expected_holder recorded_project recorded_project_real recorded_kind recorded_backend
+  [ "$KIND" != secondmate ] || return 0
+  [ "$BACKEND" != orca ] || return 0
+
+  expected_holder=$(fm_treehouse_lease_holder_for_task "$FM_HOME" "$ID") || {
+    echo "error: cannot construct a line-safe Treehouse lease holder for task $ID" >&2
+    return 1
+  }
+  meta="$STATE/$ID.meta"
+  if [ -e "$meta" ] || [ -L "$meta" ]; then
+    [ -f "$meta" ] && [ ! -L "$meta" ] || {
+      echo "error: existing metadata for $ID is not a regular file; refusing to acquire or enter any Treehouse worktree" >&2
+      return 1
+    }
+    recorded_kind=$(fm_meta_get "$meta" kind)
+    [ -n "$recorded_kind" ] || recorded_kind=ship
+    [ "$recorded_kind" = "$KIND" ] || {
+      echo "error: existing metadata for $ID belongs to kind=$recorded_kind, not kind=$KIND; refusing Treehouse lease reuse" >&2
+      return 1
+    }
+    recorded_backend=$(fm_backend_of_meta "$meta")
+    [ "$recorded_backend" = "$BACKEND" ] || {
+      echo "error: existing metadata for $ID belongs to backend=$recorded_backend, not backend=$BACKEND; recover it on its recorded backend" >&2
+      return 1
+    }
+    recorded_project=$(fm_meta_get "$meta" project)
+    recorded_project_real=$(CDPATH='' cd -- "$recorded_project" 2>/dev/null && pwd -P) || recorded_project_real=
+    [ -n "$recorded_project_real" ] && [ "$recorded_project_real" = "$PROJ_ABS_REAL" ] || {
+      echo "error: existing metadata for $ID does not identify this project; refusing Treehouse lease reuse" >&2
+      return 1
+    }
+    if ! fm_treehouse_lease_meta_read_exact "$meta"; then
+      echo "REFUSED: task $ID predates exact durable Treehouse lease metadata or its lease identity is unreadable. Preserving its recorded copy; reconcile it with 'treehouse status --json' and do not allocate or release by path." >&2
+      return 1
+    fi
+    TREEHOUSE_LEASE_PATH=$FM_TREEHOUSE_LEASE_PATH
+    TREEHOUSE_LEASE_ID=$FM_TREEHOUSE_LEASE_ID
+    TREEHOUSE_LEASE_HOLDER=$FM_TREEHOUSE_LEASE_HOLDER
+    [ "$TREEHOUSE_LEASE_HOLDER" = "$expected_holder" ] || {
+      echo "REFUSED: task $ID's Treehouse lease holder belongs to a different Firstmate home. Preserving the recorded copy and refusing cross-home reuse." >&2
+      return 1
+    }
+    if ! fm_treehouse_lease_verify_current \
+      "$TREEHOUSE_LEASE_PATH" "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" "$PROJ_ABS"; then
+      echo "REFUSED: task $ID's recorded Treehouse lease does not exactly match the current leased path, identity, and holder. Preserving the task for manual recovery." >&2
+      return 1
+    fi
+    WT=$TREEHOUSE_LEASE_PATH
+    validate_spawn_worktree "recorded Treehouse durable lease" "$meta"
+    return 0
+  fi
+
+  TREEHOUSE_LEASE_HOLDER=$expected_holder
+  TREEHOUSE_LEASE_RECEIPT="$STATE/.$ID.treehouse-lease-acquire.json"
+  if ! fm_treehouse_lease_acquire "$PROJ_ABS" "$TREEHOUSE_LEASE_HOLDER" "$TREEHOUSE_LEASE_RECEIPT"; then
+    TREEHOUSE_LEASE_PATH=${FM_TREEHOUSE_LEASE_PATH:-}
+    TREEHOUSE_LEASE_ID=${FM_TREEHOUSE_LEASE_ID:-}
+    TREEHOUSE_LEASE_HOLDER=${FM_TREEHOUSE_LEASE_HOLDER:-$TREEHOUSE_LEASE_HOLDER}
+    if fm_treehouse_lease_value_line_safe "$TREEHOUSE_LEASE_PATH" \
+       && fm_treehouse_lease_value_line_safe "$TREEHOUSE_LEASE_ID" \
+       && fm_treehouse_lease_value_line_safe "$TREEHOUSE_LEASE_HOLDER"; then
+      TREEHOUSE_LEASE_ROLLBACK=1
+    fi
+    return 1
+  fi
+  TREEHOUSE_LEASE_PATH=$FM_TREEHOUSE_LEASE_PATH
+  TREEHOUSE_LEASE_ID=$FM_TREEHOUSE_LEASE_ID
+  TREEHOUSE_LEASE_HOLDER=$FM_TREEHOUSE_LEASE_HOLDER
+  TREEHOUSE_LEASE_ROLLBACK=1
+  WT=$TREEHOUSE_LEASE_PATH
+  validate_spawn_worktree "Treehouse durable lease" "$PROJ_ABS"
+}
+
 herdr_projection_existing_meta_allows_flat() {  # <meta>
   local meta=$1 old_backend old_target old_session old_pane old_state target_session target_pane
   HERDR_RECOVERY_BACKEND=""
@@ -1488,6 +1615,8 @@ herdr_projection_existing_meta_allows_flat() {  # <meta>
       ;;
   esac
 }
+
+prepare_treehouse_task_lease || exit 1
 
 W="fm-$ID"
 case "$BACKEND" in
@@ -1725,11 +1854,11 @@ if [ "$KIND" = secondmate ]; then
     propagate_inheritable_config "$CONFIG" "$PROJ_ABS/config" \
     || echo "warning: secondmate $ID trace-context inheritance failed for $PROJ_ABS" >&2
 fi
-# #134 robustness: only tmux needs a worktree-detection target distinct from $T -
-# its rename-safe stable window id, set as WT_TARGET=$WID in the tmux branch above.
-# Every other backend addresses its pane/surface by the id already in $T, so default
-# WT_TARGET to $T for them (and for any future backend) - the shared treehouse-get +
-# worktree-detection steps below must never reference an unbound WT_TARGET under set -u.
+# #134 robustness: only tmux needs a leased-path verification target distinct
+# from $T - its rename-safe stable window id, set as WT_TARGET=$WID above.
+# Every other backend addresses its pane/surface by the id already in $T, so
+# default WT_TARGET to $T; exact path entry below must never reference an
+# unbound target under set -u.
 : "${WT_TARGET:=$T}"
 spawn_send_text_line() {  # <target> <text>
   case "$BACKEND" in
@@ -1819,39 +1948,35 @@ kimi_spawn_fail() {  # <detail>
 }
 
 if [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ]; then
-  spawn_send_text_line "$WT_TARGET" 'treehouse get'
+  # Treehouse allocation already completed non-interactively, before this
+  # endpoint could host a worker. Enter only the exact path returned in that
+  # lease's documented JSON; no endpoint process owns the reservation.
+  spawn_send_text_line "$WT_TARGET" "cd -- $(shell_quote "$TREEHOUSE_LEASE_PATH")"
 
-  # Wait for the treehouse subshell: the pane's cwd moves from the project to the worktree.
+  # Wait for the endpoint's top-level shell to enter the leased worktree.
   # Target the stable window id, not the name: if the name is ever lost (e.g. an
   # automatic-rename slips through), display-message -t <bad-name> falls back to the
   # active client's window, which would misread firstmate's OWN pane path as the
   # worktree and tangle a hook into the primary checkout. The window id never lies.
-  # Compare against PROJ_ABS_REAL (physical), not PROJ_ABS: a symlinked project
-  # prefix would otherwise make the pane's OS-level cwd read differ from
-  # PROJ_ABS on the very first poll, before the pane has actually moved.
-  #
-  # A single read that already differs from PROJ_ABS_REAL is not proof the pane
-  # settled there: on some tmux/WSL setups a brand-new window's pane_current_path
-  # transiently reports an unrelated stale path (seen live as another real git
-  # checkout entirely) before the shell catches up with treehouse get's cd. That
-  # stale path still passes the PROJ_ABS_REAL comparison and validate_spawn_worktree
-  # below (it resolves to a real, distinct worktree top-level too), so accepting it
-  # on one read alone silently records the wrong worktree= in state/<id>.meta. Require
-  # two consecutive reads to agree on the same non-project path before accepting it;
-  # a mismatch just becomes the new candidate rather than resetting the wait, so a
-  # pane that is already settled by the first real read only costs the one existing
-  # inter-poll sleep as confirmation, not a whole extra cycle on top.
+  # Compare against the physically resolved lease path. A single read is not
+  # proof the pane settled there: on some tmux/WSL setups a brand-new window's
+  # pane_current_path transiently reports an unrelated stale checkout before the
+  # shell catches up with cd. Require two consecutive exact reads of the acquired
+  # path; any other directory, including another valid worktree, remains untrusted.
+  expected_wt_real=$(real_path_or_raw "$TREEHOUSE_LEASE_PATH")
   candidate=""
+  entered_lease=0
   for _ in $(seq 1 60); do
     p=$(spawn_current_path "$WT_TARGET" || true)
     if [ -n "$p" ]; then
       p_real=$(real_path_or_raw "$p")
-      if [ "$p_real" != "$PROJ_ABS_REAL" ]; then
+      if [ "$p_real" = "$expected_wt_real" ]; then
         if [ -n "$candidate" ] && [ "$p_real" = "$candidate" ]; then
-          WT="$p"
+          WT=$TREEHOUSE_LEASE_PATH
+          entered_lease=1
           break
         fi
-        candidate="$p_real"
+        candidate=$p_real
       else
         candidate=""
       fi
@@ -1860,12 +1985,12 @@ if [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ]; then
     fi
     sleep 1
   done
-  if [ -z "$WT" ]; then
-    echo "error: treehouse get did not enter a worktree within 60s; inspect window $T" >&2
+  if [ "$entered_lease" -ne 1 ]; then
+    echo "error: endpoint did not enter the exact Treehouse leased worktree within 60s; inspect window $T" >&2
     exit 1
   fi
 
-  validate_spawn_worktree "treehouse get" "$T"
+  validate_spawn_worktree "Treehouse durable lease" "$T"
 fi
 
 # Per-task temp root: /tmp/fm-<id>/ with Go's build temp nested at gotmp/. Go won't
@@ -2185,6 +2310,12 @@ fi
 
 META_WINDOW=$T
 [ "$BACKEND" = orca ] && META_WINDOW=$W
+if { [ -e "$STATE/$ID.meta" ] || [ -L "$STATE/$ID.meta" ]; } \
+  && { [ ! -f "$STATE/$ID.meta" ] || [ -L "$STATE/$ID.meta" ]; }; then
+  echo "error: task metadata publication target $STATE/$ID.meta is not a regular file" >&2
+  exit 1
+fi
+SPAWN_META_TMP="$STATE/.$ID.meta.$$"
 {
   echo "window=$META_WINDOW"
   echo "endpoint_task_id=$ID"
@@ -2222,12 +2353,25 @@ META_WINDOW=$T
     echo "cmux_workspace_id=$CMUX_WORKSPACE_ID"
     echo "cmux_surface_id=$CMUX_SURFACE_ID"
   fi
+  if [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ]; then
+    echo "treehouse_lease_id=$TREEHOUSE_LEASE_ID"
+    echo "treehouse_lease_holder=$TREEHOUSE_LEASE_HOLDER"
+  fi
   if [ "$KIND" = secondmate ]; then
     echo "home=$PROJ_ABS"
     echo "projects=$SECONDMATE_PROJECTS"
   fi
-} > "$STATE/$ID.meta"
+} > "$SPAWN_META_TMP"
+mv -f -- "$SPAWN_META_TMP" "$STATE/$ID.meta"
+SPAWN_META_TMP=
 [ "$BACKEND" = orca ] && ORCA_ABORT_CLEANUP=0
+if [ "$TREEHOUSE_LEASE_ROLLBACK" = 1 ]; then
+  # The exact lease identity and endpoint are now durably published together.
+  # Later failures preserve that record for ordinary recovery/teardown instead
+  # of returning a copy whose task is already discoverable.
+  TREEHOUSE_LEASE_ROLLBACK=0
+  rm -f -- "$TREEHOUSE_LEASE_RECEIPT" || true
+fi
 
 sq_brief=$(shell_quote "$BRIEF")
 sq_turnend=$(shell_quote "$TURNEND")

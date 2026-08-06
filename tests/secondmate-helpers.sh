@@ -75,16 +75,34 @@ case "${1:-}" in
     fi
     exit 0
     ;;
-  return)
-    shift
-    target=
-    while [ $# -gt 0 ]; do
-      case "$1" in
-        --force) ;;
-        *) target=$1 ;;
-      esac
-      shift
+  status)
+    [ "${2:-}" = --json ] || exit 2
+    fakebin=$(CDPATH='' cd -- "$(dirname "$0")" && pwd -P)
+    test_root=$(CDPATH='' cd -- "$fakebin/../.." && pwd -P)
+    cwd_real=$(pwd -P)
+    meta=
+    path=
+    for candidate in "$test_root"/*/state/*.meta "$test_root"/*/*/state/*.meta; do
+      [ -f "$candidate" ] || continue
+      recorded_path=$(sed -n 's/^worktree=//p' "$candidate")
+      recorded_project=$(sed -n 's/^project=//p' "$candidate")
+      [ -n "$recorded_path" ] && [ -n "$recorded_project" ] || continue
+      recorded_real=$(CDPATH='' cd -- "$recorded_project" 2>/dev/null && pwd -P) || continue
+      [ "$recorded_real" = "$cwd_real" ] || continue
+      grep -q '^treehouse_lease_id=' "$candidate" || continue
+      meta=$candidate
+      path=$recorded_path
+      break
     done
+    [ -n "$meta" ] || exit 1
+    lease_id=$(sed -n 's/^treehouse_lease_id=//p' "$meta")
+    lease_holder=$(sed -n 's/^treehouse_lease_holder=//p' "$meta")
+    jq -n --arg path "$path" --arg lease_id "$lease_id" --arg lease_holder "$lease_holder" \
+      '[{path:$path,status:"leased",lease_id:$lease_id,lease_holder:$lease_holder}]'
+    ;;
+  return)
+    [ "${2:-}" = --force ] || exit 2
+    target=${3:-}
     [ -z "${FM_FAKE_TREEHOUSE_RETURN_FAIL:-}" ] || exit 17
     [ -n "${FM_FAKE_TREEHOUSE_LEASE_FILE:-}" ] && rm -f "$FM_FAKE_TREEHOUSE_LEASE_FILE"
     [ -n "$target" ] && rm -rf -- "$target"

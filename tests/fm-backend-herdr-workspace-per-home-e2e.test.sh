@@ -63,17 +63,37 @@ herdr_forget_inherited_pane
 # low-noise scratch fixture shape used by
 # tests/fm-backend-autodetect-smoke.test.sh.
 # fm-spawn no longer needs this as a symlink workaround: fm-spawn-symlink-guard-s8
-# canonicalized project and backend cwd comparisons in the worktree-discovery
-# poll.
+# canonicalized the leased path and backend cwd before exact verification.
 TMP_ROOT=$(mktemp -d "$(cd "${TMPDIR:-/tmp}" && pwd -P)/fm-herdr-e2e.XXXXXX")
 SESSION="fm-lab-herdr-e2e-$$"
 export HERDR_SESSION="$SESSION"
 WT1=; WT2=
+return_test_lease_exact() {  # <worktree>
+  local wt=$1 meta recorded lease_id holder project
+  while IFS= read -r meta; do
+    recorded=$(sed -n 's/^worktree=//p' "$meta")
+    [ "$recorded" = "$wt" ] || continue
+    lease_id=$(sed -n 's/^treehouse_lease_id=//p' "$meta")
+    holder=$(sed -n 's/^treehouse_lease_holder=//p' "$meta")
+    project=$(sed -n 's/^project=//p' "$meta")
+    [ -n "$lease_id" ] && [ -n "$holder" ] && [ -d "$project" ] || return 1
+    (cd "$project" && treehouse return --force "$wt" \
+      --if-lease-id "$lease_id" --if-lease-holder "$holder") >/dev/null 2>&1
+    return $?
+  done < <(find "$TMP_ROOT" -type f -path '*/state/*.meta' -print)
+  return 1
+}
 cleanup_all() {
-  [ -n "$WT1" ] && command -v treehouse >/dev/null 2>&1 && treehouse return --force "$WT1" >/dev/null 2>&1
-  [ -n "$WT2" ] && command -v treehouse >/dev/null 2>&1 && treehouse return --force "$WT2" >/dev/null 2>&1
-  herdr_safe_stop_and_delete "$SESSION"
-  rm -rf "$TMP_ROOT"
+  local status=0
+  [ -z "$WT1" ] || return_test_lease_exact "$WT1" || status=$?
+  [ -z "$WT2" ] || return_test_lease_exact "$WT2" || status=$?
+  herdr_safe_stop_and_delete "$SESSION" || status=$?
+  if [ "$status" -eq 0 ]; then
+    rm -rf "$TMP_ROOT"
+  else
+    printf 'warning: exact cleanup failed; preserved lease evidence at %s\n' "$TMP_ROOT" >&2
+  fi
+  return "$status"
 }
 trap cleanup_all EXIT
 fm_herdr_lab_prepare "$SESSION" || fail "could not prepare isolated Herdr lab session"

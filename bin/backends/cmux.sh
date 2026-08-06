@@ -32,15 +32,11 @@
 #
 #   1. `send` (literal) does NOT auto-submit - confirmed, matches every other
 #      backend's "literal-then-separate-Enter" contract.
-#   2. Surface cwd is CREATION-TIME-FROZEN (zellij-shape), not live-tracking
-#      (herdr-shape): `workspace list`'s `current_directory` field reflects a
-#      `cd` run directly in the surface's own top-level shell, but stays
-#      frozen at wherever that shell was when it launched a foreground
-#      subshell (exactly what `treehouse get` does) - verified live: a nested
-#      `bash -c 'cd /Users && exec bash'` left `current_directory` reporting
-#      the PARENT shell's last cwd, never following into the subshell. Fixed
-#      with zellij's own pwd-marker-probe workaround, reused verbatim in
-#      spirit (fm_backend_cmux_current_path below).
+#   2. `workspace list`'s `current_directory` follows the top-level shell `cd`
+#      current spawn uses to enter an already-acquired durable lease, but not a
+#      nested foreground subshell's cwd. The Zellij-shaped marker probe remains
+#      the stronger exact spawn-time postcondition instead of relying on passive
+#      update timing.
 #   3. `read-screen --lines N` has NO herdr-style small-N empty-result bug -
 #      verified N=1..10 all return correctly-clamped, non-empty content. The
 #      "fetch generous, trim locally" pattern is still used for consistency
@@ -435,16 +431,12 @@ fm_backend_cmux_target_ready() {  # <target> [expected-label]
 # any error. Mirrors fm_backend_zellij_current_path's active pwd-marker-probe
 # workaround (bin/backends/zellij.sh:306-347) verbatim in spirit.
 #
-# Verified pitfall (finding #2 above): cmux's `current_directory` field DOES
-# reflect a `cd` run directly in the surface's own top-level shell, but stays
-# FROZEN at whatever directory that shell was in when it launched `treehouse
-# get` as a foreground command - it never follows that command's own internal
-# `cd` into the acquired worktree. cmux's control socket exposes no
-# live-process cwd field either (unlike herdr's `foreground_cwd`), so passive
-# polling cannot solve this here any more than it could for zellij. Active
-# probe instead: print the surface's `$PWD` with a unique marker (atomically
-# submitted via send_text_line), briefly settle, then capture and read only
-# that marker line. Scoped to fm-spawn.sh's own worktree-discovery poll loop.
+# Verified pitfall (finding #2 above): cmux's `current_directory` follows the
+# top-level shell `cd` current spawn uses to enter its durable lease, but not a
+# nested foreground subshell's cwd. Keep the stronger active probe: print the
+# surface's `$PWD` with a unique marker, briefly settle, then capture and read
+# only that marker line. It is scoped to fm-spawn.sh's exact leased-path
+# verification before the worker starts.
 fm_backend_cmux_current_path() {  # <target> [expected-label]
   local target=$1 expected_label=${2:-} out line marker_begin="__FM_CMUX_CWD_BEGIN__" marker_end="__FM_CMUX_CWD_END__" in_block=0 chunk="" last=""
   fm_backend_cmux_target_ready "$target" "$expected_label" || return 0

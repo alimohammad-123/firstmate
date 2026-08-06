@@ -44,6 +44,8 @@ Verify setup by spawning a small task and confirming its `fm-<id>` window appear
 
 ## Current behavior and safety
 
+Ordinary tmux ship and scout copies use the shared durable Treehouse task-lease contract in [`configuration.md`](configuration.md#runtime-backend-configbackend--fm_backend), so a tmux server, window, shell, or machine restart does not release the copy.
+
 ### Agent liveness probe
 
 A target-existence check proves only that the pane exists.
@@ -97,6 +99,7 @@ Ambiguous pending text never receives the busy-queue conversion.
 - The OpenCode busy-queue exception is tmux-specific; Herdr retains its separately documented gap.
 
 ```sh
+tests/fm-treehouse-task-lease.test.sh
 tests/fm-backend-tmux-smoke.test.sh
 tests/fm-tmux-agent-liveness.test.sh
 tests/fm-harness-liveness-drift-live-e2e.test.sh

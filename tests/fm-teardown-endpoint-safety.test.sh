@@ -25,6 +25,25 @@ exit 0
 SH
   cat > "$TMP_ROOT/$dir/fakebin/treehouse" <<'SH'
 #!/usr/bin/env bash
+if [ "${1:-}" = status ] && [ "${2:-}" = --json ]; then
+  case_root=$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd -P)
+  cwd_real=$(pwd -P)
+  for meta in "$case_root/home/state"/*.meta; do
+    [ -f "$meta" ] || continue
+    path=$(sed -n 's/^worktree=//p' "$meta")
+    project=$(sed -n 's/^project=//p' "$meta")
+    [ -n "$path" ] && [ -n "$project" ] || continue
+    project_real=$(CDPATH='' cd -- "$project" 2>/dev/null && pwd -P) || continue
+    [ "$project_real" = "$cwd_real" ] || continue
+    lease_id=$(sed -n 's/^treehouse_lease_id=//p' "$meta")
+    lease_holder=$(sed -n 's/^treehouse_lease_holder=//p' "$meta")
+    [ -n "$lease_id" ] && [ -n "$lease_holder" ] || continue
+    jq -n --arg path "$path" --arg lease_id "$lease_id" --arg lease_holder "$lease_holder" \
+      '[{path:$path,status:"leased",lease_id:$lease_id,lease_holder:$lease_holder}]'
+    exit 0
+  done
+  exit 1
+fi
 printf 'treehouse' >> "${FM_RUNTIME_LOG:?}"
 printf ' <%s>' "$@" >> "${FM_RUNTIME_LOG:?}"
 printf '\n' >> "${FM_RUNTIME_LOG:?}"
@@ -250,8 +269,10 @@ SH
 
   fm_write_meta "$dir/home/state/$target_id.meta" \
     "window=$session:$target" "endpoint_task_id=$target_id" \
-    "worktree=$dir/nonexistent-worktree" "project=$dir/nonexistent-project" \
-    "kind=scout" "mode=no-mistakes"
+    "worktree=$dir/worktree" "project=$dir/project" \
+    "kind=scout" "mode=no-mistakes" \
+    "treehouse_lease_id=endpoint-safety-lease" \
+    "treehouse_lease_holder=firstmate-task:$(cd "$dir/home" && pwd -P):$target_id"
   env -u TMUX -u TMUX_PANE FM_TEST_TMUX_SOCKET="$socket_id" \
     FM_HOME="$dir/home" FM_ROOT_OVERRIDE="$ROOT" FM_RUNTIME_LOG="$dir/runtime.log" \
     PATH="$dir/fakebin:$PATH" "$TEARDOWN" "$target_id" --force \

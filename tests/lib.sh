@@ -8,10 +8,10 @@
 # It provides the boilerplate every test file used to re-roll: ok/not-ok
 # reporters, a self-cleaning temp root, fakebin/PATH-shim helpers, deterministic
 # git identity and fixture builders, state/<id>.meta writers, and the common
-# string/exit-code/file assertions. It deliberately does NOT bundle the
-# behavior-specific fake tmux/treehouse/no-mistakes mocks: those encode terminal
-# and lifecycle assumptions that differ per suite and belong with the tests that
-# own them.
+# string/exit-code/file assertions. It deliberately does NOT bundle terminal
+# or stateful lifecycle mocks: those encode assumptions that differ per suite
+# and belong with the tests that own them. The one Treehouse helper below models
+# only the common documented stateless lease JSON/conditional-return surface.
 #
 # ROOT is exported as the firstmate repo root (this file lives in tests/), so a
 # sourcing test can use "$ROOT/bin/..." without recomputing it.
@@ -168,6 +168,62 @@ exit 0
 SH
     chmod +x "$fakebin/$tool"
   done
+}
+
+# fm_fake_treehouse_task_lease <fakebin> writes a stateless fake for spawn tests
+# that already provide FM_FAKE_PANE_PATH. It emits the documented acquire and
+# status fields and accepts only a conditional return shape. Stateful allocator
+# tests keep their own fake so lease exclusion and identity changes are real.
+fm_fake_treehouse_task_lease() {
+  local fakebin=$1 default_path=${2:-}
+  printf '%s\n' "$default_path" > "$fakebin/.treehouse-task-path"
+  cat > "$fakebin/treehouse" <<'SH'
+#!/usr/bin/env bash
+set -u
+fakebin=$(CDPATH='' cd -- "$(dirname "$0")" && pwd -P)
+fake_path=${FM_FAKE_PANE_PATH:-$(cat "$fakebin/.treehouse-task-path" 2>/dev/null || true)}
+lease_state="$fakebin/.treehouse-task-leases"
+touch "$lease_state"
+case "${1:-}" in
+  get)
+    shift
+    holder=
+    lease=0
+    json=0
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        --lease) lease=1 ;;
+        --json) json=1 ;;
+        --lease-holder) shift; holder=${1:-} ;;
+      esac
+      shift
+    done
+    [ "$lease" -eq 1 ] && [ "$json" -eq 1 ] && [ -n "$holder" ] \
+      && [ -n "$fake_path" ] || exit 2
+    path_key=$(printf '%s' "$fake_path" | cksum | awk '{print $1}')
+    lease_id=${FM_FAKE_TREEHOUSE_LEASE_ID:-fake-task-lease-$path_key}
+    awk -F '\t' -v p="$fake_path" '$1 != p' "$lease_state" > "$lease_state.tmp"
+    printf '%s\t%s\t%s\n' "$fake_path" "$lease_id" "$holder" >> "$lease_state.tmp"
+    mv "$lease_state.tmp" "$lease_state"
+    jq -n --arg path "$fake_path" --arg lease_id "$lease_id" \
+      --arg lease_holder "$holder" \
+      '{path:$path,lease_id:$lease_id,lease_holder:$lease_holder,leased_at:"2026-08-06T00:00:00Z"}'
+    ;;
+  status)
+    [ "${2:-}" = --json ] || exit 2
+    jq -Rn '
+      [inputs | select(length > 0) | split("\t")
+        | {path:.[0],status:"leased",lease_id:.[1],lease_holder:.[2]}]
+    ' < "$lease_state"
+    ;;
+  return)
+    printf '%s\n' "$*" | grep -F -- '--if-lease-id' >/dev/null \
+      && printf '%s\n' "$*" | grep -F -- '--if-lease-holder' >/dev/null
+    ;;
+  *) exit 0 ;;
+esac
+SH
+  chmod +x "$fakebin/treehouse"
 }
 
 # fm_fake_version_tool <fakebin> <tool> <override-env-var> <default-version>

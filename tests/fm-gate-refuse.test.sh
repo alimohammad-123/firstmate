@@ -152,7 +152,7 @@ esac
 exit 0
 SH
   chmod +x "$fakebin/tmux"
-  fm_fake_exit0 "$fakebin" treehouse
+  fm_fake_treehouse_task_lease "$fakebin"
   printf '%s\n' "$fakebin"
 }
 
@@ -282,13 +282,31 @@ test_send_refuses_and_admits() {
 # task (HEAD reachable from origin), so a normal teardown genuinely succeeds and a
 # refused one leaves the task untouched (mirrors tests/fm-teardown make_case).
 make_teardown_case() {
-  local name=$1 case_dir fakebin t
+  local name=$1 case_dir fakebin
   case_dir="$TMP/$name"; fakebin="$case_dir/fakebin"
   mkdir -p "$case_dir/state" "$case_dir/config" "$fakebin"
-  for t in treehouse tmux; do
-    printf '#!/usr/bin/env bash\nexit 0\n' > "$fakebin/$t"
-    chmod +x "$fakebin/$t"
-  done
+  fm_fake_exit0 "$fakebin" tmux
+  cat > "$fakebin/treehouse" <<'SH'
+#!/usr/bin/env bash
+set -u
+case "${1:-}" in
+  status)
+    case_dir=$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd -P)
+    meta="$case_dir/state/task-x1.meta"
+    path=$(sed -n 's/^worktree=//p' "$meta")
+    lease_id=$(sed -n 's/^treehouse_lease_id=//p' "$meta")
+    holder=$(sed -n 's/^treehouse_lease_holder=//p' "$meta")
+    jq -n --arg path "$path" --arg lease_id "$lease_id" --arg lease_holder "$holder" \
+      '[{path:$path,status:"leased",lease_id:$lease_id,lease_holder:$lease_holder}]'
+    ;;
+  return)
+    printf '%s\n' "$*" | grep -F -- '--if-lease-id' >/dev/null \
+      && printf '%s\n' "$*" | grep -F -- '--if-lease-holder' >/dev/null
+    ;;
+  *) exit 0 ;;
+esac
+SH
+  chmod +x "$fakebin/treehouse"
   cat > "$fakebin/gh-axi" <<'SH'
 #!/usr/bin/env bash
 case "${1:-} ${2:-}" in
@@ -320,7 +338,9 @@ SH
   fm_write_meta "$case_dir/state/task-x1.meta" \
     "window=firstmate:fm-task-x1" "endpoint_task_id=task-x1" \
     "worktree=$case_dir/wt" "project=$case_dir/project" \
-    "kind=ship" "mode=no-mistakes"
+    "kind=ship" "mode=no-mistakes" \
+    "treehouse_lease_id=gate-refuse-task-x1" \
+    "treehouse_lease_holder=firstmate-task:$(cd "$ROOT" && pwd -P):task-x1"
   touch "$case_dir/state/.last-watcher-beat"
   printf '%s\n' "$case_dir"
 }

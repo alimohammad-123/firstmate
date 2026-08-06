@@ -695,11 +695,10 @@ test_expected_label_rejects_reused_pane_id() {
 
 test_current_path_probes_with_marker_and_ignores_prompt_paths() {
   local dir fb out
-  # Verified real-zellij pitfall (docs/zellij-backend.md "Worktree-path
-  # discovery: pane_cwd does not track a subshell"): pane_cwd never updates
-  # once a subshell (e.g. treehouse get) takes over, so current_path actively
-  # prints a marked cwd line and reads only that marker from the capture,
-  # rather than reading a JSON field.
+  # Verified real-Zellij pitfall: pane_cwd never updates once a foreground
+  # subshell takes over. current_path therefore retains the stronger active
+  # marked-pwd probe used to verify exact leased-path entry, rather than relying
+  # on a passive JSON field whose semantics vary by command shape.
   dir="$TMP_ROOT/cwd"; mkdir -p "$dir/responses"
   zellij_pane_response "$dir" 1 7 3
   zellij_pane_response "$dir" 2 7 3
@@ -834,7 +833,8 @@ test_kill_is_noop_when_session_absent() {
 test_teardown_passes_recorded_tab_id_to_zellij_kill() {
   local dir state data config project fb out status
   dir="$TMP_ROOT/teardown-zellij-ghost"; state="$dir/state"; data="$dir/data"; config="$dir/config"; project="$dir/project"
-  mkdir -p "$state" "$data/zghost" "$config" "$project" "$dir/responses"
+  mkdir -p "$state" "$data/zghost" "$config" "$dir/responses"
+  fm_git_worktree "$project" "$dir/worktree" zghost-worktree
   printf 'report\n' > "$data/zghost/report.md"
   fm_write_meta "$state/zghost.meta" \
     "window=firstmate:7" \
@@ -843,19 +843,33 @@ test_teardown_passes_recorded_tab_id_to_zellij_kill() {
     "zellij_session=firstmate" \
     "zellij_tab_id=3" \
     "zellij_pane_id=7" \
-    "worktree=$dir/missing-worktree" \
+    "worktree=$dir/worktree" \
     "project=$project" \
     "kind=scout" \
+    "treehouse_lease_id=zghost-lease" \
+    "treehouse_lease_holder=firstmate-task:$(cd "$ROOT" && pwd -P):zghost" \
     "decisions_reviewed=1" \
     "decision_keys="
   printf '[]\n' > "$dir/responses/1.out"
   printf '[{"tab_id":3,"name":"fm-zghost"}]\n' > "$dir/responses/2.out"
   fb=$(make_zellij_fakebin "$dir")
+  cat > "$fb/treehouse" <<SH
+#!/usr/bin/env bash
+if [ "\${1:-}" = status ] && [ "\${2:-}" = --json ]; then
+  jq -n --arg path "$dir/worktree" --arg lease_id zghost-lease \\
+    --arg lease_holder "firstmate-task:$(cd "$ROOT" && pwd -P):zghost" \\
+    '[{path:\$path,status:"leased",lease_id:\$lease_id,lease_holder:\$lease_holder}]'
+  exit 0
+fi
+[ "\${1:-}" = return ] || exit 2
+printf '%s\n' "\$*" >> "$dir/treehouse.log"
+SH
+  chmod +x "$fb/treehouse"
   out=$( PATH="$fb:$PATH" FM_STATE_OVERRIDE="$state" FM_DATA_OVERRIDE="$data" FM_CONFIG_OVERRIDE="$config" \
     FM_ZELLIJ_LOG="$dir/log" FM_ZELLIJ_RESPONSES="$dir/responses" FM_ZELLIJ_SESSION_LIST="firstmate" \
     "$ROOT/bin/fm-teardown.sh" zghost 2>&1 )
   status=$?
-  expect_code 0 "$status" "fm-teardown should succeed for a zellij scout whose worktree is already gone: $out"
+  expect_code 0 "$status" "fm-teardown should succeed for a Zellij scout with an exact task lease: $out"
   zellij_assert_call_order "$dir/log" $'\x1f''list-panes'$'\x1f''--json' $'\x1f''list-tabs'$'\x1f''--json' \
     "fm-teardown did not verify the recorded zellij_tab_id against the task label"
   assert_contains "$(cat "$dir/log")" $'\x1f''close-tab-by-id'$'\x1f''3' \
@@ -866,9 +880,11 @@ test_teardown_passes_recorded_tab_id_to_zellij_kill() {
 }
 
 test_forced_secondmate_teardown_kills_zellij_children_with_child_home_tag() {
-  local dir state data config home project fb out status child_title
+  local dir state data config home project childwt fb out status child_title
   dir="$TMP_ROOT/teardown-zellij-secondmate-child"; state="$dir/state"; data="$dir/data"; config="$dir/config"; home="$dir/secondmate-home"; project="$dir/project"
-  mkdir -p "$state" "$data" "$config" "$home/state" "$home/data" "$home/config" "$home/projects" "$project" "$dir/responses"
+  mkdir -p "$state" "$data" "$config" "$home/state" "$home/data" "$home/config" "$home/projects" "$dir/responses"
+  childwt="$dir/child-worktree"
+  fm_git_worktree "$project" "$childwt" zellij-child-worktree
   printf 'smz\n' > "$home/.fm-secondmate-home"
   fm_write_meta "$state/smz.meta" \
     "window=firstmate:99" \
@@ -889,14 +905,27 @@ test_forced_secondmate_teardown_kills_zellij_children_with_child_home_tag() {
     "zellij_session=firstmate" \
     "zellij_tab_id=4" \
     "zellij_pane_id=7" \
-    "worktree=$dir/missing-child-worktree" \
+    "worktree=$childwt" \
     "project=$project" \
-    "kind=scout"
+    "kind=scout" \
+    "treehouse_lease_id=zellij-child-lease" \
+    "treehouse_lease_holder=firstmate-task:$(cd "$home" && pwd -P):childz"
   child_title=$(zellij_expected_scoped_title fm-childz "$home" "$home")
   zellij_pane_response "$dir" 1 7 4
   zellij_tab_response "$dir" 2 4 "$child_title"
   printf '[]\n' > "$dir/responses/3.out"
   fb=$(make_zellij_fakebin "$dir")
+  cat > "$fb/treehouse" <<SH
+#!/usr/bin/env bash
+if [ "\${1:-}" = status ] && [ "\${2:-}" = --json ]; then
+  jq -n --arg path "$childwt" --arg lease_id zellij-child-lease \\
+    --arg lease_holder "firstmate-task:$(cd "$home" && pwd -P):childz" \\
+    '[{path:\$path,status:"leased",lease_id:\$lease_id,lease_holder:\$lease_holder}]'
+  exit 0
+fi
+[ "\${1:-}" = return ] || exit 2
+SH
+  chmod +x "$fb/treehouse"
   out=$( PATH="$fb:$PATH" FM_STATE_OVERRIDE="$state" FM_DATA_OVERRIDE="$data" FM_CONFIG_OVERRIDE="$config" \
     FM_ROOT_OVERRIDE="$ROOT" \
     FM_ZELLIJ_LOG="$dir/log" FM_ZELLIJ_RESPONSES="$dir/responses" FM_ZELLIJ_SESSION_LIST="firstmate" \

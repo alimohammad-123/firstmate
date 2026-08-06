@@ -57,6 +57,8 @@ fm_git_identity fmtest fmtest@example.invalid
 
 TEARDOWN="$ROOT/bin/fm-teardown.sh"
 PR_CHECK="$ROOT/bin/fm-pr-check.sh"
+ROOT_REAL=$(cd "$ROOT" && pwd -P)
+TEST_TREEHOUSE_LEASE_ID=teardown-test-lease
 TMP_ROOT=$(fm_test_tmproot fm-teardown-tests)
 REAL_GIT_FOR_TEST=$(command -v git)
 export REAL_GIT_FOR_TEST
@@ -201,13 +203,25 @@ SH
 # Write a meta file for the task. Args: case_dir mode kind
 write_meta() {
   local case_dir=$1 mode=$2 kind=$3
-  fm_write_meta "$case_dir/state/task-x1.meta" \
-    "window=firstmate:fm-task-x1" \
-    "endpoint_task_id=task-x1" \
-    "worktree=$case_dir/wt" \
-    "project=$case_dir/project" \
-    "kind=$kind" \
-    "mode=$mode"
+  if [ "$kind" = secondmate ]; then
+    fm_write_meta "$case_dir/state/task-x1.meta" \
+      "window=firstmate:fm-task-x1" \
+      "endpoint_task_id=task-x1" \
+      "worktree=$case_dir/wt" \
+      "project=$case_dir/project" \
+      "kind=$kind" \
+      "mode=$mode"
+  else
+    fm_write_meta "$case_dir/state/task-x1.meta" \
+      "window=firstmate:fm-task-x1" \
+      "endpoint_task_id=task-x1" \
+      "worktree=$case_dir/wt" \
+      "project=$case_dir/project" \
+      "kind=$kind" \
+      "mode=$mode" \
+      "treehouse_lease_id=$TEST_TREEHOUSE_LEASE_ID" \
+      "treehouse_lease_holder=firstmate-task:$ROOT_REAL:task-x1"
+  fi
 }
 
 # Commit something on the worktree's task branch. Args: case_dir [message]
@@ -342,14 +356,8 @@ add_lock_aware_treehouse() {
   cat > "$case_dir/fakebin/treehouse" <<'SH'
 #!/usr/bin/env bash
 if [ "${1:-}" = return ]; then
-  shift
-  wt=""
-  for a in "$@"; do
-    case "$a" in
-      --force) ;;
-      *) wt=$a ;;
-    esac
-  done
+  [ "${2:-}" = --force ] || exit 2
+  wt=${3:-}
   lock=$(git -C "$wt" rev-parse --git-path index.lock 2>/dev/null || true)
   case "$lock" in
     /*|'') ;;
@@ -376,14 +384,8 @@ add_transient_lock_treehouse() {
   cat > "$case_dir/fakebin/treehouse" <<'SH'
 #!/usr/bin/env bash
 if [ "${1:-}" = return ]; then
-  shift
-  wt=""
-  for a in "$@"; do
-    case "$a" in
-      --force) ;;
-      *) wt=$a ;;
-    esac
-  done
+  [ "${2:-}" = --force ] || exit 2
+  wt=${3:-}
   lock=$(git -C "$wt" rev-parse --git-path index.lock 2>/dev/null || true)
   case "$lock" in
     /*|'') ;;
@@ -421,14 +423,8 @@ add_persistent_lock_treehouse() {
   cat > "$case_dir/fakebin/treehouse" <<'SH'
 #!/usr/bin/env bash
 if [ "${1:-}" = return ]; then
-  shift
-  wt=""
-  for a in "$@"; do
-    case "$a" in
-      --force) ;;
-      *) wt=$a ;;
-    esac
-  done
+  [ "${2:-}" = --force ] || exit 2
+  wt=${3:-}
   lock=$(git -C "$wt" rev-parse --git-path index.lock 2>/dev/null || true)
   case "$lock" in
     /*|'') ;;
@@ -541,11 +537,47 @@ SH
 
 # Run teardown with PATH mocking. Args: case_dir [extra args...]
 run_teardown() {
-  local case_dir=$1; shift
+  local case_dir=$1 status_fakebin; shift
+  status_fakebin="$case_dir/treehouse-status-fakebin"
+  mkdir -p "$status_fakebin"
+  cat > "$status_fakebin/treehouse" <<'SH'
+#!/usr/bin/env bash
+set -u
+if [ "${1:-}" = status ] && [ "${2:-}" = --json ]; then
+  cwd_real=$(pwd -P)
+  meta=
+  path=
+  for candidate in "$FM_FAKE_TREEHOUSE_CASE"/state/*.meta \
+    "$FM_FAKE_TREEHOUSE_CASE"/*/state/*.meta \
+    "$FM_FAKE_TREEHOUSE_CASE"/*/*/state/*.meta; do
+    [ -f "$candidate" ] || continue
+    recorded_path=$(sed -n 's/^worktree=//p' "$candidate")
+    recorded_project=$(sed -n 's/^project=//p' "$candidate")
+    [ -n "$recorded_path" ] && [ -n "$recorded_project" ] || continue
+    recorded_real=$(CDPATH='' cd -- "$recorded_project" 2>/dev/null && pwd -P) || continue
+    [ "$recorded_real" = "$cwd_real" ] || continue
+    grep -q '^treehouse_lease_id=' "$candidate" || continue
+    meta=$candidate
+    path=$recorded_path
+    break
+  done
+  [ -n "$meta" ] || exit 1
+  lease_id=$(sed -n 's/^treehouse_lease_id=//p' "$meta")
+  lease_holder=$(sed -n 's/^treehouse_lease_holder=//p' "$meta")
+  jq -n --arg path "$path" --arg lease_id "$lease_id" \
+    --arg lease_holder "$lease_holder" \
+    '[{path:$path,status:"leased",lease_id:$lease_id,lease_holder:$lease_holder}]'
+  exit 0
+fi
+exec "$FM_FAKE_TREEHOUSE_DELEGATE" "$@"
+SH
+  chmod +x "$status_fakebin/treehouse"
   FM_ROOT_OVERRIDE="$ROOT" \
   FM_STATE_OVERRIDE="$case_dir/state" \
   FM_CONFIG_OVERRIDE="$case_dir/config" \
-  PATH="$case_dir/fakebin:${FM_TEARDOWN_TEST_PATH:-$PATH}" \
+  FM_FAKE_TREEHOUSE_CASE="$case_dir" \
+  FM_FAKE_TREEHOUSE_DELEGATE="$case_dir/fakebin/treehouse" \
+  PATH="$status_fakebin:$case_dir/fakebin:${FM_TEARDOWN_TEST_PATH:-$PATH}" \
     "$TEARDOWN" task-x1 "$@"
 }
 
@@ -554,7 +586,7 @@ run_teardown() {
 make_path_without_lsof() {  # <case-dir>
   local case_dir=$1 path_dir="$1/path-without-lsof" cmd resolved
   mkdir -p "$path_dir"
-  for cmd in awk bash basename cat chmod cp cut date dirname env find git grep head hostname id ln \
+  for cmd in awk bash basename cat chmod cp cut date dirname env find git grep head hostname id jq ln \
     mkdir mktemp mv perl ps readlink realpath rm sed sh sleep sort stat tail timeout tr uname wc xargs; do
     resolved=$(command -v "$cmd" 2>/dev/null) || continue
     case "$resolved" in /*) ln -sf "$resolved" "$path_dir/$cmd" ;; esac
@@ -1533,6 +1565,12 @@ assert_herdr_teardown_preflight_refuses_before_changes() {
   thlog="$case_dir/treehouse.log"; : > "$thlog"
   cat > "$case_dir/fakebin/treehouse" <<SH
 #!/usr/bin/env bash
+if [ "\${1:-}" = status ] && [ "\${2:-}" = --json ]; then
+  jq -n --arg path "$case_dir/wt" --arg lease_id "$TEST_TREEHOUSE_LEASE_ID" \\
+    --arg lease_holder "firstmate-task:$ROOT_REAL:task-x1" \\
+    '[{path:\$path,status:"leased",lease_id:\$lease_id,lease_holder:\$lease_holder}]'
+  exit 0
+fi
 printf '%s\n' "\$*" >> "$thlog"
 exit 0
 SH
@@ -1603,7 +1641,9 @@ configure_secondmate_with_herdr_child() {  # <case-dir>
     "herdr_session=childsession" \
     "herdr_workspace_id=wC" \
     "herdr_tab_id=wC:t1" \
-    "herdr_pane_id=wC:p1"
+    "herdr_pane_id=wC:p1" \
+    "treehouse_lease_id=child-herdr-lease" \
+    "treehouse_lease_holder=firstmate-task:$(cd "$home" && pwd -P):child-herdr"
   : > "$home/state/child-herdr.status"
   : > "$home/state/child-herdr.turn-ended"
   cat > "$case_dir/fakebin/herdr" <<SH
@@ -1714,7 +1754,9 @@ configure_nested_secondmate_with_herdr_grandchild() {  # <case-dir>
     "herdr_session=grandchildsession" \
     "herdr_workspace_id=wG" \
     "herdr_tab_id=wG:t1" \
-    "herdr_pane_id=wG:p1"
+    "herdr_pane_id=wG:p1" \
+    "treehouse_lease_id=grandchild-herdr-lease" \
+    "treehouse_lease_holder=firstmate-task:$(cd "$nested_home" && pwd -P):grandchild-herdr"
   : > "$nested_home/state/grandchild-herdr.status"
   : > "$nested_home/state/grandchild-herdr.turn-ended"
   cat > "$case_dir/fakebin/herdr" <<SH
