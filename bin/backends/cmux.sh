@@ -654,6 +654,7 @@ fm_backend_cmux_correlate_task_workspace() {  # <recorded-workspace-id> <expecte
   esac
   title_count=$(printf '%s\n' "$inventory" | jq -sr --arg title "$expected_title" \
     '[.[] | select(.title == $title)] | length' 2>/dev/null) || return 1
+  # shellcheck disable=SC2034 # Output reason consumed by the sourcing backend owner.
   case "$title_count" in
     1)
       resolved=$(printf '%s\n' "$inventory" | jq -sr --arg title "$expected_title" \

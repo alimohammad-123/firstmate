@@ -155,7 +155,9 @@ test_supported_backend_endpoint_records_validate() {
     "backend=cmux" "cmux_workspace_id=workspace-1" "cmux_surface_id=surface-2"
   fm_backend_source cmux || fail "cmux adapter could not load"
   fm_backend_cmux_correlate_task_workspace() {
+    # shellcheck disable=SC2034 # Stubbed adapter outputs consumed by endpoint validation.
     FM_BACKEND_CMUX_CORRELATED_WORKSPACE=$1
+    # shellcheck disable=SC2034 # Stubbed adapter outputs consumed by endpoint validation.
     FM_BACKEND_CMUX_CORRELATION_ERROR=
   }
   fm_backend_validate_task_endpoint "$dir/home/state/$id.meta" "$id" || fail "valid cmux endpoint refused"

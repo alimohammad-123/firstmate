@@ -323,6 +323,7 @@ test_origin_slug_validation_precedes_path_construction() {
   pass "completion and verification validate origins before constructing paths"
 }
 
+# shellcheck disable=SC2031 # Background subshells intentionally share immutable fixture paths.
 test_completion_serializes_with_other_metadata_owners() {
   local home id lock ready release holder_pid complete_pid i
   home=$(make_home decision-metadata-lock)

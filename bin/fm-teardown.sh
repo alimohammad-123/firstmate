@@ -1325,11 +1325,11 @@ teardown_treehouse_endpoint_retire_exact() {  # <meta> <task-id> <backend>
       }
       ;;
     zellij|cmux)
-      fm_backend_kill "$expected_backend" "$target" "$tab_id" "fm-$task_id" >/dev/null 2>&1 \
-        && fm_backend_endpoint_confirmed_gone "$expected_backend" "$target" "$tab_id" "fm-$task_id" >/dev/null 2>&1 || {
-          echo "error: $expected_backend endpoint $target for $task_id is not confirmed gone; preserving its lease and records" >&2
-          return 1
-        }
+      if ! fm_backend_kill "$expected_backend" "$target" "$tab_id" "fm-$task_id" >/dev/null 2>&1 \
+          || ! fm_backend_endpoint_confirmed_gone "$expected_backend" "$target" "$tab_id" "fm-$task_id" >/dev/null 2>&1; then
+        echo "error: $expected_backend endpoint $target for $task_id is not confirmed gone; preserving its lease and records" >&2
+        return 1
+      fi
       ;;
     *) return 1 ;;
   esac
@@ -1399,6 +1399,7 @@ teardown_treehouse_endpoint_absent_exact() {  # <meta> <task-id> <backend> [home
 
 teardown_treehouse_endpoint_retire_scoped() {  # <meta> <task-id> <backend> <home>
   local meta=$1 task_id=$2 backend=$3 home=$4
+  # shellcheck disable=SC2030,SC2031 # The subshell intentionally isolates another home's backend globals.
   (
     unset FM_ROOT_OVERRIDE
     FM_HOME=$home
@@ -1659,6 +1660,7 @@ capture_task_backend_process_group() {
     echo "REFUSED: lsof is unavailable and $BACKEND has no exact process fallback for task $ID; preserving its endpoint, lease, and records." >&2
     return 1
   }
+  # shellcheck disable=SC2031 # T is isolated only inside scoped endpoint subshells.
   leader=$(tmux display-message -p -t "$T" '#{pane_pid}' 2>/dev/null) || leader=""
   case "$leader" in ''|*[!0-9]*)
     echo "REFUSED: lsof is unavailable and the tmux pane process for $ID is unreadable; preserving its endpoint, lease, and records." >&2
@@ -1692,7 +1694,7 @@ capture_task_backend_process_group() {
 
 capture_task_backend_process_group_scoped() {  # <task-id> <backend> <target>
   local ID=$1 BACKEND=$2 T=$3
-  local TEARDOWN_FALLBACK_LEADER= TEARDOWN_FALLBACK_LEADER_IDENTITY= TEARDOWN_FALLBACK_PGID=
+  local TEARDOWN_FALLBACK_LEADER='' TEARDOWN_FALLBACK_LEADER_IDENTITY='' TEARDOWN_FALLBACK_PGID=''
   SCOPED_FALLBACK_LEADER=
   SCOPED_FALLBACK_LEADER_IDENTITY=
   SCOPED_FALLBACK_PGID=
@@ -1857,6 +1859,7 @@ require_orca_worktree_path_match_if_present() {
 
 firstmate_home_has_treehouse_slot() {
   local home=$1
+  # shellcheck disable=SC2031 # FM_ROOT is isolated only inside scoped endpoint subshells.
   worktree_registered_for_project "$FM_ROOT" "$home"
 }
 
@@ -1865,11 +1868,13 @@ validate_removal_target() {
   [ -n "$target" ] || return 0
   [ -e "$target" ] || return 0
   abs_target=$(removal_target_abs_path "$target")
+  # shellcheck disable=SC2031 # FM_HOME is isolated only inside scoped endpoint subshells.
   if abs_home=$(cd "$FM_HOME" 2>/dev/null && pwd -P); then
     :
   else
     abs_home=
   fi
+  # shellcheck disable=SC2031 # FM_ROOT is isolated only inside scoped endpoint subshells.
   abs_root=$(cd "$FM_ROOT" && pwd -P)
   case "$abs_target" in
     ''|/) echo "REFUSED: unsafe $label removal target $target" >&2; return 1 ;;
@@ -1960,12 +1965,14 @@ validate_child_worktree_for_removal() {
   [ -n "$target" ] || return 0
   [ -e "$target" ] || return 0
   abs_target=$(validate_removal_target "$target" "child worktree") || return 1
+  # shellcheck disable=SC2031 # FM_HOME is isolated only inside scoped endpoint subshells.
   if abs_home=$(cd "$FM_HOME" 2>/dev/null && pwd -P); then
     if path_is_ancestor_of "$abs_home" "$abs_target"; then
       echo "REFUSED: unsafe child worktree removal target $target is inside the active firstmate home" >&2
       return 1
     fi
   fi
+  # shellcheck disable=SC2031 # FM_ROOT is isolated only inside scoped endpoint subshells.
   abs_root=$(cd "$FM_ROOT" && pwd -P)
   if path_is_ancestor_of "$abs_root" "$abs_target"; then
     echo "REFUSED: unsafe child worktree removal target $target is inside the firstmate repo" >&2
@@ -2060,6 +2067,7 @@ remove_firstmate_home() {
       restore_firstmate_home_process_events "$abs_home_path" "$label" "$process_event_backup" || return $?
       return 1
     }
+    # shellcheck disable=SC2031 # FM_ROOT is isolated only inside scoped endpoint subshells.
     teardown_treehouse_return "$abs_home_path" "$FM_ROOT" "$label" || {
       echo "error: treehouse return failed for $label $abs_home_path; lease may still be held" >&2
       restore_firstmate_home_process_events "$abs_home_path" "$label" "$process_event_backup" || return $?
@@ -2149,6 +2157,7 @@ restore_firstmate_home_process_events() {
   if [ ! -f "$runner" ] || [ -L "$runner" ] || [ ! -x "$runner" ]; then
     runner="$SCRIPT_DIR/fm-procevent.sh"
   fi
+  # shellcheck disable=SC2031 # FM_ROOT is isolated only inside scoped endpoint subshells.
   if ! FM_HOME="$home" FM_ROOT_OVERRIDE="$FM_ROOT" "$runner" reconcile >/dev/null; then
     echo "error: process-event restoration could not rearm $label $home; active waits may remain retired; recover registrations from $backup" >&2
     return "$TEARDOWN_PROCEVENT_RESTORE_FAILED"
@@ -2636,6 +2645,7 @@ cleanup_firstmate_home_children() {
       elif [ "$child_backend" = zellij ] || [ "$child_backend" = cmux ]; then
         child_tab_id=
         [ "$child_backend" != zellij ] || child_tab_id=$(meta_value "$child_meta" zellij_tab_id)
+        # shellcheck disable=SC2030,SC2031 # The subshell intentionally isolates another home's backend globals.
         if ! ( unset FM_ROOT_OVERRIDE; FM_HOME=$home FM_ROOT=$home
           fm_backend_kill "$child_backend" "$child_t" "$child_tab_id" "fm-$child_id" >/dev/null 2>&1 \
             && fm_backend_endpoint_confirmed_gone "$child_backend" "$child_t" "$child_tab_id" "fm-$child_id" >/dev/null 2>&1
@@ -2771,6 +2781,7 @@ if [ "$KIND" = scout ] && [ "$FORCE" != "--force" ]; then
     echo "The report is the work product. Have the crewmate write it, or use --force after explicit discard approval." >&2
     exit 1
   fi
+  # shellcheck disable=SC2031 # FM_HOME is isolated only inside scoped endpoint subshells.
   if ! FM_HOME="$FM_HOME" FM_STATE_OVERRIDE="$STATE" FM_DATA_OVERRIDE="$DATA" \
       FM_CONFIG_OVERRIDE="$CONFIG" "$SCRIPT_DIR/fm-decision-hold.sh" verify "$ID" >/dev/null; then
     echo "REFUSED: scout task $ID has not passed the unresolved-decision completion gate." >&2
@@ -2931,6 +2942,7 @@ elif [ -d "$WT" ] && [ "$KIND" != secondmate ]; then
   if [ "$FORCE" != "--force" ] && [ "$KIND" != scout ] && [ "$KIND" != secondmate ]; then
     post_lock_cleanup_check=validate_worktree_teardown_safety
   fi
+  # shellcheck disable=SC2031 # FM_HOME is isolated only inside scoped endpoint subshells.
   teardown_treehouse_return "$WT" "$PROJ" "worktree" "$post_lock_cleanup_check" \
     "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" "$META" "$ID" "$BACKEND" "$FM_HOME" \
     "worktree" "$WT" "$TASK_TMP" \
@@ -3015,6 +3027,7 @@ if [ "$TREEHOUSE_LEASE_RECEIPT_RETIRE" = 1 ]; then
   rm -f -- "$TREEHOUSE_LEASE_RECEIPT"
 fi
 if [ "$KIND" != scout ] && [ "$KIND" != secondmate ] && [ "$MODE" != local-only ]; then
+  # shellcheck disable=SC2031 # FM_ROOT is isolated only inside scoped endpoint subshells.
   "$FM_ROOT/bin/fm-fleet-sync.sh" "$PROJ" || true
 fi
 echo "teardown $ID complete (window $T, worktree $WT)"

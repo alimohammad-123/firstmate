@@ -158,6 +158,7 @@ fm_secondmate_spawn_task_lock_acquire() {  # <home> <state> <task-lock>
 
 fm_secondmate_retirement_mark_locked() {  # <state> <owner>
   local state=$1 owner=$2 marker tmp
+  # shellcheck disable=SC2034 # Output flag consumed by the sourcing teardown owner.
   FM_SECONDMATE_RETIREMENT_MARKER_CREATED=0
   marker=$(fm_secondmate_retirement_marker_path "$state") || return 1
   if [ -e "$marker" ] || [ -L "$marker" ]; then
@@ -170,6 +171,7 @@ fm_secondmate_retirement_mark_locked() {  # <state> <owner>
     rm -f -- "$tmp"
     return 1
   }
+  # shellcheck disable=SC2034 # Output flag consumed by the sourcing teardown owner.
   FM_SECONDMATE_RETIREMENT_MARKER_CREATED=1
 }
 

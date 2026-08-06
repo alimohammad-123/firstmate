@@ -131,9 +131,11 @@ FMEOF
     return 1
   fi
   if [ "$named_count" -eq 1 ]; then
+    # shellcheck disable=SC2034 # Output target consumed by the sourcing backend owner.
     FM_BACKEND_TMUX_CORRELATED_TARGET=$named_id
     return 0
   fi
+  # shellcheck disable=SC2034 # Output reason consumed by the sourcing backend owner.
   FM_BACKEND_TMUX_CORRELATION_ERROR=absent
   return 1
 }

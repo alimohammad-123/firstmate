@@ -85,6 +85,7 @@ fm_treehouse_lease_acquire() {  # <project-dir> <holder> <receipt-json>
     printf 'error: cannot create Treehouse lease acquisition receipt %s\n' "$receipt" >&2
     return 1
   fi
+  # shellcheck disable=SC2034 # Output flag consumed by the sourcing spawn owner.
   FM_TREEHOUSE_LEASE_ACQUISITION_ARMED=1
   if ! (CDPATH='' cd -- "$project" && treehouse get --lease --json --lease-holder "$holder") > "$receipt"; then
     # A caller can still roll back safely when Treehouse reported a complete
