@@ -760,29 +760,49 @@ spawn_treehouse_metadata_matches_current_endpoint() {
 }
 
 spawn_preserve_treehouse_lease_evidence() {
-  local recovery_tmp
+  local recovery_tmp existing_meta
   [ -n "${TREEHOUSE_LEASE_PATH:-}" ] || return 0
   [ -n "${TREEHOUSE_LEASE_ID:-}" ] || return 0
   [ -n "${TREEHOUSE_LEASE_HOLDER:-}" ] || return 0
   mkdir -p "$STATE" 2>/dev/null || return 0
   recovery_tmp="$STATE/.$ID.meta.lease-recovery.$$"
+  existing_meta="$STATE/$ID.meta"
+  if [ -f "$existing_meta" ] && [ ! -L "$existing_meta" ]; then
+    [ "$(spawn_meta_field_exact "$existing_meta" endpoint_task_id)" = "$ID" ] || return 1
+    [ "$(spawn_meta_field_exact "$existing_meta" worktree)" = "$TREEHOUSE_LEASE_PATH" ] || return 1
+    [ "$(spawn_meta_field_exact "$existing_meta" project)" = "$PROJ_ABS" ] || return 1
+    [ "$(spawn_meta_field_exact "$existing_meta" treehouse_lease_id)" = "$TREEHOUSE_LEASE_ID" ] || return 1
+    [ "$(spawn_meta_field_exact "$existing_meta" treehouse_lease_holder)" = "$TREEHOUSE_LEASE_HOLDER" ] || return 1
+    awk -F= '
+      $1 == "window" || $1 == "endpoint_task_id" || $1 == "backend" ||
+      $1 == "tmux_window_id" ||
+      $1 == "herdr_session" || $1 == "herdr_workspace_id" || $1 == "herdr_tab_id" || $1 == "herdr_pane_id" ||
+      $1 == "zellij_session" || $1 == "zellij_tab_id" || $1 == "zellij_pane_id" ||
+      $1 == "cmux_workspace_id" || $1 == "cmux_surface_id" ||
+      $1 == "treehouse_lease_id" || $1 == "treehouse_lease_holder" || $1 == "treehouse_lease_recovery" { next }
+      { print }
+    ' "$existing_meta" > "$recovery_tmp" 2>/dev/null || return 1
+  else
+    {
+      echo "worktree=$TREEHOUSE_LEASE_PATH"
+      echo "project=${PROJ_ABS:-}"
+      echo "harness=${HARNESS:-}"
+      echo "kind=${KIND:-ship}"
+      [ -z "${MODE:-}" ] || echo "mode=$MODE"
+      [ -z "${YOLO:-}" ] || echo "yolo=$YOLO"
+      echo "model=${MODEL:-default}"
+      echo "effort=${EFFORT:-default}"
+    } > "$recovery_tmp" 2>/dev/null || return 1
+  fi
   {
     echo "window=${T:-}"
     echo "endpoint_task_id=$ID"
-    echo "worktree=$TREEHOUSE_LEASE_PATH"
-    echo "project=${PROJ_ABS:-}"
-    echo "harness=${HARNESS:-}"
-    echo "kind=${KIND:-ship}"
-    [ -z "${MODE:-}" ] || echo "mode=$MODE"
-    [ -z "${YOLO:-}" ] || echo "yolo=$YOLO"
-    echo "model=${MODEL:-default}"
-    echo "effort=${EFFORT:-default}"
     [ "${BACKEND:-tmux}" = tmux ] || echo "backend=$BACKEND"
     [ -z "${TREEHOUSE_ENDPOINT_ABORT_TARGET:-}" ] || spawn_write_treehouse_endpoint_identity
     echo "treehouse_lease_id=$TREEHOUSE_LEASE_ID"
     echo "treehouse_lease_holder=$TREEHOUSE_LEASE_HOLDER"
     echo "treehouse_lease_recovery=spawn-rollback-failed"
-  } > "$recovery_tmp" 2>/dev/null || return 0
+  } >> "$recovery_tmp" 2>/dev/null || return 1
   mv -f -- "$recovery_tmp" "$STATE/$ID.meta" 2>/dev/null || true
 }
 

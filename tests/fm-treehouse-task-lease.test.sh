@@ -154,12 +154,16 @@ case "$*" in
       target=
       prev=
       for arg in "$@"; do [ "$prev" != -t ] || target=$arg; prev=$arg; done
-      row=$(awk -F '\t' -v target="$target" '$1 == target {print; exit}' "$TMUX_WINDOWS")
-      session=$(printf '%s\n' "$row" | cut -f2)
-      name=$(printf '%s\n' "$row" | cut -f3)
-      awk -F '\t' -v target="$target" 'BEGIN {OFS="\t"} {if ($1 == target) $3="foreign-after-restart"; print}' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
-      mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
-      printf '@restart-replacement-%s\t%s\t%s\n' "${target#@}" "$session" "$name" >> "$TMUX_WINDOWS"
+      rebound_marker="$TMUX_WINDOWS.rebound-${target#@}"
+      if [ ! -e "$rebound_marker" ]; then
+        : > "$rebound_marker"
+        row=$(awk -F '\t' -v target="$target" '$1 == target {print; exit}' "$TMUX_WINDOWS")
+        session=$(printf '%s\n' "$row" | cut -f2)
+        name=$(printf '%s\n' "$row" | cut -f3)
+        awk -F '\t' -v target="$target" 'BEGIN {OFS="\t"} {if ($1 == target) $3="foreign-after-restart"; print}' "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
+        mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
+        printf '@restart-replacement-%s\t%s\t%s\n' "${target#@}" "$session" "$name" >> "$TMUX_WINDOWS"
+      fi
     fi
     if [ "${FM_FAKE_TMUX_RENAME_BEFORE_FAILURE:-0}" = 1 ]; then
       target=
@@ -460,6 +464,13 @@ if [ -n "${FM_FAKE_REMOVE_HOME:-}" ] && [ "$target" = "$FM_FAKE_REMOVE_HOME" ]; 
     "$FM_REAL_SLEEP" 0.05
   done
   exit 0
+fi
+if [ "${FM_FAKE_BLOCK_DURING_TEARDOWN:-0}" = 1 ] \
+   && [ ! -e "${FM_FAKE_TEARDOWN_READY:-}" ]; then
+  : > "$FM_FAKE_TEARDOWN_READY"
+  while [ ! -e "$FM_FAKE_TEARDOWN_RELEASE" ]; do
+    "$FM_REAL_SLEEP" 0.05
+  done
 fi
 exec "$FM_REAL_RM" "$@"
 SH
@@ -866,6 +877,57 @@ run_teardown_force "$PRIMARY_COMPAT_HOME" primary-parent-compat >/dev/null \
   || fail 'primary parent-write compatibility fixture could not be torn down'
 pass 'ordinary primary spawn retains its home-local per-task lock path'
 
+make_brief "$HOME_A" tmux-final-rebound
+run_spawn "$HOME_A" tmux-final-rebound "$WT1" >/dev/null \
+  || fail 'tmux final-correlation fixture could not publish'
+TMUX_FINAL_META="$HOME_A/state/tmux-final-rebound.meta"
+tmux_final_old=$(sed -n 's/^tmux_window_id=//p' "$TMUX_FINAL_META")
+tmux_final_new=@final-rebound-replacement
+TMUX_FINAL_READY="$WORLD/tmux-final-rebound.ready"
+TMUX_FINAL_RELEASE="$WORLD/tmux-final-rebound.release"
+return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+event_count_before=$(wc -l < "$EVENT_LOG" | tr -d ' ')
+FM_FAKE_BLOCK_DURING_TEARDOWN=1 \
+  FM_FAKE_TEARDOWN_READY="$TMUX_FINAL_READY" \
+  FM_FAKE_TEARDOWN_RELEASE="$TMUX_FINAL_RELEASE" \
+  run_teardown_force "$HOME_A" tmux-final-rebound \
+  >"$WORLD/tmux-final-rebound.out" 2>"$WORLD/tmux-final-rebound.err" &
+tmux_final_pid=$!
+i=0
+while [ ! -e "$TMUX_FINAL_READY" ] && [ "$i" -lt 100 ]; do
+  "$FM_REAL_SLEEP" 0.05
+  i=$((i + 1))
+done
+assert_present "$TMUX_FINAL_READY" \
+  'tmux final-correlation fixture did not reach its post-validation barrier'
+awk -F '\t' -v id="$tmux_final_old" \
+  'BEGIN {OFS="\t"} {if ($1 == id) $3="foreign-final-window"; print}' \
+  "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
+mv "$TMUX_WINDOWS.tmp" "$TMUX_WINDOWS"
+printf '%s\tfirstmate\tfm-tmux-final-rebound\n' "$tmux_final_new" >> "$TMUX_WINDOWS"
+: > "$TMUX_FINAL_RELEASE"
+if wait "$tmux_final_pid"; then
+  fail 'tmux teardown accepted an id rebound after early validation'
+fi
+return_count_after=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+[ "$return_count_after" -eq "$return_count_before" ] \
+  || fail 'tmux final-correlation refusal returned the Treehouse lease'
+tail -n "+$((event_count_before + 1))" "$EVENT_LOG" > "$WORLD/tmux-final-rebound.events"
+if grep -Fq 'tmux kill-window -t ' "$WORLD/tmux-final-rebound.events"; then
+  fail 'tmux final-correlation refusal killed an endpoint after id reuse'
+fi
+backend_endpoint_is_live tmux "$tmux_final_old" \
+  || fail 'tmux final-correlation refusal killed the rebound foreign window'
+backend_endpoint_is_live tmux "$tmux_final_new" \
+  || fail 'tmux final-correlation refusal killed the exact-name replacement'
+assert_present "$TMUX_FINAL_META" 'tmux final-correlation refusal erased task metadata'
+grep -Fq "$WT1"$'\t' "$TREEHOUSE_STATE" \
+  || fail 'tmux final-correlation refusal lost the held lease'
+backend_endpoint_remove tmux "$tmux_final_old"
+run_teardown_force "$HOME_A" tmux-final-rebound >/dev/null \
+  || fail 'tmux final-correlation fixture could not recover after ambiguity cleared'
+pass 'tmux teardown revalidates live identity before endpoint retirement and lease return'
+
 make_brief "$HOME_A" cmux-duplicate-title
 run_spawn "$HOME_A" cmux-duplicate-title "$WT1" --backend cmux >/dev/null \
   || fail 'cmux duplicate-title fixture could not publish'
@@ -1006,6 +1068,18 @@ for backend in tmux herdr zellij cmux; do
   field=$(backend_endpoint_meta_field "$backend")
   old_identity=$(sed -n "s/^$field=//p" "$meta")
   lease_identity=$(sed -n 's/^treehouse_lease_id=//p' "$meta")
+  if [ "$backend" = tmux ]; then
+    tasktmp_identity=$(sed -n 's/^tasktmp=//p' "$meta")
+    busy_gen_identity=$(sed -n 's/^busy_gen=//p' "$meta")
+    printf '%s\n' \
+      'pr=https://example.test/pull/42' \
+      'pr_head=0123456789abcdef' \
+      'x_request=req-preserve' \
+      'x_request_ts=1700000000' \
+      'x_followups=1' \
+      'traceparent=00-0123456789abcdef0123456789abcdef-0123456789abcdef-01' \
+      >> "$meta"
+  fi
   backend_endpoint_remove "$backend" "$old_identity"
   if run_backend_late_failure "$backend" "$HOME_A" "$id" "$WT1" 1 >/dev/null 2>&1; then
     fail "$backend recovered-lease relaunch unexpectedly survived its late failure"
@@ -1018,6 +1092,17 @@ for backend in tmux herdr zellij cmux; do
   backend_endpoint_is_live "$backend" "$new_identity" \
     || fail "$backend replacement recovery metadata does not bind the surviving endpoint"
   if [ "$backend" = tmux ]; then
+    assert_grep 'pr=https://example.test/pull/42' "$meta" 'recovered rollback erased pr metadata'
+    assert_grep 'pr_head=0123456789abcdef' "$meta" 'recovered rollback erased pr_head metadata'
+    assert_grep 'x_request=req-preserve' "$meta" 'recovered rollback erased x_request metadata'
+    assert_grep 'x_request_ts=1700000000' "$meta" 'recovered rollback erased x_request_ts metadata'
+    assert_grep 'x_followups=1' "$meta" 'recovered rollback erased x_followups metadata'
+    assert_grep 'traceparent=00-0123456789abcdef0123456789abcdef-0123456789abcdef-01' "$meta" \
+      'recovered rollback erased traceparent metadata'
+    [ "$(sed -n 's/^tasktmp=//p' "$meta")" = "$tasktmp_identity" ] \
+      || fail 'recovered rollback changed tasktmp metadata'
+    [ "$(sed -n 's/^busy_gen=//p' "$meta")" = "$busy_gen_identity" ] \
+      || fail 'recovered rollback changed busy_gen metadata'
     awk -F '\t' -v identity="$new_identity" -v name="fm-$id" \
       'BEGIN {OFS="\t"} {if ($1 == identity) $3=name; print}' \
       "$TMUX_WINDOWS" > "$TMUX_WINDOWS.tmp"
@@ -1026,7 +1111,7 @@ for backend in tmux herdr zellij cmux; do
   run_teardown_force "$HOME_A" "$id" >/dev/null \
     || fail "$backend replacement recovery could not be torn down exactly"
 done
-pass 'recovered leases preserve each backend replacement endpoint identity after ambiguous cleanup'
+pass 'recovered leases preserve durable metadata and replacement endpoint identity'
 
 make_brief "$HOME_A" publication-handoff
 return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)

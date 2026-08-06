@@ -1187,6 +1187,37 @@ teardown_treehouse_return() {
   return 1
 }
 
+teardown_tmux_endpoint_retire_exact() {  # <meta> <task-id> <target>
+  local meta=$1 task_id=$2 target=$3 window session name reason
+  window=$(fm_backend_meta_exact_value "$meta" window) || return 1
+  session=${window%%:*}
+  name=${window#*:}
+  [ -n "$session" ] && [ "$name" = "fm-$task_id" ] || return 1
+  case "$target" in @*) ;; *) return 1 ;; esac
+  fm_backend_source tmux || return 1
+  FM_BACKEND_TMUX_CORRELATION_ERROR=unreadable
+  fm_backend_tmux_correlate_task_window "$session" "$name" "$target" || {
+    reason=${FM_BACKEND_TMUX_CORRELATION_ERROR:-unreadable}
+    echo "REFUSED: tmux endpoint $target for task $task_id has $reason final live identity; preserving its lease and records." >&2
+    return 1
+  }
+  [ "$FM_BACKEND_TMUX_CORRELATED_TARGET" = "$target" ] || {
+    echo "REFUSED: tmux endpoint $target for task $task_id changed before final mutation; preserving its lease and records." >&2
+    return 1
+  }
+  fm_backend_kill tmux "$target" >/dev/null 2>&1 || return 1
+  FM_BACKEND_TMUX_CORRELATION_ERROR=unreadable
+  if fm_backend_tmux_correlate_task_window "$session" "$name" "$target"; then
+    echo "REFUSED: tmux endpoint for task $task_id remains live after close; preserving its lease and records." >&2
+    return 1
+  fi
+  reason=${FM_BACKEND_TMUX_CORRELATION_ERROR:-unreadable}
+  [ "$reason" = absent ] || {
+    echo "REFUSED: tmux endpoint for task $task_id has $reason identity after close; preserving its lease and records." >&2
+    return 1
+  }
+}
+
 validate_worktree_teardown_safety() {
   local dirty_raw dirty unpushed_raw unpushed DEFAULT unmerged_raw unmerged branch
   [ -d "$WT" ] || return 0
@@ -2564,6 +2595,7 @@ fi
 # refuses before any destructive step.
 TEARDOWN_HERDR_SESSION=
 TEARDOWN_HERDR_PANE=
+TEARDOWN_ENDPOINT_RETIRED=0
 if [ "$BACKEND" = herdr ]; then
   teardown_herdr_preflight_target "$T" "$ID" || exit 1
   fm_backend_herdr_parse_target "$T" || exit 1
@@ -2612,6 +2644,10 @@ elif [ -d "$WT" ] && [ "$KIND" != secondmate ]; then
   post_lock_cleanup_check=
   if [ "$FORCE" != "--force" ] && [ "$KIND" != scout ] && [ "$KIND" != secondmate ]; then
     post_lock_cleanup_check=validate_worktree_teardown_safety
+  fi
+  if [ "$BACKEND" = tmux ]; then
+    teardown_tmux_endpoint_retire_exact "$META" "$ID" "$T" || exit 1
+    TEARDOWN_ENDPOINT_RETIRED=1
   fi
   teardown_treehouse_return "$WT" "$PROJ" "worktree" "$post_lock_cleanup_check" \
     "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" || {
@@ -2664,7 +2700,7 @@ elif [ "$BACKEND" = herdr ]; then
   else
     echo "warning: herdr session presentation lock path is unavailable; skipping the pane close rather than closing unlocked" >&2
   fi
-elif [ "$BACKEND" != orca ]; then
+elif [ "$BACKEND" != orca ] && [ "$TEARDOWN_ENDPOINT_RETIRED" != 1 ]; then
   fm_backend_kill "$BACKEND" "$T" "$(meta_value "$META" zellij_tab_id)" "fm-$ID" 2>/dev/null || true
 fi
 if [ "$HERDR_PRESENTATION_RETIRE_CANDIDATE" = 1 ]; then
