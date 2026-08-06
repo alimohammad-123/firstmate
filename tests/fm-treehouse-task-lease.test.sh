@@ -39,6 +39,7 @@ FM_REAL_CP=$(command -v cp)
 FM_REAL_SLEEP=$(command -v sleep)
 FM_REAL_PS=$(command -v ps)
 FM_REAL_PYTHON3=$(command -v python3)
+FM_REAL_LSOF=$(command -v lsof)
 export TREEHOUSE_STATE TREEHOUSE_POOL TREEHOUSE_COUNTER TREEHOUSE_LOG TMUX_LOG TMUX_WINDOWS TMUX_COUNTER ENDPOINT_STATE ENDPOINT_COUNTER CMUX_FOCUS_MARKER XDG_STATE_HOME EVENT_LOG FM_REAL_MV FM_REAL_RM FM_REAL_CP FM_REAL_SLEEP FM_REAL_PS FM_REAL_PYTHON3
 
 mkdir -p "$HOME_A/data" "$HOME_A/state" "$HOME_A/config" "$HOME_A/projects" \
@@ -132,6 +133,14 @@ case "${1:-}" in
     if [ "${FM_FAKE_RETURN_INDEX_LOCK_ID:-}" = "$expected_id" ] \
        && [ ! -e "$TREEHOUSE_STATE.return-lock-$expected_id" ]; then
       : > "$TREEHOUSE_STATE.return-lock-$expected_id"
+      if [ -n "${FM_FAKE_RETURN_PROCESS_READY_FILE:-}" ]; then
+        attempt=0
+        while [ ! -f "$FM_FAKE_RETURN_PROCESS_READY_FILE" ] && [ "$attempt" -lt 100 ]; do
+          "$FM_REAL_SLEEP" 0.01
+          attempt=$((attempt + 1))
+        done
+        [ -f "$FM_FAKE_RETURN_PROCESS_READY_FILE" ] || exit 1
+      fi
       if [ -n "${FM_FAKE_RETURN_RESTART_TASK:-}" ]; then
         printf '@return-restart-%s\tfirstmate\tfm-%s\n' \
           "$FM_FAKE_RETURN_RESTART_TASK" "$FM_FAKE_RETURN_RESTART_TASK" >> "$TMUX_WINDOWS"
@@ -268,8 +277,12 @@ case "$*" in
     exit 0
     ;;
   *'tab list'*)
-    jq -Rn '
-      [inputs | select(length > 0) | split("\t") | select(.[0] == "herdr")
+    workspace=
+    prev=
+    for arg in "$@"; do [ "$prev" != --workspace ] || workspace=$arg; prev=$arg; done
+    jq -Rn --arg workspace "$workspace" '
+      [inputs | select(length > 0) | split("\t")
+        | select(.[0] == "herdr" and (.[2] | startswith($workspace + ":")))
         | {tab_id:.[1],label:.[3]}] | {result:{tabs:.}}
     ' < "$ENDPOINT_STATE" 2>/dev/null || printf '{"result":{"tabs":[]}}\n'
     exit 0
@@ -1017,6 +1030,49 @@ if kill -0 "$tmux_no_lsof_pid" 2>/dev/null; then
 fi
 pass 'missing lsof uses a pre-retirement exact tmux process fallback'
 
+make_brief "$HOME_A" tmux-no-lsof-retry
+run_spawn "$HOME_A" tmux-no-lsof-retry "$WT1" >/dev/null \
+  || fail 'missing-lsof retry fixture could not publish'
+TMUX_NO_LSOF_RETRY_META="$HOME_A/state/tmux-no-lsof-retry.meta"
+tmux_no_lsof_retry_lease=$(sed -n 's/^treehouse_lease_id=//p' "$TMUX_NO_LSOF_RETRY_META")
+TMUX_NO_LSOF_RETRY_PROCESS="$WORLD/tmux-no-lsof-retry.process"
+TMUX_NO_LSOF_RETRY_WRITER_READY="$WORLD/tmux-no-lsof-retry-writer.ready"
+TMUX_NO_LSOF_RETRY_TRIGGER="$TREEHOUSE_STATE.return-lock-$tmux_no_lsof_retry_lease"
+TMUX_NO_LSOF_RETRY_WT=$(cd "$WT1" && pwd -P)
+"$FM_REAL_PYTHON3" -c '
+import os, sys, time
+while not os.path.exists(sys.argv[1]):
+    time.sleep(0.01)
+os.chdir(sys.argv[2])
+open(sys.argv[3], "w").close()
+time.sleep(60)
+' "$TMUX_NO_LSOF_RETRY_TRIGGER" "$TMUX_NO_LSOF_RETRY_WT" "$TMUX_NO_LSOF_RETRY_WRITER_READY" &
+tmux_no_lsof_retry_writer=$!
+return_count_before=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+if FM_TEST_RETURN_RETRIES=1 FM_FAKE_RETURN_INDEX_LOCK_ID="$tmux_no_lsof_retry_lease" \
+  FM_FAKE_RETURN_PROCESS_READY_FILE="$TMUX_NO_LSOF_RETRY_WRITER_READY" \
+  FM_LSOF_BIN="$WORLD/missing-lsof" FM_FAKE_REAL_PS=1 FM_FAKE_REAL_SLEEP=1 \
+  FM_FAKE_TMUX_PROCESS_FILE="$TMUX_NO_LSOF_RETRY_PROCESS" \
+  run_teardown_force "$HOME_A" tmux-no-lsof-retry >/dev/null 2>&1; then
+  fail 'missing-lsof teardown reused stale process evidence for a delayed return'
+fi
+return_count_after=$(grep -c '^return ' "$TREEHOUSE_LOG" || true)
+[ "$return_count_after" -eq $((return_count_before + 1)) ] \
+  || fail 'missing-lsof teardown attempted a delayed conditional return'
+assert_present "$TMUX_NO_LSOF_RETRY_WRITER_READY" \
+  'missing-lsof retry fixture did not admit its detached writer'
+kill -0 "$tmux_no_lsof_retry_writer" 2>/dev/null \
+  || fail 'missing-lsof retry refusal did not preserve the detached writer'
+assert_present "$TMUX_NO_LSOF_RETRY_META" \
+  'missing-lsof retry refusal erased task metadata'
+grep -Fq "$WT1"$'\t'"$tmux_no_lsof_retry_lease"$'\t' "$TREEHOUSE_STATE" \
+  || fail 'missing-lsof retry refusal released the exact lease'
+kill -TERM "$tmux_no_lsof_retry_writer" 2>/dev/null || true
+wait "$tmux_no_lsof_retry_writer" 2>/dev/null || true
+run_teardown_force "$HOME_A" tmux-no-lsof-retry >/dev/null \
+  || fail 'missing-lsof retry fixture did not recover with a fresh inventory'
+pass 'missing lsof refuses delayed returns with new detached writers preserved'
+
 make_brief "$HOME_A" reap-ambiguous
 run_spawn "$HOME_A" reap-ambiguous "$WT1" >/dev/null \
   || fail 'ambiguous reap fixture could not publish'
@@ -1063,6 +1119,34 @@ backend_endpoint_remove tmux @restored-before-reap
 run_teardown_force "$HOME_A" endpoint-before-reap >/dev/null \
   || fail 'pre-reap endpoint restoration fixture did not recover after exact removal'
 pass 'retired endpoint evidence is re-correlated before process reaping'
+
+make_brief "$HOME_A" herdr-projection-rebound
+run_spawn "$HOME_A" herdr-projection-rebound "$WT1" --backend herdr >/dev/null \
+  || fail 'Herdr projection rebound fixture could not publish'
+HERDR_PROJECTION_META="$HOME_A/state/herdr-projection-rebound.meta"
+herdr_projection_lease=$(sed -n 's/^treehouse_lease_id=//p' "$HERDR_PROJECTION_META")
+if FM_FAKE_LSOF_MALFORMED=1 run_teardown_force "$HOME_A" herdr-projection-rebound >/dev/null 2>&1; then
+  fail 'Herdr projection rebound fixture did not preserve retirement evidence'
+fi
+printf 'herdr\tt-projection-restored\tw2:p-projection-restored\tfm-herdr-projection-rebound\n' >> "$ENDPOINT_STATE"
+event_before=$(wc -l < "$EVENT_LOG" | tr -d ' ')
+if FM_FAKE_RECORD_REAP=1 run_teardown_force "$HOME_A" herdr-projection-rebound >/dev/null 2>&1; then
+  fail 'Herdr task-wide absence missed a restored presentation-workspace pane'
+fi
+tail -n "+$((event_before + 1))" "$EVENT_LOG" > "$WORLD/herdr-projection-rebound.events"
+grep -Fq 'tab list --workspace w2' "$WORLD/herdr-projection-rebound.events" \
+  || fail 'Herdr task-wide absence did not inspect the presentation workspace'
+if grep -Fq 'reap-scan ' "$WORLD/herdr-projection-rebound.events"; then
+  fail 'Herdr projection rebound reached process reaping before refusal'
+fi
+backend_endpoint_is_live herdr w2:p-projection-restored \
+  || fail 'Herdr task-wide absence mutated the restored presentation pane'
+grep -Fq "$WT1"$'\t'"$herdr_projection_lease"$'\t' "$TREEHOUSE_STATE" \
+  || fail 'Herdr projection rebound released the exact lease'
+backend_endpoint_remove herdr w2:p-projection-restored
+run_teardown_force "$HOME_A" herdr-projection-rebound >/dev/null \
+  || fail 'Herdr projection rebound fixture did not recover after exact removal'
+pass 'Herdr task-wide absence scans every named-session workspace'
 
 make_brief "$HOME_A" endpoint-after-reap
 run_spawn "$HOME_A" endpoint-after-reap "$WT1" >/dev/null \
@@ -1151,6 +1235,22 @@ fi
 assert_absent "$PROCESS_RETRY_META" \
   'return-retry process fixture retained task metadata after safe return'
 pass 'every conditional return retry repeats process safety immediately before return'
+
+make_brief "$HOME_A" teardown-inside-lease
+run_spawn "$HOME_A" teardown-inside-lease "$WT1" >/dev/null \
+  || fail 'inside-lease teardown fixture could not publish'
+TEARDOWN_INSIDE_WT=$(cd "$WT1" && pwd -P)
+(
+  cd "$TEARDOWN_INSIDE_WT" || exit 1
+  FM_ROOT_OVERRIDE="$ROOT" FM_HOME="$HOME_A" FM_STATE_OVERRIDE="$HOME_A/state" \
+    FM_DATA_OVERRIDE="$HOME_A/data" FM_CONFIG_OVERRIDE="$HOME_A/config" \
+    FM_TEARDOWN_GUARD_DONE=1 FM_TREEHOUSE_RETURN_LOCK_RETRIES=0 \
+    FM_LSOF_BIN="$FM_REAL_LSOF" PATH="$FAKEBIN:$PATH" \
+    exec "$TEARDOWN" teardown-inside-lease --force >/dev/null
+) || fail 'teardown invoked inside the leased copy reaped or refused its own guard shell'
+assert_absent "$HOME_A/state/teardown-inside-lease.meta" \
+  'inside-lease teardown retained task metadata after exact return'
+pass 'pre-return process discovery excludes the active teardown shells'
 
 make_brief "$HOME_A" tmux-final-rebound
 run_spawn "$HOME_A" tmux-final-rebound "$WT1" >/dev/null \

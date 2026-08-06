@@ -1109,18 +1109,29 @@ teardown_treehouse_return_once() {  # <dir> <cd-dir> [lease-id] [holder]
   fi
 }
 
-teardown_treehouse_pre_return_guard() {  # <meta> <task-id> <backend> <home> <label> <dir> <tasktmp> [leader] [identity] [pgid]
-  local meta=$1 task_id=$2 backend=$3 endpoint_home=$4 label=$5 dir=$6 tasktmp=$7
-  local fallback_leader=${8:-} fallback_identity=${9:-} fallback_pgid=${10:-}
+teardown_treehouse_pre_return_guard() {  # <meta> <task-id> <backend> <home> <safe-cwd> <label> <dir> <tasktmp> [leader] [identity] [pgid]
+  local meta=$1 task_id=$2 backend=$3 endpoint_home=$4 safe_cwd=$5 label=$6 dir=$7 tasktmp=$8
+  local fallback_leader=${9:-} fallback_identity=${10:-} fallback_pgid=${11:-}
+  local saved_id=$ID saved_backend=$BACKEND
+  local saved_fallback_leader=${TEARDOWN_FALLBACK_LEADER:-}
+  local saved_fallback_identity=${TEARDOWN_FALLBACK_LEADER_IDENTITY:-}
+  local saved_fallback_pgid=${TEARDOWN_FALLBACK_PGID:-} reap_rc=0
+  [ -n "$endpoint_home" ] && [ -d "$endpoint_home" ] || return 1
+  [ -n "$safe_cwd" ] && [ -d "$safe_cwd" ] || return 1
+  CDPATH='' cd -- "$safe_cwd" || return 1
   teardown_treehouse_endpoint_absent_exact "$meta" "$task_id" "$backend" "$endpoint_home" || return 1
-  (
-    ID=$task_id
-    BACKEND=$backend
-    TEARDOWN_FALLBACK_LEADER=$fallback_leader
-    TEARDOWN_FALLBACK_LEADER_IDENTITY=$fallback_identity
-    TEARDOWN_FALLBACK_PGID=$fallback_pgid
-    reap_task_worktree_processes "$label" "$dir" "$tasktmp"
-  ) || return 1
+  ID=$task_id
+  BACKEND=$backend
+  TEARDOWN_FALLBACK_LEADER=$fallback_leader
+  TEARDOWN_FALLBACK_LEADER_IDENTITY=$fallback_identity
+  TEARDOWN_FALLBACK_PGID=$fallback_pgid
+  reap_task_worktree_processes "$label" "$dir" "$tasktmp" || reap_rc=$?
+  ID=$saved_id
+  BACKEND=$saved_backend
+  TEARDOWN_FALLBACK_LEADER=$saved_fallback_leader
+  TEARDOWN_FALLBACK_LEADER_IDENTITY=$saved_fallback_identity
+  TEARDOWN_FALLBACK_PGID=$saved_fallback_pgid
+  [ "$reap_rc" -eq 0 ] || return "$reap_rc"
   teardown_treehouse_endpoint_absent_exact "$meta" "$task_id" "$backend" "$endpoint_home"
 }
 
@@ -1142,7 +1153,7 @@ teardown_treehouse_return() {
   if [ -n "$lease_id" ]; then
     teardown_treehouse_pre_return_guard \
       "$endpoint_meta" "$endpoint_task_id" "$endpoint_backend" "$endpoint_home" \
-      "$process_label" "$process_dir" "$process_tasktmp" \
+      "$cd_dir" "$process_label" "$process_dir" "$process_tasktmp" \
       "$fallback_leader" "$fallback_identity" "$fallback_pgid" || return 1
   fi
   if out=$(teardown_treehouse_return_once "$dir" "$cd_dir" "$lease_id" "$lease_holder" 2>&1); then
@@ -1152,6 +1163,10 @@ teardown_treehouse_return() {
   [ -n "$out" ] && printf '%s\n' "$out" >&2
 
   if ! treehouse_return_is_index_lock_error "$out"; then
+    return 1
+  fi
+  if [ -n "$lease_id" ] && ! command -v "$TEARDOWN_LSOF_BIN" >/dev/null 2>&1; then
+    echo "REFUSED: $label return needs a delayed retry but no fresh complete process inventory is available; preserving its lease and records." >&2
     return 1
   fi
 
@@ -1173,7 +1188,7 @@ teardown_treehouse_return() {
     if [ -n "$lease_id" ]; then
       teardown_treehouse_pre_return_guard \
         "$endpoint_meta" "$endpoint_task_id" "$endpoint_backend" "$endpoint_home" \
-        "$process_label" "$process_dir" "$process_tasktmp" \
+        "$cd_dir" "$process_label" "$process_dir" "$process_tasktmp" \
         "$fallback_leader" "$fallback_identity" "$fallback_pgid" || return 1
     fi
     if out=$(teardown_treehouse_return_once "$dir" "$cd_dir" "$lease_id" "$lease_holder" 2>&1); then
@@ -1206,7 +1221,7 @@ teardown_treehouse_return() {
       if [ -n "$lease_id" ]; then
         teardown_treehouse_pre_return_guard \
           "$endpoint_meta" "$endpoint_task_id" "$endpoint_backend" "$endpoint_home" \
-          "$process_label" "$process_dir" "$process_tasktmp" \
+          "$cd_dir" "$process_label" "$process_dir" "$process_tasktmp" \
           "$fallback_leader" "$fallback_identity" "$fallback_pgid" || return 1
       fi
       if out=$(teardown_treehouse_return_once "$dir" "$cd_dir" "$lease_id" "$lease_holder" 2>&1); then
@@ -1573,7 +1588,11 @@ pids_with_cwd_under() {  # <dir>
         path=${line#n}
         case "$path" in
           "$dir"|"$dir"/*)
-            [ -n "$pid" ] && [ "$pid" != "$$" ] && printf '%s\n' "$pid"
+            if [ -n "$pid" ] \
+               && [ "$pid" != "$$" ] \
+               && [ "$pid" != "${BASHPID:-$$}" ]; then
+              printf '%s\n' "$pid"
+            fi
             ;;
         esac
         ;;
@@ -2911,7 +2930,7 @@ elif [ -d "$WT" ] && [ "$KIND" != secondmate ]; then
     post_lock_cleanup_check=validate_worktree_teardown_safety
   fi
   teardown_treehouse_return "$WT" "$PROJ" "worktree" "$post_lock_cleanup_check" \
-    "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" "$META" "$ID" "$BACKEND" "" \
+    "$TREEHOUSE_LEASE_ID" "$TREEHOUSE_LEASE_HOLDER" "$META" "$ID" "$BACKEND" "$FM_HOME" \
     "worktree" "$WT" "$TASK_TMP" \
     "$TEARDOWN_FALLBACK_LEADER" "$TEARDOWN_FALLBACK_LEADER_IDENTITY" "$TEARDOWN_FALLBACK_PGID" || {
     echo "error: exact conditional Treehouse lease return failed for worktree $WT; teardown aborted with task identity preserved" >&2

@@ -3048,13 +3048,15 @@ fm_backend_herdr_endpoint_confirmed_gone() {  # <target>
 }
 
 fm_backend_herdr_task_endpoint_absent() {  # <session> <recorded-pane> <task-label>
-  local session=$1 pane=$2 label=$3 workspace_list home_label workspaces workspace tabs matches=0 count
+  local session=$1 pane=$2 label=$3 workspace_list workspaces workspace tabs matches=0 count
   [ "$(fm_backend_herdr_pane_presence_state "$session" "$pane")" = dead ] || return 1
-  home_label=$(fm_backend_herdr_workspace_label) || return 1
   workspace_list=$(fm_backend_herdr_cli "$session" workspace list 2>/dev/null) || return 1
-  workspaces=$(printf '%s' "$workspace_list" | jq -r --arg label "$home_label" '
-    select((.result.workspaces | type) == "array")
-    | .result.workspaces[] | select(.label == $label) | .workspace_id
+  workspaces=$(printf '%s' "$workspace_list" | jq -r '
+    if ((.result.workspaces | type) != "array") then error("invalid workspaces") else
+      [.result.workspaces[].workspace_id]
+      | if (all(.[]; type == "string" and length > 0) and (length == (unique | length)))
+        then .[] else error("ambiguous workspaces") end
+    end
   ' 2>/dev/null) || return 1
   while IFS= read -r workspace; do
     [ -n "$workspace" ] || continue
